@@ -1,0 +1,9 @@
+name: financedata
+dependencies:
+- python=3
+- pip
+- numpy
+- matplotlib
+- pip:
+    - pandas_datareader
+    - datetime
