@@ -3,8 +3,8 @@ Main routine of the package.
 """
 
 import sys
-from mypkg import config
-from mypkg import mymodule
+import config
+from example_av import Example
 
 def main(args=None):
     
@@ -12,11 +12,18 @@ def main(args=None):
     
     if args is None:
         pass
+        
+    apikey = config.apikey
  
     
-    # Do something here. 
-    
-    
+    # Examples
+    e = Example(apikey)
+    e.timeseries()
+    # e.bbands()
+    e.sector()
+    e.crypto()
+    e.forex()
+
     
 if __name__ == "__main__":
     main(sys.argv[1:])

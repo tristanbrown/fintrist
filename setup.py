@@ -7,7 +7,7 @@ setup(name='fintrist',
     description = ("A personal financial analysis package. "),
     license = "Private",
     packages = find_packages(),
-    install_requires = ['alpha_vantage'],
+    install_requires = ['pandas','matplotlib','alpha_vantage'],
     entry_points = {
         'console_scripts': [
             'fintrist = fintrist.__main__:main'
