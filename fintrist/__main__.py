@@ -11,7 +11,7 @@ def main(args=None):
     # Determine inputs.
     
     if args is None:
-        args = sys.argv[1:]
+        pass
  
     
     # Do something here. 
@@ -19,4 +19,4 @@ def main(args=None):
     
     
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

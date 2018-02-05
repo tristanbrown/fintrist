@@ -1,0 +1,4 @@
+alpha-vantage==1.8.1
+## !! Could not determine repository location
+fintrist==0.0.1
+simplejson==3.13.2
