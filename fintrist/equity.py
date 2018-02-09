@@ -15,22 +15,21 @@ class Equity():
      
     """
     def __init__(self, apikey=None, symbol='SPY'):
-        self._key = apikey
         self.symbol = symbol
-        self._format = 'pandas'
+        self.ts = TimeSeries(key=apikey, output_format='pandas')
 
     def quote(self):
         """Gives a real-time price quote for this equity."""
-        self.price = ''
-        self.time = ''
-        return [self.price, self.time]
+        data = self.intraday(outputsize='compact')[-1:]
+        return data[['4. close','5. volume']]
     
-    def data(self, outputsize='compact'):
+    def intraday(self, interval='1min', outputsize='full'):
         """Gives the equity's Open, High, Low, Close, Volume, and Adj Close for
         each trading day, starting at the given date."""
-        ts = TimeSeries(key=self._key, output_format=self._format)
-        data, meta_data = ts.get_intraday(
+        data, meta_data = self.ts.get_intraday(
             symbol=self.symbol,
+            interval=interval,
+            outputsize=outputsize
             )
         return data
         

@@ -26,7 +26,8 @@ def main(args=None):
     # e.forex()
 
     nvda = Equity(apikey, 'NVDA')
-    print(nvda.data())
+    print(nvda.intraday())
+    print(nvda.quote())
 
     
 if __name__ == "__main__":
