@@ -5,6 +5,7 @@ Main routine of the package.
 import sys
 import config
 from example_av import Example
+from equity import Equity
 
 def main(args=None):
     
@@ -17,12 +18,15 @@ def main(args=None):
  
     
     # Examples
-    e = Example(apikey)
-    e.timeseries()
+    # e = Example(apikey)
+    # e.timeseries()
     # e.bbands()
-    e.sector()
-    e.crypto()
-    e.forex()
+    # e.sector()
+    # e.crypto()
+    # e.forex()
+
+    nvda = Equity(apikey, 'NVDA')
+    print(nvda.data())
 
     
 if __name__ == "__main__":
