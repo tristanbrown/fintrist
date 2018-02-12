@@ -2,6 +2,7 @@
 Stock tracking based on the Alpha Vantage api
 https://github.com/RomelTorres/alpha_vantage
 https://www.alphavantage.co/documentation/
+https://github.com/RomelTorres/alpha_vantage/blob/develop/alpha_vantage/timeseries.py
 """
 
 import matplotlib.pyplot as plt
@@ -18,19 +19,71 @@ class Equity():
         self.symbol = symbol
         self.ts = TimeSeries(key=apikey, output_format='pandas')
 
-    def quote(self):
-        """Gives a real-time price quote for this equity."""
-        data = self.intraday(outputsize='compact')[-1:]
-        return data[['4. close','5. volume']]
+    def refresh(self):
+        """Clears all time-sensitive data."""
+        properties = ['_quote', '_days']
+        for data in properties:
+            try:
+                delattr(self, data)
+            except AttributeError:
+                pass
     
-    def intraday(self, interval='1min', outputsize='full'):
+    @property
+    def quote(self):
+        """Gives a real-time price quote for this equity.
+        Formatted as the date, last price, and cumulative day's volume."""
+        try:
+            return self._quote
+        except AttributeError:
+            data = self.daily(outputsize='compact')[-1:]
+            self._quote = data[['4. close','5. volume']]
+            return self._quote
+    
+    @property
+    def days(self):
+        """
+        """
+        try:
+            return self._days
+        except AttributeError:
+            self._days = self.daily()
+            return self._days
+    
+    def intraday(self, interval='1min', outputsize='compact'):
         """Gives the equity's Open, High, Low, Close, Volume, and Adj Close for
-        each trading day, starting at the given date."""
+        each trading minute."""
         data, meta_data = self.ts.get_intraday(
             symbol=self.symbol,
             interval=interval,
-            outputsize=outputsize
+            outputsize=outputsize,
             )
+        return data
+
+    def daily(self, outputsize='full'):
+        """Gives the equity's Open, High, Low, Close, Volume, and Adj Close for
+        each trading day, starting at the given date."""
+        data, meta_data = self.ts.get_daily(
+            symbol=self.symbol,
+            outputsize=outputsize,
+            )
+        return data
+    
+    def weekly(self):
+        """Gives the equity's Open, High, Low, Close, Volume, and Adj Close for
+        each trading day, starting at the given date."""
+        data, meta_data = self.ts.get_weekly(symbol=self.symbol)
+        return data
+    
+    def monthly(self):
+        """Gives the equity's Open, High, Low, Close, Volume, and Adj Close for
+        each trading day, starting at the given date."""
+        data, meta_data = self.ts.get_monthly(symbol=self.symbol)
+        return data
+    
+    def batch(self, symbols):
+        """
+        """
+        data, meta_data = self.ts.get_batch_stock_quotes(symbols)
         return data
         
     def plot(self, series, start='1900-01-01'):
