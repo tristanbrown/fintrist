@@ -110,8 +110,6 @@ class Equity():
         data, meta_data = self.tech.get_macd(
             self.symbol,
             interval = interval,
-            time_period = time_period,
-            series_type = series_type,
             )
         return data
     
@@ -130,15 +128,15 @@ class Equity():
             )
         return data
     
-    def ultimate(self, symbol, interval='daily', timeperiod1=None,
+    def ultimate(self, interval='daily', timeperiod1=None,
                    timeperiod2=None, timeperiod3=None):
         """Ultimate oscillator.
         """
-        data, meta_data = self.tech.get_bbands(
+        data, meta_data = self.tech.get_ultsoc(
             self.symbol,
             interval = interval,
-            time_period1 = time_period1,
-            time_period2 = time_period2,
-            time_period3 = time_period3,
+            timeperiod1 = timeperiod1,
+            timeperiod2 = timeperiod2,
+            timeperiod3 = timeperiod3,
             )
         return data

@@ -3,6 +3,7 @@ Main routine of the package.
 """
 
 import sys
+import os
 import config
 import time
 from example_av import Example
@@ -32,20 +33,12 @@ def main(args=None):
     # print(stock.daily())
     stock.refresh()
     time0 = time.time()
-    stock.daily(outputsize='compact')
-    time1 = time.time()
-    print(stock.quote)
-    time2 = time.time()
-    print(stock.quote)
-    time3 = time.time()
-    stock.refresh()
-    print(stock.quote)
-    time4 = time.time()
-
-    print(time1-time0)
-    print(time2-time1)
-    print(time3-time2)
-    print(time4-time3)
+    path = os.path.join('data', symbol )
+    stock.daily(outputsize='full').to_csv(path_or_buf=path+'_daily.csv')
+    stock.sma().to_csv(path_or_buf=path+'_sma.csv')
+    stock.bbands().to_csv(path_or_buf=path+'_bbands.csv')
+    stock.macd().to_csv(path_or_buf=path+'_macd.csv')
+    stock.ultimate().to_csv(path_or_buf=path+'_ult.csv')
     
 if __name__ == "__main__":
     main(sys.argv[1:])
