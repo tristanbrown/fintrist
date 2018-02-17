@@ -24,3 +24,10 @@ class Ticker():
         
         stream = pd.concat(list_of_streams, axis=1)
         return stream
+
+    def comparison(self, function, chunk):
+        """Takes each column in the chunk as a variable and inputs it into the
+        function. The result of the function is returned. 
+        """
+        # Use "Time-aware Rolling" for this
+        return (function(chunk))
