@@ -29,7 +29,7 @@ class History():
     def read_data(self, source):
         """
         """
-        data = self.validate_history(pd.read_csv(source))
+        data = self.validate_history(pd.read_csv(source, index_col=0))
         return data
     
     def validate_history(self, data):

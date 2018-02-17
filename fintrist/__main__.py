@@ -9,6 +9,7 @@ import time
 from example_av import Example
 from equity import Equity
 from history import History
+from sim import Ticker
 
 def main(args=None):
     
@@ -41,11 +42,16 @@ def main(args=None):
     # stock.macd().to_csv(path_or_buf=path+'_macd.csv')
     # stock.ultimate().to_csv(path_or_buf=path+'_ult.csv')
 
-    lyb_daily = History('lyb', 'daily')
-    print(lyb_daily.data)
+    lyb_daily = History('lyb', 'daily').data
+    # print(lyb_daily)
 
-    lyb_ult = History('lyb', 'ult')
-    print(lyb_ult.data)
-    
+    lyb_ult = History('lyb', 'ult').data
+    # print(lyb_ult)
+
+    lyb_sma = History('lyb', 'sma').data
+
+    T = Ticker([lyb_daily, lyb_sma, lyb_ult])
+    print(T.stream)
+
 if __name__ == "__main__":
     main(sys.argv[1:])
