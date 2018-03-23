@@ -28,6 +28,7 @@ class Ticker():
     def comparison(self, function, chunk):
         """Takes each column in the chunk as a variable and inputs it into the
         function. The result of the function is returned. 
+        
+        Use "Time-aware Rolling" from pandas to generate chunks for this.
         """
-        # Use "Time-aware Rolling" for this
         return (function(chunk))
