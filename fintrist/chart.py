@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 class Chart():
     """
-     
+
     """
     def __init__(self, series=None):
         self.series = series
@@ -21,8 +21,8 @@ class Chart():
         x = y.index
         plt.plot(x, y, '-b')
         plt.ylabel(series)
-        
-    
+ 
+
     def plotprice(self, start='1900-01-01'):
         """Plots the equity's Adj Close price, starting at the given date."""
         self.plot('Adj Close', start)
