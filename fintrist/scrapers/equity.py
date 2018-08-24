@@ -11,13 +11,15 @@ from alpha_vantage.sectorperformance import SectorPerformances
 
 class Equity():
     """
-     
     """
     def __init__(self, apikey=None, symbol='SPY'):
         self.symbol = symbol
         self.ts = TimeSeries(key=apikey, output_format='pandas')
         self.tech = TechIndicators(key=apikey, output_format='pandas')
 
+    def get_data(self):
+        return self.daily()
+    
     def refresh(self):
         """Clears all time-sensitive data."""
         properties = ['_quote', '_days']
