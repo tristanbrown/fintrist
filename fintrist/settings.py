@@ -4,14 +4,5 @@ wish to modify.
 """
 
 APIKEY = '***REMOVED***'
-
-path = dict(
-    input = 'data',
-    output = 'data',
-
-    )
-
-params = dict(
-    param1 = 'one'
-    
-    )
+REFRESH_INTERVAL = 15
+KEEP_STUDIES = 5
