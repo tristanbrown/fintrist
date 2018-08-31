@@ -5,7 +5,7 @@ Script to track a stock's daily chart.
 import argparse
 
 from fintrist import settings
-from fintrist.tracker import TrackingEngine
+from fintrist.tracker import Stream
 
 parser = argparse.ArgumentParser(description='Start Fintrist.')
 parser.add_argument('symbol', metavar='SYM', type=str, help='Stock symbol')
@@ -15,8 +15,9 @@ args = parser.parse_args()
 def main():
     # Make one of these specific for each scraper. 
     # Determine inputs.
+    name = "{}_daily".format(args.symbol)
     inputs = {'symbol': args.symbol}
-    trk = TrackingEngine('stock', 'exists', inputs)
+    stock = Stream(name, 'stock', 'exists', inputs)
 
 if __name__ == "__main__":
     main()
