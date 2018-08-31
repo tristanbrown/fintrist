@@ -12,7 +12,7 @@ class Analysis():
     def database(self):
         """Return the analysis database."""
         analyses = {
-            'exists': self.any_data
+            'exists': self.any_data # Refactor to YAML file?
         }
 
         return analyses
@@ -23,19 +23,3 @@ class Analysis():
             study.alerts.add('Data Does Not Exist')
         else:
             study.alerts.add('Data Exists')
-
-class Study():
-    """Analyzes the data and generates alerts."""
-
-    def __init__(self, data):
-        self.alerts = set()
-        self.data = data
-        self.output = None
-
-    def save(self):
-        """Saves the Study object in the database."""
-        print("Not yet implemented.")
-    
-    def delete(self):
-        """Removes the Study object from the database."""
-        print("Not yet implemented.")

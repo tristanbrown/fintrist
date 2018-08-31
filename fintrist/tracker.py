@@ -7,10 +7,11 @@ import time
 
 from fintrist import settings
 from fintrist.alerts import AlertsBoard
-from fintrist.analysis import Analysis, Study
+from fintrist.analysis import Analysis
 from fintrist.scrapers.base import Scraper
+from fintrist.study import Study
 
-class TrackingEngine():
+class Stream():
     """Tracking engine that monitors and updates data acquired by scrapers.
 
     Each scraper must return a dataframe.
@@ -20,8 +21,8 @@ class TrackingEngine():
     :param inputs: contains any parameters necessary for the scraper to run.
     :type inputs: dict
     """
-    def __init__(self, source, analysis_name, inputs):
-        self.basedir = self.generate_base_dir()
+    def __init__(self, stream_name, source, analysis_name, inputs):
+        self.basedir = os.path.join(settings.DATA_DIR, stream_name)
         self.study_list = []
         self.alerts_board = AlertsBoard()
         self.source = source
@@ -31,6 +32,11 @@ class TrackingEngine():
 
     def track(self, interval):
         """Periodically update the data and run any desired analyses."""
+        try:
+            os.mkdir(self.basedir)
+        except FileExistsError:
+            pass
+
         while True:
             print("{0}: Updating {1}".format(time.asctime(), self.source))
             self.update()
@@ -46,17 +52,10 @@ class TrackingEngine():
         self.alerts_board.update(self.study_list)
         print(newstudy.data)
 
-    def generate_base_dir(self):
-        """Choose the directory in which to save the studies."""
-        datadir = settings.DATA_DIR
-        i = 0
-        while os.path.exists(os.path.join(datadir, str(i))):
-            i += 1
-        return os.path.join(datadir, str(i))
-
     def create_study(self, data):
         """Create a study object."""
-        study = Study(data)
+        timestamp = time.strftime('%Y%m%d_%H%M%S')
+        study = Study(timestamp, self.basedir, data)
         study.save()
         return study
 
