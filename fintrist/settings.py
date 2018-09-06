@@ -9,3 +9,4 @@ REFRESH_INTERVAL = 15
 KEEP_STUDIES = 5
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 DATA_DIR = os.path.join(ROOT_DIR, 'data')
+DATABASE_NAME = 'Fintrist DB'

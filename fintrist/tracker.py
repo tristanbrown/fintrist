@@ -4,14 +4,17 @@ events such as data refresh.
 """
 import os
 import time
+import pickle
+import bson
 
 from fintrist import settings
 from fintrist.alerts import AlertsBoard
-from fintrist.analysis import Analysis
-from fintrist.scrapers.base import Scraper
-from fintrist.study import Study
+from fintrist.processes.scrapers.base import Scraper
+from fintrist.models import AlertsBoard, Process, Stream, Study
+from pymongo import MongoClient
+from mongoengine import connect
 
-class Stream():
+class TrackingEngine():
     """Tracking engine that monitors and updates data acquired by scrapers.
 
     Each scraper must return a dataframe.
@@ -22,7 +25,7 @@ class Stream():
     :type inputs: dict
     """
     def __init__(self, stream_name, source, analysis_name, inputs):
-        self.basedir = os.path.join(settings.DATA_DIR, stream_name)
+        connect(settings.DATABASE_NAME)
         self.study_list = []
         self.alerts_board = AlertsBoard()
         self.source = source
@@ -41,6 +44,7 @@ class Stream():
             print("{0}: Updating {1}".format(time.asctime(), self.source))
             self.update()
             time.sleep(interval)
+        
 
     def update(self):
         """Update all of the tracked data."""
@@ -51,6 +55,17 @@ class Stream():
         self.cycle_studies(newstudy)
         self.alerts_board.update(self.study_list)
         print(newstudy.data)
+        # Test MongoDB
+        client = MongoClient()
+        db = client.FintristTest
+        collection = db.studies
+        study_data = {
+            'type': 'stock',
+            'name': newstudy.name,
+            'data': bson.binary.Binary(pickle.dumps(newstudy.data, protocol=2)),
+        }
+        result = collection.insert_one(study_data)
+        print('One study: {0}'.format(result.inserted_id))
 
     def create_study(self, data):
         """Create a study object."""

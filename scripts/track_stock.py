@@ -5,7 +5,7 @@ Script to track a stock's daily chart.
 import argparse
 
 from fintrist import settings
-from fintrist.tracker import Stream
+from fintrist.tracker import TrackingEngine
 
 parser = argparse.ArgumentParser(description='Start Fintrist.')
 parser.add_argument('symbol', metavar='SYM', type=str, help='Stock symbol')
@@ -17,7 +17,7 @@ def main():
     # Determine inputs.
     name = "{}_daily".format(args.symbol)
     inputs = {'symbol': args.symbol}
-    stock = Stream(name, 'stock', 'exists', inputs)
+    stock = TrackingEngine(name, 'stock', 'exists', inputs)
 
 if __name__ == "__main__":
     main()
