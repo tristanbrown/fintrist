@@ -12,6 +12,7 @@ class Stream(Document):
     name = StringField(max_length=120, required=True)
     studies = ListField(ReferenceField('Study'))
     alerts = ReferenceField('AlertsBoard')
+    refresh_interval = IntField(min_value=15)
 
 class Study(Document):
     """Contains data process results."""
@@ -30,11 +31,10 @@ class Study(Document):
 
 class Process(Document):
     """Handles for choosing the appropriate data-processing functions."""
-    name = StringField(max_length=120, required=True)
+    name = StringField(max_length=120, required=True, unique=True)
 
 class AlertsBoard(Document):
     """Collects alerts for a particular Stream."""
-    id = IntField(required=True)
     active = ListField(StringField(max_length=120))
     log = ListField(StringField(max_length=120))
     timestamp = DateTimeField(default=dt.now(tzlocal()))
