@@ -3,23 +3,19 @@ The engine that chooses a scraper and returns data.
 """
 
 from fintrist import settings
-from fintrist.scrapers.equity import Equity
+from fintrist.processes.scrapers.equity import Equity
 
-class Scraper():
-    """Chooses the appropriate analysis."""
+__all__ = ['stock']
 
-    def __init__(self, name, inputs):
-        self.name = name
-        self.inputs = inputs
-
-    def get(self):
-        """Return a particular scraper."""
-        return self.database(self.inputs)[self.name]
-
-    def database(self, inputs):
-        """Return the scraper database."""
-        scrapers = {
-            'stock': Equity(settings.APIKEY, inputs['symbol'])
-        }
-
-        return scrapers
+def stock(inputs):
+    """Get a stock quote history."""
+    scraper = Equity(settings.APIKEY, inputs['symbol'])
+    if inputs['frequency'] == 'min':
+        data = scraper.intraday()
+    elif inputs['frequency'] == 'daily':
+        data = scraper.daily()
+    elif inputs['frequency'] == 'weekly':
+        data = scraper.weekly()
+    elif inputs['frequency'] == 'monthly':
+        data = scraper.monthly()
+    return data
