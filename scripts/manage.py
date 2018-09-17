@@ -15,15 +15,21 @@ def register():
     process_list = processes.ALL.keys()
     for name in process_list:
         try:
-            Process(name=name).save()
+            Process(name).save()
+            print("Inserted '{}'.".format(name))
         except NotUniqueError:
-            pass
+            print("'{}' skipped: Already registered.".format(name))
+
+def clear():
+    """Delete all processes in the database."""
+    connect(settings.DATABASE_NAME)
+    Process.objects().delete() # pylint: disable=no-member
+    print("Cleared the processes database.")
 
 def main():
-    """Check the command."""
+    """Run the function specified by the command line argument."""
     arg = sys.argv[1]
-    if arg == 'register':
-        register()
+    globals()[arg]()
 
 if __name__ == "__main__":
     main()
