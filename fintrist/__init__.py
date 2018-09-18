@@ -2,8 +2,10 @@
 Start Fintrist, connect to the DB, and expose public methods.
 """
 
-from mongoengine import connect
+import mongoengine
 from . import settings
 from .models import Stream
 
-connect(settings.DATABASE_NAME)
+__all__ = ('Stream',)
+
+mongoengine.connect(settings.DATABASE_NAME)

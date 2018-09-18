@@ -4,9 +4,12 @@ The engine that applies analyses to data and generates alerts.
 
 __all__ = ['any_data']
 
-def any_data(self, study, inputs):
+def any_data(inputs):
     """If there is data, raise alert."""
-    if study.data.empty:
-        study.alerts.add('Data Does Not Exist')
+    alerts = []
+    data = inputs['data']
+    if not data:
+        alerts.append('Data Does Not Exist')
     else:
-        study.alerts.add('Data Exists')
+        alerts.append('Data Exists')
+    return (data, alerts)
