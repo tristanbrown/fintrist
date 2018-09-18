@@ -18,4 +18,5 @@ def stock(inputs):
         data = scraper.weekly()
     elif inputs['frequency'] == 'monthly':
         data = scraper.monthly()
-    return data
+    alerts = ['got data']
+    return (data, alerts)
