@@ -1,0 +1,23 @@
+# Ignore compiled
+*.py[cod]
+
+# Ignore installation files
+*.egg*
+
+# Ignore dot files
+.*
+
+# Except linting and gitignore
+!.pylintrc
+!.gitignore
+
+# Ignore generated data
+data/*
+
+# Ignore scratchwork
+scratch*
+
+# Don't upload sensitive data
+passwords.txt
+settings.py
+config.py
