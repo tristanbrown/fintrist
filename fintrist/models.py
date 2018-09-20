@@ -7,9 +7,10 @@ import time
 
 from datetime import datetime as dt
 from dateutil.tz import tzlocal
-from mongoengine.document import Document
+from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import (
-    BinaryField, DateTimeField, DictField, EmbeddedDocumentField, IntField,
+    BinaryField, DateTimeField, DictField, EmbeddedDocumentField,
+    EmbeddedDocumentListField, IntField,
     ListField, MapField, ReferenceField, StringField,
 )
 from mongoengine.errors import DoesNotExist
@@ -20,15 +21,10 @@ __all__ = ('Stream', 'Study', 'Process', 'AlertsBoard')
 
 logger = logging.getLogger(__name__)
 
-class AlertsBoard(Document):
+class AlertsBoard(EmbeddedDocument):
     """Collects alerts for a particular Stream."""
-    active = ListField(StringField(max_length=120))
-    log = ListField(StringField(max_length=120))
     timestamp = DateTimeField(default=dt.now(tzlocal()))
-
-    def add_alerts(self, newalerts):
-        """Add new alerts to the AlertsBoard and trigger notifications."""
-        logger.warning("Not yet implemented. New alerts: %s", newalerts)
+    active = DictField()
 
 class Stream(Document):
     """Contains the relationships between Studies, Analyses, and AlertsBoards.
@@ -38,7 +34,8 @@ class Stream(Document):
     name = StringField(max_length=120, required=True, unique=True)
     refresh = IntField(min_value=15)
     studies = ListField(ReferenceField('Study'))
-    alerts = EmbeddedDocumentField('AlertsBoard')
+    # alerts = EmbeddedDocumentField('AlertsBoard', default=AlertsBoard())
+    alertslog = EmbeddedDocumentListField('AlertsBoard')
 
     # Figure out how to include class methods here (e.g. "add_study", "activate()")
     def create_study(self, name, proc_name, inputs):
@@ -60,14 +57,20 @@ class Stream(Document):
     def activate(self):
         """Periodically update the Study instances and collect alerts."""
         self.reload()
-        if not self.alerts:
-            self.update(set__alerts=AlertsBoard())
-            self.reload()
         while True:
-            logger.info("%s: Updating %s", dt.now(tzlocal()), self.name)
-            newalerts = {study.id: study.run() for study in self.studies}
-            self.alerts.add_alerts(newalerts)
+            logger.warning("%s: Updating %s", dt.now(tzlocal()), self.name)
+            newalerts = {study.name: set(study.run()) for study in self.studies}
+            self.update_alerts(newalerts)
             time.sleep(self.refresh)
+
+    def update_alerts(self, newalerts):
+        """Add new alerts and choose whether to notify the user."""
+        if self.alertslog:
+            prev_board = self.alertslog[-1]
+        else:
+            prev_board = AlertsBoard()
+        new_board = AlertsBoard(active=newalerts)
+        self.update(push__alertslog=new_board)
 
 class Study(Document):
     """Contains data process results."""
