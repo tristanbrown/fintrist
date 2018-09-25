@@ -9,7 +9,7 @@ from datetime import datetime as dt
 from dateutil.tz import tzlocal
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import (
-    BinaryField, DateTimeField, DictField, EmbeddedDocumentField,
+    BinaryField, DateTimeField, DictField,
     EmbeddedDocumentListField, IntField,
     ListField, MapField, ReferenceField, StringField,
 )
@@ -34,7 +34,6 @@ class Stream(Document):
     name = StringField(max_length=120, required=True, unique=True)
     refresh = IntField(min_value=15)
     studies = ListField(ReferenceField('Study'))
-    # alerts = EmbeddedDocumentField('AlertsBoard', default=AlertsBoard())
     alertslog = EmbeddedDocumentListField('AlertsBoard')
 
     # Figure out how to include class methods here (e.g. "add_study", "activate()")
