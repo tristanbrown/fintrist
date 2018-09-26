@@ -59,7 +59,6 @@ class Equity():
             interval=interval,
             outputsize=outputsize,
             )
-        print(self.quote)
         return data
 
     def daily(self, outputsize='full'):

@@ -9,7 +9,7 @@ from datetime import datetime as dt
 from dateutil.tz import tzlocal
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import (
-    BinaryField, DateTimeField, DictField,
+    BinaryField, DateTimeField, DictField, EmbeddedDocumentField,
     EmbeddedDocumentListField, IntField,
     ListField, MapField, ReferenceField, StringField,
 )
@@ -25,6 +25,7 @@ class AlertsBoard(EmbeddedDocument):
     """Collects alerts for a particular Stream."""
     timestamp = DateTimeField(default=dt.now(tzlocal()))
     active = DictField()
+    meta = {'strict': False}
 
 class Stream(Document):
     """Contains the relationships between Studies, Analyses, and AlertsBoards.
@@ -35,6 +36,7 @@ class Stream(Document):
     refresh = IntField(min_value=15)
     studies = ListField(ReferenceField('Study'))
     alertslog = EmbeddedDocumentListField('AlertsBoard')
+    meta = {'strict': False}
 
     # Figure out how to include class methods here (e.g. "add_study", "activate()")
     def create_study(self, name, proc_name, inputs):
@@ -85,6 +87,9 @@ class Study(Document):
     data = BinaryField() # TODO: FileField? GridFS is messy for updates?
     alerts = ListField(StringField(max_length=120))
     timestamp = DateTimeField(default=dt.now(tzlocal()))
+
+    # Meta
+    meta = {'strict': False}
 
     def run(self):
         """Run the Study process on the inputs and return any alerts."""
