@@ -23,7 +23,7 @@ def register():
 def clear():
     """Delete all processes in the database."""
     connect(settings.DATABASE_NAME)
-    Process.objects().delete() # pylint: disable=no-member
+    Process.objects().delete()
     print("Cleared the processes database.")
 
 def main():
