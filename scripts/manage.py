@@ -23,7 +23,7 @@ def register():
 def clear():
     """Delete all processes in the database."""
     connect(settings.DATABASE_NAME)
-    Process.objects().delete()
+    Process.drop_collection()
     print("Cleared the processes database.")
 
 def main():
