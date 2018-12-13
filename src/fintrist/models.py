@@ -25,6 +25,8 @@ class AlertsBoard(EmbeddedDocument):
     """Collects alerts for a particular Stream."""
     timestamp = DateTimeField(default=dt.now(tzlocal()))
     active = DictField()
+    schema_version = IntField(default=1)
+
     meta = {'strict': False}
 
 class Stream(Document):
@@ -36,6 +38,8 @@ class Stream(Document):
     refresh = IntField(min_value=15)
     studies = ListField(ReferenceField('Study'))
     alertslog = EmbeddedDocumentListField('AlertsBoard')
+    schema_version = IntField(default=1)
+
     meta = {'strict': False}
 
     # Figure out how to include class methods here (e.g. "add_study", "activate()")
@@ -89,6 +93,7 @@ class Study(Document):
     timestamp = DateTimeField(default=dt.now(tzlocal()))
 
     # Meta
+    schema_version = IntField(default=1)
     meta = {'strict': False}
 
     def run(self):
@@ -104,3 +109,5 @@ class Study(Document):
 class Process(Document):
     """Handles for choosing the appropriate data-processing functions."""
     name = StringField(max_length=120, required=True, unique=True)
+    version = IntField()
+    schema_version = IntField(default=1)
