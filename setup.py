@@ -7,12 +7,12 @@ setup(
     author_email="brown.tristan.r@gmail.com",
     description=("A personal financial analysis package. "),
     license="Private",
-    packages=find_packages(),
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     install_requires=['pandas', 'matplotlib', 'alpha_vantage'],
     entry_points={
         'console_scripts': [
             'fintrist = fintrist.__main__:main',
-            'manage.py = scripts.manage:main',
         ]
     },
 )
