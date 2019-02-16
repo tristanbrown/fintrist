@@ -5,8 +5,7 @@ import sys
 
 from mongoengine import connect
 from mongoengine.errors import NotUniqueError
-from fintrist import settings
-from fintrist import processes
+from fintrist import settings, processes, util
 from fintrist.models import Process
 
 def register():
@@ -25,6 +24,10 @@ def clear():
     connect(settings.DATABASE_NAME)
     Process.drop_collection()
     print("Cleared the processes database.")
+
+@util.not_implemented
+def test():
+    print("Test function")
 
 def main():
     """Run the function specified by the command line argument."""
