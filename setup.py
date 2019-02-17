@@ -1,5 +1,15 @@
 from setuptools import setup, find_packages
 
+REQUIREMENTS = [
+    'pandas',
+    'matplotlib',
+    'flask',
+    'python-dotenv',
+    'pymongo',
+    'mongoengine',
+    'alpha_vantage>=2.0.0',
+]
+
 setup(
     name='fintrist',
     version='0.0.1',
@@ -9,10 +19,10 @@ setup(
     license="Private",
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    install_requires=['pandas', 'matplotlib', 'alpha_vantage'],
+    install_requires=REQUIREMENTS,
     entry_points={
         'console_scripts': [
-            'fintrist = fintrist.__main__:main',
+            # 'fintrist = fintrist.__main__:main',
         ]
     },
 )
