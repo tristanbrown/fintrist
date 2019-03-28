@@ -5,7 +5,6 @@ REQUIREMENTS = [
     'matplotlib',
     'flask',
     'python-dotenv',
-    'pymongo',
     'mongoengine',
     'alpha_vantage>=2.0.0',
 ]
@@ -22,7 +21,7 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={
         'console_scripts': [
-            # 'fintrist = fintrist.__main__:main',
+            'fintrist_app = fintrist_app.__main__:run',
         ]
     },
 )
