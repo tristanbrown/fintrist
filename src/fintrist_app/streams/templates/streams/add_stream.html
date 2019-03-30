@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h1>Add an stream</h1>
+  <p>Add a new stream with the form below:</p>
+  <form method="POST">
+      {# This hidden_tag is a CSRF security feature. #}
+      {{ form.hidden_tag() }}
+      {{ form.name.label }} {{ form.name() }}<br>
+      {{ form.refresh.label }} {{ form.refresh() }}<br>
+      {{ form.submit() }}
+  </form>
+</div>
+{% endblock %}

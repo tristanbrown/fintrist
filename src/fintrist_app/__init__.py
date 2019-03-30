@@ -1,27 +1,27 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 
 import fintrist
 from fintrist_app import settings
-
-# TODO: Explicitly specify fintrist db connection.
-# TODO: Implement User info in a separate db.
-# TODO: Use "roles" with $redact to control access to specific documents
-# TODO: https://stackoverflow.com/questions/28168258/does-mongodb-provide-document-level-access-to-users
-# TODO: Alternatively, use "owner" and "group" fields on documents, and use mongoengine filters to control access
-# TODO: Is this vulnerable? Example: fintrist.Stream.objects will still return all objects, regardless of auth.
-# TODO: Need to deny users direct access to object operations.
-# TODO: Create two db roles: "Develop" and "Flask-access" https://docs.mongodb.com/manual/core/authorization/
-# TODO: https://docs.mongodb.com/manual/tutorial/manage-users-and-roles/
+from fintrist_app.streams.views import streams_blueprint
+from fintrist_app.studies.views import studies_blueprint
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'mysecretkey'
+
+app.register_blueprint(streams_blueprint,url_prefix="/streams")
+app.register_blueprint(studies_blueprint,url_prefix='/studies')
 
 @app.route("/")
 def index():
+    return render_template('home.html')
+
+@app.route("/appdata")
+def appdata():
     return settings.APPDATA
 
-@app.route("/streams")
-def streams():
+@app.route("/streamslist")
+def streamslist():
     return ', '.join([stream.name for stream in fintrist.Stream.objects])
 
 @app.route("/<name>")

@@ -4,6 +4,8 @@ REQUIREMENTS = [
     'pandas',
     'matplotlib',
     'flask',
+    'flask_wtf',
+    'wtforms',
     'python-dotenv',
     'mongoengine',
     'alpha_vantage>=2.0.0',
