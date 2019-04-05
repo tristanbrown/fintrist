@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Stream
-from fintrist_app.streams.forms import AddForm, DelForm, SelForm
+from fintrist_app.streams.forms import AddForm, DelForm, StreamSelForm, StudySelForm
 
 streams_blueprint = Blueprint('streams',
                               __name__,
@@ -29,17 +29,35 @@ def list():
 @streams_blueprint.route('/select', methods=['GET','POST'])
 def select():
     # Grab a selectable list of studies from database.
-    form = SelForm()
-    form2 = SelForm()
+    selform = StreamSelForm()
+    selform2 = StudySelForm()
     db_objects = [(str(stream.id), stream.name) for stream in Stream.objects()]
-    form.selections.choices = db_objects
-    if form.validate_on_submit():
-        form2 = SelForm()
-        selections = form.selections.data
-        new_objects = [(str(stream.id), stream.name) for stream in Stream.objects(id__in=selections)]
-        form2.selections.choices = new_objects
-        form.selections.data = form2.selections.data = []
-    return render_template('select_streams.html', form=form, form2=form2)
+    selform.selections.choices = db_objects
+    if selform.validate_on_submit():
+        # Select a Stream and view associated Studies
+        selections = selform.selections.data
+        selected_stream = Stream.objects(id=selections).get()
+        if selform.choose.data:
+            new_objects = [(str(stream.id), stream.name) for stream in selected_stream.studies]
+            selform2.selections.choices = new_objects
+            selform.selections.data = selform2.selections.data = []
+        # Delete Stream
+        elif selform.delete.data:
+            selected_stream.delete()
+        # Edit Stream
+        elif selform.edit.data:
+            session['editstream'] = selected_stream
+            return redirect(url_for('streams.edit'))
+    # Add a new stream to the database
+    addform = AddForm()
+    if addform.validate_on_submit() and addform.submit.data:
+        name = addform.name.data
+        refresh = addform.refresh.data
+        # Add new stream to database
+        new_stream = Stream(name, refresh)
+        new_stream.save()
+        return redirect(url_for('streams.select'))
+    return render_template('select_streams.html', selform=selform, selform2=selform2, addform=addform)
 
 @streams_blueprint.route('/delete', methods=['GET', 'POST'])
 def delete():

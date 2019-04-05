@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, SelectMultipleField
+from wtforms import StringField, IntegerField, SubmitField, SelectField
 
 from fintrist import Stream
 
@@ -14,7 +14,13 @@ class DelForm(FlaskForm):
     name = StringField('Name of Stream to Remove:')
     submit = SubmitField('Remove Stream')
 
-class SelForm(FlaskForm):
+class StreamSelForm(FlaskForm):
     choices = []
-    selections = SelectMultipleField('Available Streams', choices=choices)
-    submit = SubmitField('Choose Streams')
+    selections = SelectField('Available Streams', choices=choices)
+    choose = SubmitField('Choose Streams')
+    edit = SubmitField('Edit Streams')
+    delete = SubmitField('Delete Streams')
+
+class StudySelForm(FlaskForm):
+    choices = []
+    selections = SelectField('Associated Studies', choices=choices)

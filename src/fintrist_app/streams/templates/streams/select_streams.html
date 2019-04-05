@@ -2,18 +2,36 @@
 {% block content %}
 <div class="jumbotron">
   <h1>Here is a list of all available streams.</h1>
-  <form method="POST">
-    {# This hidden_tag is a CSRF security feature. #}
-    {{ form.hidden_tag() }}
-    {{ form.selections.label }}<br>
-    {{ form.selections(size=10) }}<br>
-    {{ form.submit() }}<br><br>
-  </form>
-  <form method="GET">
-    {# This hidden_tag is a CSRF security feature. #}
-    {{ form.hidden_tag() }}
-    {{ form2.selections.label }}<br>
-    {{ form2.selections(size=5) }}<br>
-  </form>
+  <div class="row">
+    <div class="column", style="width: 300px;">
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ selform.hidden_tag() }}
+        {{ selform.selections.label }}<br>
+        {{ selform.selections(size=10) }}<br>
+        {{ selform.choose() }}<br><br>
+        {{ selform.edit() }}<br><br>
+        {{ selform.delete() }}<br>
+      </form>
+    </div>
+    <div class="column", style="width: 300px;">
+      <form method="GET">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ selform2.hidden_tag() }}
+        {{ selform2.selections.label }}<br>
+        {{ selform2.selections(size=5) }}<br>
+      </form>
+    </div>
+    <div class="column">
+      <p>Add a new stream with the form below:</p>
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ addform.hidden_tag() }}
+        {{ addform.name.label }} {{ addform.name() }}<br>
+        {{ addform.refresh.label }} {{ addform.refresh() }}<br>
+        {{ addform.submit() }}
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}
