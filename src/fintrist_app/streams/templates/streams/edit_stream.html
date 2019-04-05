@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h1>Editing Stream: {{ streamname }}.</h1><br>
+  <div class="row">
+    <div class="column", style="width: 300px;">
+        <form method="GET">
+          {# This hidden_tag is a CSRF security feature. #}
+          {{ selform2.hidden_tag() }}
+          {{ selform2.selections.label }}<br>
+          {{ selform2.selections(size=5) }}<br>
+        </form>
+      </div>
+    <div class="column", style="width: 300px;">
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ selform.hidden_tag() }}
+        {{ selform.selections.label }}<br>
+        {{ selform.selections(size=10) }}<br>
+        {{ selform.choose() }}<br><br>
+        {{ selform.edit() }}<br><br>
+        {{ selform.delete() }}<br>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
