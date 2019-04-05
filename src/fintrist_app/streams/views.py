@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Stream
-from fintrist_app.streams.forms import AddForm, DelForm, StreamSelForm, StudySelForm
+from fintrist_app.streams.forms import AddForm, DelForm, sel_form, subsel_form
 
 streams_blueprint = Blueprint('streams',
                               __name__,
@@ -29,8 +29,8 @@ def list():
 @streams_blueprint.route('/select', methods=['GET','POST'])
 def select():
     # Grab a selectable list of studies from database.
-    selform = StreamSelForm()
-    selform2 = StudySelForm()
+    selform = sel_form('Streams')
+    selform2 = subsel_form('Studies')
     db_objects = [(str(stream.id), stream.name) for stream in Stream.objects()]
     selform.selections.choices = db_objects
     if selform.validate_on_submit():
@@ -46,7 +46,7 @@ def select():
             selected_stream.delete()
         # Edit Stream
         elif selform.edit.data:
-            session['editstream'] = selected_stream
+            session['editstream'] = str(selected_stream.id)
             return redirect(url_for('streams.edit'))
     # Add a new stream to the database
     addform = AddForm()
@@ -58,6 +58,14 @@ def select():
         new_stream.save()
         return redirect(url_for('streams.select'))
     return render_template('select_streams.html', selform=selform, selform2=selform2, addform=addform)
+
+@streams_blueprint.route('/edit', methods=['GET','POST'])
+def edit():
+    editstream = Stream.objects(id=session['editstream']).get()
+    streamname = editstream.name
+    selform = sel_form('Studies')
+    selform2 = subsel_form('Studies')
+    return render_template('edit_stream.html', streamname=streamname, selform=selform, selform2=selform2)
 
 @streams_blueprint.route('/delete', methods=['GET', 'POST'])
 def delete():

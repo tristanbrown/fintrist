@@ -3,6 +3,7 @@ from wtforms import StringField, IntegerField, SubmitField, SelectField
 
 from fintrist import Stream
 
+
 class AddForm(FlaskForm):
 
     name = StringField('Name of Stream:')
@@ -14,13 +15,18 @@ class DelForm(FlaskForm):
     name = StringField('Name of Stream to Remove:')
     submit = SubmitField('Remove Stream')
 
-class StreamSelForm(FlaskForm):
-    choices = []
-    selections = SelectField('Available Streams', choices=choices)
-    choose = SubmitField('Choose Streams')
-    edit = SubmitField('Edit Streams')
-    delete = SubmitField('Delete Streams')
+def sel_form(label):
+    """Generate a selection form."""
+    class SelForm(FlaskForm):
+        default_choices = []
+        selections = SelectField(f'Available {label}', choices=default_choices)
+        choose = SubmitField(f'Choose {label}')
+        edit = SubmitField(f'Edit {label}')
+        delete = SubmitField(f'Delete {label}')
+    return SelForm()
 
-class StudySelForm(FlaskForm):
-    choices = []
-    selections = SelectField('Associated Studies', choices=choices)
+def subsel_form(label):
+    class SelForm(FlaskForm):
+        choices = []
+        selections = SelectField(f'Associated {label}', choices=choices)
+    return SelForm()
