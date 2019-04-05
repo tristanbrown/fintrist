@@ -77,6 +77,10 @@ class Stream(Document):
         new_board = AlertsBoard(active=newalerts)
         self.update(push__alertslog=new_board)
 
+    def list_studies(self):
+        """List the studies associated with this stream, by name."""
+        return [study.name for study in self.studies]
+
 class Study(Document):
     """Contains data process results."""
     # ID
