@@ -98,6 +98,12 @@ class Stream(Document):
         lastidx = len(self.studies)
         self.move_study_to_idx(a_study, lastidx)
 
+    def rename(self, newname):
+        """Rename the Stream."""
+        self.name = newname
+        self.save()
+        self.reload()
+
     def update_refresh(self, newrefresh):
         """Update the refresh interval."""
         self.refresh = newrefresh
