@@ -57,7 +57,52 @@ class Stream(Document):
 
     def add_study(self, newstudy):
         """Add an existing Study to the Stream."""
-        self.update(push__studies=newstudy.id)
+        self.update(add_to_set__studies=newstudy)
+        self.reload()
+
+    def remove_study(self, oldstudy):
+        """Remove a Study from the Stream."""
+        self.update(pull__studies=oldstudy)
+        self.reload()
+
+    def move_study_to_idx(self, a_study, newidx):
+        """Move a Study to a specific index in the Study list."""
+        idx = self.studies.index(a_study)
+        self.studies.pop(idx)
+        self.studies.insert(newidx, a_study)
+        self.save()
+        self.reload()
+
+    def move_study_earlier(self, a_study):
+        """Move a Study one spot earlier in the Study list."""
+        idx = self.studies.index(a_study)
+        try:
+            self.move_study_to_idx(a_study, idx - 1)
+        except IndexError:
+            pass
+
+    def move_study_later(self, a_study):
+        """Move a Study one spot later in the Study list."""
+        idx = self.studies.index(a_study)
+        try:
+            self.move_study_to_idx(a_study, idx + 1)
+        except IndexError:
+            pass
+
+    def move_study_first(self, a_study):
+        """Move a Study to the front of the Study list."""
+        self.move_study_to_idx(a_study, 0)
+
+    def move_study_last(self, a_study):
+        """Move a Study to the front of the Study list."""
+        lastidx = len(self.studies)
+        self.move_study_to_idx(a_study, lastidx)
+
+    def update_refresh(self, newrefresh):
+        """Update the refresh interval."""
+        self.refresh = newrefresh
+        self.save()
+        self.reload()
 
     def activate(self):
         """Periodically update the Study instances and collect alerts."""

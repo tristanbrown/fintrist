@@ -7,8 +7,8 @@ from fintrist import Stream
 class AddForm(FlaskForm):
 
     name = StringField('Name of Stream:')
-    refresh = IntegerField('Refresh Interval (s):')
-    submit = SubmitField('Add Stream')
+    refresh = IntegerField('Refresh Interval (sec):')
+    submit = SubmitField('Save')
 
 class DelForm(FlaskForm):
 
@@ -21,6 +21,7 @@ def sel_form(label):
         default_choices = []
         selections = SelectField(f'Available {label}', choices=default_choices)
         choose = SubmitField(f'Choose {label}')
+        moveright = SubmitField('>>')
         edit = SubmitField(f'Edit {label}')
         delete = SubmitField(f'Delete {label}')
     return SelForm()
@@ -29,4 +30,9 @@ def subsel_form(label):
     class SelForm(FlaskForm):
         choices = []
         selections = SelectField(f'Associated {label}', choices=choices)
+        movefirst = SubmitField('First')
+        moveup = SubmitField('^')
+        movedown = SubmitField('v')
+        movelast = SubmitField('Last')
+        remove = SubmitField(f'Remove {label}')
     return SelForm()

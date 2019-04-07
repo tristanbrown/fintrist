@@ -4,22 +4,35 @@
   <h1>Editing Stream: {{ streamname }}.</h1><br>
   <div class="row">
     <div class="column", style="width: 300px;">
-        <form method="GET">
-          {# This hidden_tag is a CSRF security feature. #}
-          {{ selform2.hidden_tag() }}
-          {{ selform2.selections.label }}<br>
-          {{ selform2.selections(size=5) }}<br>
-        </form>
-      </div>
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ allsel.hidden_tag() }}
+        {{ allsel.selections.label }}<br>
+        {{ allsel.selections(size=10) }}<br><br>
+        {{ allsel.moveright() }}<br><br>
+        {{ allsel.edit() }}<br><br>
+      </form>
+    </div>
     <div class="column", style="width: 300px;">
       <form method="POST">
         {# This hidden_tag is a CSRF security feature. #}
-        {{ selform.hidden_tag() }}
-        {{ selform.selections.label }}<br>
-        {{ selform.selections(size=10) }}<br>
-        {{ selform.choose() }}<br><br>
-        {{ selform.edit() }}<br><br>
-        {{ selform.delete() }}<br>
+        {{ assoc.hidden_tag() }}
+        {{ assoc.selections.label }}<br>
+        {{ assoc.selections(size=5) }}<br><br>
+        {{ assoc.movefirst() }}
+        {{ assoc.moveup() }}
+        {{ assoc.movedown() }}
+        {{ assoc.movelast() }}<br><br>
+        {{ assoc.remove() }}<br><br>
+      </form>
+    </div>
+    <div class="column">
+      <p>Update refresh interval: {{ refresh }} sec</p>
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ refreshform.hidden_tag() }}
+        {{ refreshform.refresh.label }} {{ refreshform.refresh() }}<br>
+        {{ refreshform.submit() }}
       </form>
     </div>
   </div>
