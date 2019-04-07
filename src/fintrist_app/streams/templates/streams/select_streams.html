@@ -8,7 +8,7 @@
         {# This hidden_tag is a CSRF security feature. #}
         {{ selform.hidden_tag() }}
         {{ selform.selections.label }}<br>
-        {{ selform.selections(size=10) }}<br>
+        {{ selform.selections(size=10) }}<br><br>
         {{ selform.choose() }}<br><br>
         {{ selform.edit() }}<br><br>
         {{ selform.delete() }}<br>
@@ -19,8 +19,9 @@
         {# This hidden_tag is a CSRF security feature. #}
         {{ selform2.hidden_tag() }}
         {{ selform2.selections.label }}<br>
-        {{ selform2.selections(size=5) }}<br>
+        {{ selform2.selections(size=5) }}<br><br>
       </form>
+      <p>Refresh interval: {{ refresh }}</p>
     </div>
     <div class="column">
       <p>Add a new stream with the form below:</p>
