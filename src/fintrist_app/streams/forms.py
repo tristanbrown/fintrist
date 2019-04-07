@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, SelectField
+from wtforms import StringField, IntegerField, SubmitField, SelectField, validators
 
 from fintrist import Stream
 
@@ -7,7 +7,7 @@ from fintrist import Stream
 class AddForm(FlaskForm):
 
     name = StringField('Name of Stream:')
-    refresh = IntegerField('Refresh Interval (sec):')
+    refresh = IntegerField('Refresh Interval (sec):', validators=[validators.Optional(),])
     submit = SubmitField('Save')
 
 class DelForm(FlaskForm):
@@ -22,8 +22,10 @@ def sel_form(label):
         selections = SelectField(f'Available {label}', choices=default_choices)
         choose = SubmitField(f'Choose {label}')
         moveright = SubmitField('>>')
+        moveleft = SubmitField('<<')
         edit = SubmitField(f'Edit {label}')
         delete = SubmitField(f'Delete {label}')
+        clear = SubmitField('Clear Selections')
     return SelForm()
 
 def subsel_form(label):

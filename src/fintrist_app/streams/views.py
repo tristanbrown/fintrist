@@ -8,93 +8,67 @@ streams_blueprint = Blueprint('streams',
                               __name__,
                               template_folder='templates/streams')
 
-@streams_blueprint.route('/add', methods=['GET', 'POST'])
-def add():
-
-    form = AddForm()
-    if form.validate_on_submit():
-        name = form.name.data
-        refresh = form.refresh.data
-        # Add new stream to database
-        new_stream = Stream(name, refresh)
-        new_stream.save()
-
-        return redirect(url_for('streams.list'))
-    return render_template('add_stream.html', form=form)
-
-@streams_blueprint.route('/list')
-def list():
-    # Grab a list of studies from database.
-    streams = Stream.objects()
-    return render_template('list_streams.html', streams=streams)
-
-@streams_blueprint.route('/select', methods=['GET','POST'])
-def select():
-    # Grab a selectable list of studies from database.
-    selform = sel_form('Streams')
-    selform2 = subsel_form('Studies')
-    db_objects = get_choices(Stream.objects())
-    selform.selections.choices = db_objects
-    selrefresh = ''
-    if selform.validate_on_submit():
-        # Select a Stream
-        selections = selform.selections.data
-        selected_stream = Stream.objects(id=selections).get()
-        # View associated studies and refresh interval
-        if selform.choose.data:
-            selrefresh = selected_stream.refresh
-            new_objects = get_choices(selected_stream.studies)
-            selform2.selections.choices = new_objects
-        # Delete Stream
-        elif selform.delete.data:
-            selected_stream.delete()
-        # Edit Stream
-        elif selform.edit.data:
-            session['editstream'] = str(selected_stream.id)
-            return redirect(url_for('streams.edit'))
-    # Add a new stream to the database
-    addform = AddForm()
-    if addform.validate_on_submit() and addform.submit.data:
-        name = addform.name.data
-        newrefresh = addform.refresh.data
-        new_stream = Stream(name, newrefresh)
-        new_stream.save()
-        return redirect(url_for('streams.select'))
-    return render_template(
-        'select_streams.html', 
-        selform=selform,
-        selform2=selform2,
-        addform=addform,
-        refresh=selrefresh,
-        )
-
 @streams_blueprint.route('/edit', methods=['GET','POST'])
 def edit():
-    """Edit a specific stream.
+    """Edit Streams.
 
     Allows modification of the associated Study list, as well as the refresh
     interval.
     """
+    # Set up All Streams selection list
+    streamform = sel_form('Streams')
+    db_objects = get_choices(Stream.objects())
+    streamform.selections.choices = db_objects
     # The Stream to edit
-    editstream = Stream.objects(id=session['editstream']).get()
-    streamname = editstream.name
+    editstream_id = session.get('editstream')
+    if editstream_id:
+        editstream = Stream.objects(id=editstream_id).get()
+        streamname = editstream.name
+        selrefresh = editstream.refresh
+    else:
+        editstream = None
+        streamname = ''
+        selrefresh = None
     # Set up All Studies selection list
     allform = sel_form('Studies')
     allform.selections.choices = get_choices(Study.objects())
     # Set up Stream-associated Studies list
     assocform = subsel_form('Studies')
-    assocform.selections.choices = get_choices(editstream.studies)
     # Set up refresh interval edit
-    refreshform = AddForm()
+    addform = AddForm()
+
+    # Clear the selections
+    if streamform.clear.data:
+        session['editstream'] = None
+        return redirect(url_for('streams.edit'))
+
+    # Submit buttons for Streams selection list
+    if streamform.validate_on_submit():
+        # Select a Stream
+        selections = streamform.selections.data
+        editstream = Stream.objects(id=selections).get()
+        session['editstream'] = str(editstream.id)
+        streamname = editstream.name
+        # Edit Stream
+        if streamform.edit.data:
+            new_objects = get_choices(editstream.studies)
+            assocform.selections.choices = new_objects
+            selrefresh = int(editstream.refresh)
+        # Delete Stream
+        elif streamform.delete.data:
+            editstream.delete()
+            session['editstream'] = None
+            return redirect(url_for('streams.edit'))
+
     # Submit buttons for All Studies selection list
-    if allform.validate_on_submit():
+    if editstream and allform.validate_on_submit():
         selections = allform.selections.data
         selected_study = Study.objects(id=selections).get()
-        if allform.moveright.data:
+        if allform.moveleft.data:
             editstream.add_study(selected_study)
         assocform.selections.choices = get_choices(editstream.studies)
     # Submit buttons for Stream-associated Studies
-    if assocform.validate_on_submit():
+    if editstream and assocform.validate_on_submit():
         selections = assocform.selections.data
         selected_study = Study.objects(id=selections).get()
         if assocform.remove.data:
@@ -109,32 +83,31 @@ def edit():
             editstream.move_study_last(selected_study)
         assocform.selections.choices = get_choices(editstream.studies)
     # Update refresh interval for the Stream
-    if refreshform.validate_on_submit() and refreshform.submit.data:
-        newrefresh = refreshform.refresh.data
-        print(newrefresh)
-        editstream.update_refresh(newrefresh)
+    if addform.validate_on_submit() and addform.submit.data:
+        name = addform.name.data
+        newrefresh = addform.refresh.data
+        if editstream:
+            if name:
+                editstream.rename(name)
+            if newrefresh:
+                editstream.update_refresh(newrefresh)
+        else:
+            new_stream = Stream(name, newrefresh)
+            new_stream.save()
+            new_stream.reload()
+            # session['editstream'] = str(new_stream.id)
+        return redirect(url_for('streams.edit'))
+
     return render_template(
         'edit_stream.html',
+        streamform=streamform,
         streamname=streamname,
         allsel=allform,
         assoc=assocform,
-        refresh=int(editstream.refresh),
-        refreshform=refreshform,
+        refresh=selrefresh,
+        addform=addform,
         )
 
 def get_choices(query):
     """Get a list of selection choices from a query object."""
     return [(str(item.id), item.name) for item in query]
-
-@streams_blueprint.route('/delete', methods=['GET', 'POST'])
-def delete():
-
-    form = DelForm()
-
-    if form.validate_on_submit():
-        name = form.name.data
-        stream = Stream.objects(name=name).get()
-        stream.delete()
-
-        return redirect(url_for('streams.list'))
-    return render_template('delete_stream.html', form=form)

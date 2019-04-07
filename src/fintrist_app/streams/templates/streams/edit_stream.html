@@ -1,16 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="jumbotron">
-  <h1>Editing Stream: {{ streamname }}.</h1><br>
+  <h1>Editing Stream: {{ streamname }}</h1><br>
   <div class="row">
     <div class="column", style="width: 300px;">
       <form method="POST">
         {# This hidden_tag is a CSRF security feature. #}
-        {{ allsel.hidden_tag() }}
-        {{ allsel.selections.label }}<br>
-        {{ allsel.selections(size=10) }}<br><br>
-        {{ allsel.moveright() }}<br><br>
-        {{ allsel.edit() }}<br><br>
+        {{ streamform.hidden_tag() }}
+        {{ streamform.selections.label }}<br>
+        {{ streamform.selections(size=10) }}<br>
+        {{ streamform.clear() }}<br>
+        {{ streamform.edit() }}<br>
+        {{ streamform.delete() }}<br><br>
+      </form>
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ addform.hidden_tag() }}
+        {{ addform.name.label }} {{ addform.name() }}<br>
+        {{ addform.refresh.label }} {{ addform.refresh() }}<br>
+        {{ addform.submit() }}
       </form>
     </div>
     <div class="column", style="width: 300px;">
@@ -25,14 +33,16 @@
         {{ assoc.movelast() }}<br><br>
         {{ assoc.remove() }}<br><br>
       </form>
+      <p>Refresh interval: {{ refresh }} sec</p>
     </div>
-    <div class="column">
-      <p>Update refresh interval: {{ refresh }} sec</p>
+    <div class="column", style="width: 300px;">
       <form method="POST">
         {# This hidden_tag is a CSRF security feature. #}
-        {{ refreshform.hidden_tag() }}
-        {{ refreshform.refresh.label }} {{ refreshform.refresh() }}<br>
-        {{ refreshform.submit() }}
+        {{ allsel.hidden_tag() }}
+        {{ allsel.selections.label }}<br>
+        {{ allsel.selections(size=10) }}<br><br>
+        {{ allsel.moveleft() }}<br><br>
+        {{ allsel.edit() }}<br><br>
       </form>
     </div>
   </div>
