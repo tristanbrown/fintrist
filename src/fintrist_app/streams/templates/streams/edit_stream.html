@@ -12,6 +12,8 @@
         {{ streamform.clear() }}<br>
         {{ streamform.edit() }}<br>
         {{ streamform.delete() }}<br><br>
+        {{ streamform.activate() }}<br>
+        {{ streamform.deactivate() }}<br><br>
       </form>
       <form method="POST">
         {# This hidden_tag is a CSRF security feature. #}

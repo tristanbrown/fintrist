@@ -2,14 +2,14 @@
 The engine that chooses a scraper and returns data.
 """
 
-from fintrist import settings
+from fintrist.settings import Config
 from fintrist.processes.scrapers.equity import Equity
 
 __all__ = ['stock']
 
 def stock(inputs):
     """Get a stock quote history."""
-    scraper = Equity(settings.APIKEY, inputs['symbol'])
+    scraper = Equity(Config().APIKEY, inputs['symbol'])
     if inputs['frequency'] == 'min':
         data = scraper.intraday()
     elif inputs['frequency'] == 'daily':

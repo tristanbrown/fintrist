@@ -1,16 +1,22 @@
 import os
 from flask import Flask, render_template
+from flask_apscheduler import APScheduler
 
 import fintrist
-from fintrist_app import settings
+from fintrist_app.settings import Config
 from fintrist_app.streams.views import streams_blueprint
 from fintrist_app.studies.views import studies_blueprint
 
+# Set up Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config.from_object(Config())
 
-app.register_blueprint(streams_blueprint,url_prefix="/streams")
-app.register_blueprint(studies_blueprint,url_prefix='/studies')
+app.register_blueprint(streams_blueprint, url_prefix="/streams")
+app.register_blueprint(studies_blueprint, url_prefix='/studies')
+
+# Set up Scheduler
+scheduler = APScheduler()
+scheduler.init_app(app)
 
 @app.route("/")
 def index():
@@ -18,7 +24,7 @@ def index():
 
 @app.route("/appdata")
 def appdata():
-    return settings.APPDATA
+    return app.config['APPDATA']
 
 @app.route("/streamslist")
 def streamslist():

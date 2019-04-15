@@ -8,6 +8,7 @@ REQUIREMENTS = [
     'wtforms',
     'python-dotenv',
     'mongoengine',
+    'apscheduler',
     'alpha_vantage>=2.0.0',
 ]
 
@@ -21,6 +22,7 @@ setup(
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     install_requires=REQUIREMENTS,
+    python_requires='>=3.6, !=3.7.2',
     entry_points={
         'console_scripts': [
             'fintrist_app = fintrist_app.__main__:run',
