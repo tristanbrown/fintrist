@@ -26,6 +26,8 @@ def sel_form(label):
         edit = SubmitField(f'Edit {label}')
         delete = SubmitField(f'Delete {label}')
         clear = SubmitField('Clear Selections')
+        activate = SubmitField(f'Activate {label}')
+        deactivate = SubmitField(f'Deactivate {label}')
     return SelForm()
 
 def subsel_form(label):

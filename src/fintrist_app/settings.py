@@ -5,6 +5,10 @@ wish to modify.
 import os
 from dotenv import load_dotenv
 
+import fintrist
+
 load_dotenv()
 
-APPDATA = os.path.join(os.getenv('APPDATA'), 'Fintrist')
+class Config(fintrist.Config):
+    APPDATA = os.path.join(os.getenv('APPDATA'), 'Fintrist')
+    SECRET_KEY = 'mysecretkey'

@@ -59,6 +59,11 @@ def edit():
             editstream.delete()
             session['editstream'] = None
             return redirect(url_for('streams.edit'))
+        # Activate/Deactivate Stream
+        elif streamform.activate.data:
+            editstream.activate()
+        elif streamform.deactivate.data:
+            editstream.deactivate()
 
     # Submit buttons for All Studies selection list
     if editstream and allform.validate_on_submit():

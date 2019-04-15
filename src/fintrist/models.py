@@ -4,9 +4,9 @@ The engine that applies analyses to data and generates alerts.
 import logging
 import pickle # TODO: Switch to bson for performance? Consider different pickle protocols
 import time
-
 from datetime import datetime as dt
 from dateutil.tz import tzlocal
+
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import (
     BinaryField, DateTimeField, DictField, EmbeddedDocumentField,
@@ -14,8 +14,10 @@ from mongoengine.fields import (
     ListField, MapField, ReferenceField, StringField,
 )
 from mongoengine.errors import DoesNotExist
+from apscheduler.jobstores.base import JobLookupError
 
 from fintrist import processes
+from fintrist.scheduling import scheduler
 
 __all__ = ('Stream', 'Study', 'Process', 'AlertsBoard')
 
@@ -34,6 +36,7 @@ class Stream(Document):
 
     Usage: Stream(name, refresh)
     """
+    # pylint: disable=no-member
     name = StringField(max_length=120, required=True, unique=True)
     refresh = IntField(min_value=15)
     studies = ListField(ReferenceField('Study'))
@@ -64,6 +67,10 @@ class Stream(Document):
         """Remove a Study from the Stream."""
         self.update(pull__studies=oldstudy)
         self.reload()
+
+    def list_studies(self):
+        """List the studies associated with this stream, by name."""
+        return [study.name for study in self.studies]
 
     def move_study_to_idx(self, a_study, newidx):
         """Move a Study to a specific index in the Study list."""
@@ -103,21 +110,54 @@ class Stream(Document):
         self.name = newname
         self.save()
         self.reload()
+        if self.active:
+            scheduler.modify_job(str(self.id), name=self.name)
 
     def update_refresh(self, newrefresh):
         """Update the refresh interval."""
         self.refresh = newrefresh
         self.save()
         self.reload()
+        if self.active:
+            scheduler.reschedule_job(str(self.id), trigger='interval', seconds=self.refresh)
+
+    def run(self):
+        """Update the Study instances and collect alerts."""
+        self.reload()
+        logger.warning("%s: Updating %s", dt.now(tzlocal()), self.name)
+        newalerts = {study.name: set(study.run()) for study in self.studies}
+        self.update_alerts(newalerts)
+
+    @staticmethod
+    def run_stream(stream_id):
+        """Static wrapper for `run`."""
+        this_stream = Stream.objects(id=stream_id).get()
+        this_stream.run()
 
     def activate(self):
-        """Periodically update the Study instances and collect alerts."""
-        self.reload()
-        while True:
-            logger.warning("%s: Updating %s", dt.now(tzlocal()), self.name)
-            newalerts = {study.name: set(study.run()) for study in self.studies}
-            self.update_alerts(newalerts)
-            time.sleep(self.refresh)
+        """Periodically run the Stream."""
+        # from fintrist import scheduler
+        scheduler.add_job(
+            self.run_stream,
+            args=[str(self.id)],
+            trigger='interval',
+            seconds=self.refresh,
+            id=str(self.id),
+            name=self.name,
+            replace_existing=True,
+        )
+
+    def deactivate(self):
+        """Stop the Stream from running periodically."""
+        try:
+            scheduler.remove_job(str(self.id))
+        except JobLookupError:
+            print("Job not found")
+
+    @property
+    def active(self):
+        """Boolean value of whether the Stream is active in the scheduler."""
+        return bool(scheduler.get_job(str(self.id)))
 
     def update_alerts(self, newalerts):
         """Add new alerts and choose whether to notify the user."""
@@ -127,10 +167,6 @@ class Stream(Document):
             prev_board = AlertsBoard()
         new_board = AlertsBoard(active=newalerts)
         self.update(push__alertslog=new_board)
-
-    def list_studies(self):
-        """List the studies associated with this stream, by name."""
-        return [study.name for study in self.studies]
 
 class Study(Document):
     """Contains data process results."""

@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-APIKEY = os.getenv('APIKEY')
-DATABASE_NAME = os.getenv('DATABASE_NAME')
-USERNAME = os.getenv('USERNAME')
-PASSWORD = os.getenv('PASSWORD')
+class Config():
+    APIKEY = os.getenv('APIKEY')
+    DATABASE_NAME = os.getenv('DATABASE_NAME')
+    USERNAME = os.getenv('USERNAME')
+    PASSWORD = os.getenv('PASSWORD')
