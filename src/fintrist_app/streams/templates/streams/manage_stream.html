@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <div class="row">
+    <div class="column", style="width: 300px;">
+      <p>Inactive</p>
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ inactiveform.hidden_tag() }}
+        {{ inactiveform.selections.label }}<br>
+        {{ inactiveform.selections(size=10) }}<br><br>
+        {{ inactiveform.moveright() }}<br><br>
+        {{ inactiveform.runonce() }}<br><br>
+      </form>
+    </div>
+    <div class="column", style="width: 300px;">
+      <p>Active</p>
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ activeform.hidden_tag() }}
+        {{ activeform.selections.label }}<br>
+        {{ activeform.selections(size=10) }}<br><br>
+        {{ activeform.moveleft() }}<br><br>
+        {{ activeform.runonce() }}<br><br>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

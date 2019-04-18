@@ -5,10 +5,7 @@ from fintrist_app import app
 def run():
     """Main method to run the app."""
     scheduler.start()
-    try:
-        app.run(debug=True)
-    finally:
-        scheduler.shutdown(wait=False)
+    app.run(debug=True)
 
 if __name__ == "__main__":
     run()
