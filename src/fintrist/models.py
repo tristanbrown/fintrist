@@ -136,7 +136,6 @@ class Stream(Document):
 
     def activate(self):
         """Periodically run the Stream."""
-        # from fintrist import scheduler
         scheduler.add_job(
             self.run_stream,
             args=[str(self.id)],
@@ -153,6 +152,16 @@ class Stream(Document):
             scheduler.remove_job(str(self.id))
         except JobLookupError:
             print("Job not found")
+
+    def run_stream_once(self):
+        """Submit a job to run the whole stream once."""
+        scheduler.add_job(
+            self.run_stream,
+            args=[str(self.id)],
+            id=str(self.id) + 'once',
+            name=self.name + ' once',
+            replace_existing=False,
+        )
 
     @property
     def active(self):

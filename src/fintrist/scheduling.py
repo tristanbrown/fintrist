@@ -10,8 +10,7 @@ def create_scheduler():
     config = Config()
     jobstores = {'default': MongoDBJobStore(database=config.DATABASE_NAME)}
     executors = {'default': ProcessPoolExecutor(max_workers=4)}
-    job_defaults = {'coalesce': True, 'max_instances': 1,
-        'misfire_grace_time': 5,}
+    job_defaults = {'coalesce': True, 'max_instances': 1, 'misfire_grace_time': 5,}
 
     return BackgroundScheduler(
         jobstores=jobstores,
