@@ -6,6 +6,12 @@ studies_blueprint = Blueprint('studies',
                               __name__,
                               template_folder='templates/studies')
 
+@studies_blueprint.route('/edit', methods=['GET', 'POST'])
+def edit():
+    # Grab a list of studies from database.
+    studies = Study.objects()
+    return render_template('edit_study.html', studies=studies)
+
 @studies_blueprint.route('/add', methods=['GET', 'POST'])
 def add():
 

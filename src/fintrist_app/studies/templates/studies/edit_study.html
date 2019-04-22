@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h1>Editing Study: {{ studyname }}</h1><br>
+  <div class="row">
+    <div class="column", style="width: 300px;">
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ studyform.hidden_tag() }}
+        {{ studyform.selections.label }}<br>
+        {{ studyform.selections(size=10) }}<br>
+        {{ studyform.clear() }}<br>
+        {{ studyform.edit() }}<br>
+        {{ studyform.delete() }}<br><br>
+      </form>
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ addform.hidden_tag() }}
+        {{ addform.name.label }} {{ addform.name() }}<br>
+        {{ addform.refresh.label }} {{ addform.refresh() }}<br>
+        {{ addform.submit() }}
+      </form>
+    </div>
+    <div class="column", style="width: 300px;">
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ assoc.hidden_tag() }}
+        {{ assoc.selections.label }}<br>
+        {{ assoc.selections(size=5) }}<br><br>
+        {{ assoc.movefirst() }}
+        {{ assoc.moveup() }}
+        {{ assoc.movedown() }}
+        {{ assoc.movelast() }}<br><br>
+        {{ assoc.remove() }}<br><br>
+      </form>
+      <p>Refresh interval: {{ refresh }} sec</p>
+    </div>
+    <div class="column", style="width: 300px;">
+      <form method="POST">
+        {# This hidden_tag is a CSRF security feature. #}
+        {{ allsel.hidden_tag() }}
+        {{ allsel.selections.label }}<br>
+        {{ allsel.selections(size=10) }}<br><br>
+        {{ allsel.moveleft() }}<br><br>
+        {{ allsel.edit() }}<br><br>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
