@@ -7,16 +7,19 @@ from fintrist.processes.scrapers.equity import Equity
 
 __all__ = ['stock']
 
-def stock(inputs):
-    """Get a stock quote history."""
-    scraper = Equity(Config().APIKEY, inputs['symbol'])
-    if inputs['frequency'] == 'min':
+def stock(symbol, frequency):
+    """Get a stock quote history.
+
+    ::params:: symbol, frequency
+    """
+    scraper = Equity(Config().APIKEY, symbol)
+    if frequency == 'min':
         data = scraper.intraday()
-    elif inputs['frequency'] == 'daily':
+    elif frequency == 'daily':
         data = scraper.daily()
-    elif inputs['frequency'] == 'weekly':
+    elif frequency == 'weekly':
         data = scraper.weekly()
-    elif inputs['frequency'] == 'monthly':
+    elif frequency == 'monthly':
         data = scraper.monthly()
     alerts = ['got data']
     return (data, alerts)

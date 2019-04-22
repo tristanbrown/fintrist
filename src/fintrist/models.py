@@ -4,6 +4,7 @@ The engine that applies analyses to data and generates alerts.
 import logging
 import pickle # TODO: Switch to bson for performance? Consider different pickle protocols
 import time
+import hashlib
 from datetime import datetime as dt
 from dateutil.tz import tzlocal
 
@@ -207,7 +208,17 @@ class Study(Document):
         return self.alerts
 
 class Process(Document):
-    """Handles for choosing the appropriate data-processing functions."""
-    name = StringField(max_length=120, required=True, unique=True)
-    version = IntField()
+    """Handles for choosing the appropriate data-processing functions.
+    Parent arguments and parameters are parsed from the function docstring.
+    """
+    # Identity
+    name = StringField(max_length=120, required=True)
+    fingerprint = StringField(required=True, primary_key=True)
+    version = IntField(required=True)
+
+    # Args
+    parents = ListField(StringField())
+    params = ListField(StringField())
+
+    # Meta
     schema_version = IntField(default=1)
