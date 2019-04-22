@@ -7,7 +7,7 @@ __all__ = ['any_data']
 def any_data(data):
     """If there is data, raise alert.
     ::parents:: data
-    ::params::
+    test2
     """
     alerts = []
     if not data:

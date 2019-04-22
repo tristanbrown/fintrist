@@ -4,6 +4,7 @@ The engine that applies analyses to data and generates alerts.
 import logging
 import pickle # TODO: Switch to bson for performance? Consider different pickle protocols
 import time
+import inspect
 import hashlib
 from datetime import datetime as dt
 from dateutil.tz import tzlocal
@@ -213,7 +214,7 @@ class Process(Document):
     """
     # Identity
     name = StringField(max_length=120, required=True)
-    fingerprint = StringField(required=True, primary_key=True)
+    function = StringField(required=True, primary_key=True)
     version = IntField(required=True)
 
     # Args
@@ -222,3 +223,33 @@ class Process(Document):
 
     # Meta
     schema_version = IntField(default=1)
+
+    def clean(self):
+        """Encode a function as a hash."""
+        if not isinstance(self.function, str) or len(self.function) != 40:
+            # Check the hash
+            funcstring = str.encode(inspect.getsource(self.function))
+            self.function = hashlib.sha1(funcstring).hexdigest()
+
+            # Check for previous versions
+            recent = self.get_newest()
+            if recent:
+                self.version = recent.version + 1
+            else:
+                self.version = 1
+
+            # Set the args
+            self.parents, self.params = self.get_proc_params(self.function)
+
+    def get_proc_params(self, func):
+        """Return the names for the parent data and parameter arguments."""
+        source = func
+        docstr = inspect.getdoc(source)
+        # TODO: get the parameters from the docstring
+        parents = ['parent1', 'parent2']
+        params = ['param1', 'param2']
+        return parents, params
+
+    def get_newest(self):
+        """Return the most recent version of a process."""
+        return Process.objects(name=self.name).order_by("-version").limit(-1).first()
