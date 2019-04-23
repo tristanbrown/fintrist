@@ -6,6 +6,7 @@ import pickle # TODO: Switch to bson for performance? Consider different pickle 
 import time
 import inspect
 import hashlib
+import re
 from datetime import datetime as dt
 from dateutil.tz import tzlocal
 
@@ -200,7 +201,7 @@ class Study(Document):
 
     def run(self):
         """Run the Study process on the inputs and return any alerts."""
-        function = processes.ALL[self.process.name]
+        function = self.process.get_function()
         newdata, newalerts = function(self.inputs)
         self.update(set__data=pickle.dumps(newdata))
         self.update(set__alerts=newalerts)
@@ -214,7 +215,7 @@ class Process(Document):
     """
     # Identity
     name = StringField(max_length=120, required=True)
-    function = StringField(required=True, primary_key=True)
+    checksum = StringField(required=True, primary_key=True)
     version = IntField(required=True)
 
     # Args
@@ -226,10 +227,11 @@ class Process(Document):
 
     def clean(self):
         """Encode a function as a hash."""
-        if not isinstance(self.function, str) or len(self.function) != 40:
+        if not isinstance(self.checksum, str) or len(self.checksum) != 40:
+            new_func = self.get_function()
             # Check the hash
-            funcstring = str.encode(inspect.getsource(self.function))
-            self.function = hashlib.sha1(funcstring).hexdigest()
+            funcstring = str.encode(inspect.getsource(new_func))
+            self.checksum = hashlib.sha1(funcstring).hexdigest()
 
             # Check for previous versions
             recent = self.get_newest()
@@ -239,15 +241,23 @@ class Process(Document):
                 self.version = 1
 
             # Set the args
-            self.parents, self.params = self.get_proc_params(self.function)
+            self.parents, self.params = self.get_proc_params(new_func)
+
+    def get_function(self):
+        """Get the function corresponding to the Process name."""
+        return processes.ALL[self.name]
 
     def get_proc_params(self, func):
         """Return the names for the parent data and parameter arguments."""
-        source = func
-        docstr = inspect.getdoc(source)
-        # TODO: get the parameters from the docstring
-        parents = ['parent1', 'parent2']
-        params = ['param1', 'param2']
+        parents = []
+        params = []
+        docstr = inspect.getdoc(func)
+        for line in docstr.splitlines():
+            words = re.findall(r"[\w']+", line)
+            if line.startswith('::parents::'):
+                parents.extend(words[1:])
+            elif line.startswith('::params::'):
+                params.extend(words[1:])
         return parents, params
 
     def get_newest(self):
