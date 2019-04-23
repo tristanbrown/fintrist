@@ -9,14 +9,9 @@ from fintrist.models import Process
 
 def register():
     """Register all of the processes in the database."""
-    new_procs = processes.ALL
-    for name in new_procs:
-        new_function = new_procs[name]
+    for name in processes.ALL:
         try:
-            Process(
-                name=name,
-                function=new_function,
-                ).save(force_insert=True)
+            Process(name=name).save(force_insert=True)
             print("Inserted '{}'.".format(name))
         except NotUniqueError:
             print("'{}' skipped: Already registered.".format(name))
