@@ -8,6 +8,7 @@ REQUIREMENTS = [
     'wtforms',
     'python-dotenv',
     'mongoengine',
+    'blinker',
     'apscheduler',
     'alpha_vantage>=2.0.0',
 ]
