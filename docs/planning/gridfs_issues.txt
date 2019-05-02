@@ -1,0 +1,5 @@
+GridFS does not update atomically. 
+MongoEngine's replace function deletes the file first before writing a new one. 
+
+MongoDB recommends versioning the files in the metadata, uploading a new version
+first, and then deleting the old version. 

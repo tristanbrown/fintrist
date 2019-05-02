@@ -13,13 +13,14 @@ from dateutil.tz import tzlocal
 from mongoengine.document import Document, EmbeddedDocument
 from mongoengine.fields import (
     BinaryField, DateTimeField, DictField, EmbeddedDocumentField,
-    EmbeddedDocumentListField, IntField,
+    EmbeddedDocumentListField, IntField, FileField,
     ListField, MapField, ReferenceField, StringField,
 )
 from mongoengine.errors import DoesNotExist
+from mongoengine import signals
 from apscheduler.jobstores.base import JobLookupError
 
-from fintrist import processes
+from fintrist import processes, util
 from fintrist.scheduling import scheduler
 
 __all__ = ('Stream', 'Study', 'Process', 'AlertsBoard')
@@ -180,6 +181,12 @@ class Stream(Document):
         new_board = AlertsBoard(active=newalerts)
         self.update(push__alertslog=new_board)
 
+@util.handler(signals.pre_delete)
+def clean_files(sender, document):
+    """Signal deleted Studies to remove data files."""
+    document.remove_files()
+
+@clean_files.apply
 class Study(Document):
     """Contains data process results."""
     # ID
@@ -187,11 +194,12 @@ class Study(Document):
 
     # Defining the analysis that generated the data
     process = ReferenceField('Process', required=True)
-    inputs = DictField()  # Processing parameters.
     parents = MapField(ReferenceField('Study'))  # Precursor data used by the Analysis
+    inputs = DictField()  # Processing parameters.
 
     # Outputs
-    data = BinaryField() # TODO: FileField? GridFS is messy for updates?
+    file = FileField()
+    newfile = FileField()
     alerts = ListField(StringField(max_length=120))
     timestamp = DateTimeField(default=dt.now(tzlocal()))
 
@@ -201,13 +209,63 @@ class Study(Document):
 
     def run(self):
         """Run the Study process on the inputs and return any alerts."""
-        function = self.process.get_function()
-        newdata, newalerts = function(self.inputs)
-        self.update(set__data=pickle.dumps(newdata))
-        self.update(set__alerts=newalerts)
-        self.update(set__timestamp=dt.now(tzlocal()))
-        self.reload()
+        function = self.process.function
+        parent_data = {name: study.data for name, study in self.parents.items()}
+        self.data, self.alerts = function(**parent_data, **self.inputs)
+        self.timestamp = dt.now(tzlocal())
+        self.save()
         return self.alerts
+
+    def set_process(self, name):
+        """Set a new Process to the Study."""
+        proc = Process().get_newest(name)
+        self.process = proc
+        self.save()
+
+    def update_process(self):
+        """Update the associated Process to the latest version."""
+        name = self.process.name
+        self.set_process(name)
+
+    @property
+    def data(self):
+        """Preprocess the data field to return the data in a usable format."""
+        self.transfer_file()
+        try:
+            return pickle.loads(self.file.read())
+        except TypeError:
+            return None
+
+    @data.setter
+    def data(self, newdata):
+        """Process the data for storage."""
+        if not self.file:
+            self.write_to(self.file, newdata)
+        else:
+            self.write_to(self.newfile, newdata)
+            self.transfer_file()
+
+    def write_to(self, field, newdata):
+        """Write data to a FileField."""
+        field.new_file()
+        field.write(pickle.dumps(newdata))
+        field.close()
+        self.save()
+
+    def transfer_file(self):
+        """Transfer the data from newfile to file."""
+        if self.newfile:
+            newfile = self.newfile.read()
+            self.file.replace(newfile)
+            self.save()
+            self.newfile.delete()
+            self.save()
+
+    def remove_files(self):
+        """Remove the data."""
+        self.file.delete()
+        self.newfile.delete()
+        self.save()
 
 class Process(Document):
     """Handles for choosing the appropriate data-processing functions.
@@ -228,13 +286,13 @@ class Process(Document):
     def clean(self):
         """Encode a function as a hash."""
         if not isinstance(self.checksum, str) or len(self.checksum) != 40:
-            new_func = self.get_function()
+            new_func = self.function
             # Check the hash
             funcstring = str.encode(inspect.getsource(new_func))
             self.checksum = hashlib.sha1(funcstring).hexdigest()
 
             # Check for previous versions
-            recent = self.get_newest()
+            recent = self.get_newest(self.name)
             if recent:
                 self.version = recent.version + 1
             else:
@@ -243,7 +301,8 @@ class Process(Document):
             # Set the args
             self.parents, self.params = self.get_proc_params(new_func)
 
-    def get_function(self):
+    @property
+    def function(self):
         """Get the function corresponding to the Process name."""
         return processes.ALL[self.name]
 
@@ -260,6 +319,6 @@ class Process(Document):
                 params.extend(words[1:])
         return parents, params
 
-    def get_newest(self):
+    def get_newest(self, name):
         """Return the most recent version of a process."""
-        return Process.objects(name=self.name).order_by("-version").limit(-1).first()
+        return Process.objects(name=name).order_by("-version").limit(-1).first()
