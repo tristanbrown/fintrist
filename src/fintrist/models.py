@@ -195,7 +195,7 @@ class Study(Document):
     # Defining the analysis that generated the data
     process = ReferenceField('Process', required=True)
     parents = MapField(ReferenceField('Study'))  # Precursor data used by the Analysis
-    inputs = DictField()  # Processing parameters.
+    params = DictField()  # Processing parameters.
 
     # Outputs
     file = FileField()
@@ -207,25 +207,44 @@ class Study(Document):
     schema_version = IntField(default=1)
     meta = {'strict': False}
 
+    def clean(self):
+        """Before saving, ensure process is an object ref."""
+        if isinstance(self.process, str):
+            self._set_process(self.process)
+
     def run(self):
         """Run the Study process on the inputs and return any alerts."""
         function = self.process.function
         parent_data = {name: study.data for name, study in self.parents.items()}
-        self.data, self.alerts = function(**parent_data, **self.inputs)
+        self.data, self.alerts = function(**parent_data, **self.params)
         self.timestamp = dt.now(tzlocal())
         self.save()
         return self.alerts
 
     def set_process(self, name):
+        """Saving wrapper for set_process."""
+        self._set_process(name)
+        self.save()
+
+    def _set_process(self, name):
         """Set a new Process to the Study."""
         proc = Process().get_newest(name)
         self.process = proc
-        self.save()
 
     def update_process(self):
         """Update the associated Process to the latest version."""
         name = self.process.name
         self.set_process(name)
+
+    @property
+    def all_parents(self):
+        """Full dict of parent kwargs, even if not set yet."""
+        return {key: self.parents.get(key) for key in self.process.parents}
+
+    @property
+    def all_params(self):
+        """Full dict of param kwargs, even if not set yet."""
+        return {key: self.params.get(key) for key in self.process.params}
 
     @property
     def data(self):
