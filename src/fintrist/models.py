@@ -19,6 +19,7 @@ from mongoengine.fields import (
 from mongoengine.errors import DoesNotExist
 from mongoengine import signals
 from apscheduler.jobstores.base import JobLookupError
+from bson.dbref import DBRef
 
 from fintrist import processes, util
 from fintrist.scheduling import scheduler
@@ -48,6 +49,12 @@ class Stream(Document):
     schema_version = IntField(default=1)
 
     meta = {'strict': False}
+
+    def clean(self):
+        """Clean out invalid data."""
+        for study in self.studies:
+            if isinstance(study, DBRef):
+                self.studies.remove(study)
 
     def create_study(self, name, proc_name, inputs):
         """Create a new study tracked by a Stream instance."""
