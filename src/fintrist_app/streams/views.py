@@ -110,12 +110,15 @@ def edit():
             return redirect(url_for('streams.edit'))
 
     # Submit buttons for All Studies selection list
-    if editstream and allform.validate_on_submit():
+    if allform.validate_on_submit():
         selections = allform.selections.data
         selected_study = Study.objects(id=selections).get()
-        if allform.moveleft.data:
+        if editstream and allform.moveleft.data:
             editstream.add_study(selected_study)
-        assocform.selections.choices = util.get_choices(editstream.studies)
+            assocform.selections.choices = util.get_choices(editstream.studies)
+        elif allform.edit.data:
+            session['editstudy'] = str(selected_study.id)
+            return redirect(url_for('studies.edit'))
     # Submit buttons for Stream-associated Studies
     if editstream and assocform.validate_on_submit():
         selections = assocform.selections.data

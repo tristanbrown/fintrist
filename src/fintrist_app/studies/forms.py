@@ -1,16 +1,13 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, SelectField
+from wtforms import StringField, IntegerField, SubmitField, SelectField, SelectMultipleField
 
-class AddForm(FlaskForm):
+def add_form(label):
+    """Generate a selection form."""
+    class AddForm(FlaskForm):
 
-    name = StringField('Name of Study:')
-    analysis = StringField('Name of Process:')
-    submit = SubmitField('Add Study')
-
-class DelForm(FlaskForm):
-
-    name = StringField('Name of Study to Remove:')
-    submit = SubmitField('Remove Study')
+        entry = StringField(label)
+        submit = SubmitField('Save')
+    return AddForm(prefix=label)
 
 def sel_form(label):
     """Generate a selection form."""
@@ -25,15 +22,26 @@ def sel_form(label):
         clear = SubmitField('Clear Selections')
         activate = SubmitField(f'Activate {label}')
         deactivate = SubmitField(f'Deactivate {label}')
-    return SelForm()
+    return SelForm(prefix=label)
 
-def subsel_form(label):
-    class SubSelForm(FlaskForm):
-        choices = []
-        selections = SelectField(f'Associated {label}', choices=choices)
-        movefirst = SubmitField('First')
-        moveup = SubmitField('^')
-        movedown = SubmitField('v')
-        movelast = SubmitField('Last')
-        remove = SubmitField(f'Remove {label}')
-    return SubSelForm()
+def mini_sel_form(label, def_choices):
+    """Generate a selection form."""
+    class MiniSelForm(FlaskForm):
+        selections = SelectField(label, choices=def_choices)
+    return MiniSelForm(prefix=label)
+
+def multisel_form(label):
+    """Generate a selection form."""
+    class MultiSelForm(FlaskForm):
+        default_choices = []
+        selections = SelectMultipleField(f'Associated {label}', choices=default_choices)
+        choose = SubmitField(f'Choose {label}')
+        moveright = SubmitField('>>')
+        moveleft = SubmitField('<<')
+        edit = SubmitField(f'Edit {label}')
+        delete = SubmitField(f'Delete {label}')
+        clear = SubmitField('Clear Selections')
+        activate = SubmitField(f'Activate {label}')
+        deactivate = SubmitField(f'Deactivate {label}')
+        runonce = SubmitField(f'Run Once')
+    return MultiSelForm(prefix=label)
