@@ -49,7 +49,6 @@ class Stream(Document):
 
     meta = {'strict': False}
 
-    # Figure out how to include class methods here (e.g. "add_study", "activate()")
     def create_study(self, name, proc_name, inputs):
         """Create a new study tracked by a Stream instance."""
         try:
@@ -221,6 +220,11 @@ class Study(Document):
         self.save()
         return self.alerts
 
+    def rename(self, newname):
+        """Rename the Study."""
+        self.name = newname
+        self.save()
+
     def set_process(self, name):
         """Saving wrapper for set_process."""
         self._set_process(name)
@@ -245,6 +249,24 @@ class Study(Document):
     def all_params(self):
         """Full dict of param kwargs, even if not set yet."""
         return {key: self.params.get(key) for key in self.process.params}
+
+    def remove_inputs(self, inputs):
+        """Remove all of the inputs in the given iterable of names."""
+        for key in inputs:
+            self.parents.pop(key, None)
+            self.params.pop(key, None)
+        self.save()
+
+    def add_parents(self, newparents):
+        """Add all of the parents in the given dict of ids."""
+        parent_objects = {key: Study.objects(id=val).get() for key, val in newparents.items()}
+        self.parents.update(parent_objects)
+        self.save()
+
+    def add_params(self, newparams):
+        """Add all of the params in the given dict."""
+        self.params.update(newparams)
+        self.save()
 
     @property
     def data(self):

@@ -28,7 +28,7 @@ def sel_form(label):
         clear = SubmitField('Clear Selections')
         activate = SubmitField(f'Activate {label}')
         deactivate = SubmitField(f'Deactivate {label}')
-    return SelForm()
+    return SelForm(prefix=label)
 
 def subsel_form(label):
     class SubSelForm(FlaskForm):
@@ -39,7 +39,7 @@ def subsel_form(label):
         movedown = SubmitField('v')
         movelast = SubmitField('Last')
         remove = SubmitField(f'Remove {label}')
-    return SubSelForm()
+    return SubSelForm(prefix=label)
 
 def multisel_form(label):
     """Generate a selection form."""
@@ -55,4 +55,4 @@ def multisel_form(label):
         activate = SubmitField(f'Activate {label}')
         deactivate = SubmitField(f'Deactivate {label}')
         runonce = SubmitField(f'Run Once')
-    return MultiSelForm()
+    return MultiSelForm(prefix=label)
