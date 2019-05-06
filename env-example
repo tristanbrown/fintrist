@@ -1,0 +1,4 @@
+# Sensitive data
+
+APIKEY = ''
+DATABASE_NAME = ''

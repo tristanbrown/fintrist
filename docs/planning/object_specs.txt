@@ -1,0 +1,19 @@
+### Stream ###
+- Hosts a series of studies
+- Stores a refresh interval.
+- Triggers each study to run, in order, on the refresh interval. 
+- Centralizes alerts?
+- Unique to each user.
+
+### Study ###
+- An object that associates a specific process with specific inputs. 
+- Stores the output data. 
+- Inputs can be other specific studies.
+- Unique to each user. 
+- Can be associated with more than one Stream.
+- Multiple copies of the same Study in the same Stream are nonsensical. 
+
+### Process ###
+- A function that generates data. 
+- May or may not take data inputs. 
+- Universally available. 

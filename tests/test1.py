@@ -1,10 +1,7 @@
-import unittest
-
-from mypkg import config
-from mypkg import mymodule
+import fintrist
 
 
-class FileStructureTestCase(unittest.TestCase):
+class UnitTest():
     def setUp(self):
         pass
     
