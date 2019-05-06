@@ -4,10 +4,12 @@ The engine that applies analyses to data and generates alerts.
 
 __all__ = ['any_data']
 
-def any_data(inputs):
-    """If there is data, raise alert."""
+def any_data(data):
+    """If there is data, raise alert.
+    ::parents:: data
+    test3
+    """
     alerts = []
-    data = inputs['data']
     if not data:
         alerts.append('Data Does Not Exist')
     else:

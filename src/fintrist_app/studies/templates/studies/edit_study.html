@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="jumbotron">
+  <h1>Editing Study: {{ studyname }}</h1><br>
+  <div class="row">
+    <div class="column", style="width: 250px;">
+      <form method="POST">
+        {{ studyform.hidden_tag() }}
+        {{ studyform.selections.label }}<br>
+        {{ studyform.selections(size=10) }}<br>
+        {{ studyform.clear() }}<br>
+        {{ studyform.edit() }}<br>
+        {{ studyform.delete() }}<br><br>
+      </form>
+    </div>
+    <div class="column", style="width: 250px;">
+      <form method="POST">
+        {{ addform.hidden_tag() }}
+        {{ addform.entry.label }} <br> {{ addform.entry() }}<br>
+        <p>Selected Process:<br>{{ procname }}</p>
+        {{ procsel.hidden_tag() }}
+        {{ procsel.selections.label }}<br>
+        {{ procsel.selections(size=8) }}<br>
+        {{ addform.submit() }}<br><br>
+      </form>
+    </div>
+    <div class="column", style="width: 250px;">
+      <form method="POST">
+        {{ inputsform.hidden_tag() }}
+        {{ inputsform.selections.label }}<br>
+        {{ inputsform.selections(size=10) }}<br>
+        {{ inputsform.delete() }}<br><br>
+      </form>
+    </div>
+    <div class="column", style="width: 250px;">
+      <form method="POST">
+        <p>Parents:</p>
+        {% for key, parentform in parentforms.items() %}
+          {{ parentform.hidden_tag() }}
+          {{ parentform.selections.label }}<br>
+          {{ parentform.selections(size=4) }}<br><br>
+        {% endfor %}
+        <p>Parameters:</p>
+        {% for key, paramform in paramforms.items() %}
+          {{ paramform.hidden_tag() }}
+          {{ paramform.entry.label }} <br>
+          {{ paramform.entry() }}<br><br>
+        {% endfor %}
+        {# { saveinputs.hidden_tag() } #}
+        {{ saveinputs.submit() }}<br><br>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
