@@ -10,11 +10,6 @@ class AddForm(FlaskForm):
     refresh = IntegerField('Refresh Interval (sec):', validators=[validators.Optional(),])
     submit = SubmitField('Save')
 
-class DelForm(FlaskForm):
-
-    name = StringField('Name of Stream to Remove:')
-    submit = SubmitField('Remove Stream')
-
 def sel_form(label):
     """Generate a selection form."""
     class SelForm(FlaskForm):
@@ -39,7 +34,7 @@ def subsel_form(label):
         movedown = SubmitField('v')
         movelast = SubmitField('Last')
         remove = SubmitField(f'Remove {label}')
-    return SubSelForm(prefix=label)
+    return SubSelForm(prefix=label + '_sub')
 
 def multisel_form(label):
     """Generate a selection form."""
@@ -55,4 +50,4 @@ def multisel_form(label):
         activate = SubmitField(f'Activate {label}')
         deactivate = SubmitField(f'Deactivate {label}')
         runonce = SubmitField(f'Run Once')
-    return MultiSelForm(prefix=label)
+    return MultiSelForm(prefix=label + '_multi')

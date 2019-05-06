@@ -3,7 +3,7 @@ import time
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Stream, Study
 from fintrist.scheduling import scheduler
-from fintrist_app.streams.forms import AddForm, DelForm, sel_form, subsel_form, multisel_form
+from fintrist_app.streams.forms import AddForm, sel_form, subsel_form, multisel_form
 from fintrist_app import util
 
 streams_blueprint = Blueprint('streams',
@@ -68,12 +68,16 @@ def edit():
     streamform = sel_form('Streams')
     db_objects = util.get_choices(Stream.objects())
     streamform.selections.choices = db_objects
+    # Set up Stream-associated Studies list
+    assocform = subsel_form('Studies')
     # The Stream to edit
     editstream_id = session.get('editstream')
     if editstream_id:
         editstream = Stream.objects(id=editstream_id).get()
         streamname = editstream.name
-        selrefresh = editstream.refresh
+        selrefresh = int(editstream.refresh)
+        new_objects = util.get_choices(editstream.studies)
+        assocform.selections.choices = new_objects
     else:
         editstream = None
         streamname = ''
@@ -81,8 +85,7 @@ def edit():
     # Set up All Studies selection list
     allform = sel_form('Studies')
     allform.selections.choices = util.get_choices(Study.objects())
-    # Set up Stream-associated Studies list
-    assocform = subsel_form('Studies')
+
     # Set up refresh interval edit
     addform = AddForm()
 
@@ -96,18 +99,14 @@ def edit():
         # Select a Stream
         selections = streamform.selections.data
         editstream = Stream.objects(id=selections).get()
-        session['editstream'] = str(editstream.id)
-        streamname = editstream.name
         # Edit Stream
         if streamform.edit.data:
-            new_objects = util.get_choices(editstream.studies)
-            assocform.selections.choices = new_objects
-            selrefresh = int(editstream.refresh)
+            session['editstream'] = str(editstream.id)
         # Delete Stream
         elif streamform.delete.data:
             editstream.delete()
             session['editstream'] = None
-            return redirect(url_for('streams.edit'))
+        return redirect(url_for('streams.edit'))
 
     # Submit buttons for All Studies selection list
     if allform.validate_on_submit():
@@ -115,7 +114,7 @@ def edit():
         selected_study = Study.objects(id=selections).get()
         if editstream and allform.moveleft.data:
             editstream.add_study(selected_study)
-            assocform.selections.choices = util.get_choices(editstream.studies)
+            return redirect(url_for('streams.edit'))
         elif allform.edit.data:
             session['editstudy'] = str(selected_study.id)
             return redirect(url_for('studies.edit'))
@@ -133,7 +132,7 @@ def edit():
             editstream.move_study_first(selected_study)
         elif assocform.movelast.data:
             editstream.move_study_last(selected_study)
-        assocform.selections.choices = util.get_choices(editstream.studies)
+        return redirect(url_for('streams.edit'))
     # Update refresh interval for the Stream
     if addform.validate_on_submit() and addform.submit.data:
         name = addform.name.data
@@ -146,8 +145,6 @@ def edit():
         else:
             new_stream = Stream(name, newrefresh)
             new_stream.save()
-            new_stream.reload()
-            # session['editstream'] = str(new_stream.id)
         return redirect(url_for('streams.edit'))
 
     return render_template(
