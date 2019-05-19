@@ -1,7 +1,0 @@
-### Handling the processing of jobs with celery ###
-
-Two possible approaches:
-1. The scheduler is a celery worker with 'greenlet' pool type, and the 
-    jobs are passed to another celery worker with default pool type
-
-2. Use 'celery beat' for scheduling, in a default pool worker. 
