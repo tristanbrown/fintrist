@@ -4,7 +4,7 @@ Start Fintrist, connect to the DB, and expose public methods.
 
 import mongoengine
 from .settings import Config
-from .models import Stream, Study, Process
+from .models import *
 
 __all__ = ('Stream',)
 
