@@ -24,7 +24,7 @@ from fintrist import processes, util
 from fintrist.scheduling import scheduler
 from fintrist.notify import Notification
 
-__all__ = ('Stream', 'Study', 'Process')
+__all__ = ('Stream', 'Study', 'Process', 'Trigger')
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +82,13 @@ class AlertsLog(EmbeddedDocument):
 
 class Trigger(EmbeddedDocument):
     """A rule determining how an action is triggered."""
-    on = StringField(default='active', choices=['active', 'inactive', 'all'])
-    condition = StringField(default='in', choices=['in', 'is',])
+    alert_types = ('active', 'inactive', 'all')
+    match_if = ('in', 'is',)
+    action_choices = ('log', 'printhead', 'email', 'sms', 'trade')
+    on = StringField(default='active', choices=alert_types)
+    condition = StringField(default='in', choices=match_if)
     matchtext = StringField(max_length=120)
-    actions = ListField(
-        StringField(choices=['log', 'printhead', 'email', 'sms', 'trade']))
+    actions = ListField(StringField(choices=action_choices))
 
     # Meta
     schema_version = IntField(default=1)
@@ -282,6 +284,7 @@ class Study(Document):
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
     triggers = EmbeddedDocumentListField('Trigger', default=list)
+    # TODO: Switch triggers to MapField
 
     # Meta
     schema_version = IntField(default=1)
