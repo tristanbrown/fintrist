@@ -94,6 +94,9 @@ class Trigger(EmbeddedDocument):
     schema_version = IntField(default=1)
     meta = {'strict': False}
 
+    def __str__(self):
+        return f"{self.matchtext} {self.condition} {self.on}"
+
     def check_conds(self, study):
         """Check if the conditions for triggering have been met by the alert."""
         if self.on == 'active':
@@ -283,7 +286,7 @@ class Study(Document):
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
-    triggers = EmbeddedDocumentListField('Trigger', default=list)
+    triggers = MapField(EmbeddedDocumentField('Trigger'))
     # TODO: Switch triggers to MapField
 
     # Meta
@@ -408,6 +411,23 @@ class Study(Document):
         self.file.delete()
         self.newfile.delete()
         self.save()
+
+    def get_trigger(self, trig_id):
+        """Return the desired trigger."""
+        return self.triggers.get(trig_id)
+
+    def add_trigger(self, matchtext, **kwargs):
+        """Add a Trigger to the Study, or update a matching one."""
+        new = Trigger(matchtext=matchtext, **kwargs)
+        self.triggers[str(new)] = new
+        self.save()
+
+    def del_trigger(self, trig_id):
+        """Delete the specified trigger."""
+        try:
+            del self.triggers[trig_id]
+        except KeyError:
+            print(f"Trigger '{trig_id}' not found.")
 
 class Process(Document):
     """Handles for choosing the appropriate data-processing functions.
