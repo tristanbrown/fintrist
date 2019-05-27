@@ -23,8 +23,9 @@ def edit():
     editstudy_id = session.get('editstudy')
     inputsform = multisel_form('Inputs')
     alltriggers = sel_form('Triggers')
+    trig_id = session.get('sel_trigger')
 
-    if editstudy_id:
+    try:
         editstudy = Study.objects(id=editstudy_id).get()
         studyname = editstudy.name
         procname = editstudy.process.name
@@ -33,15 +34,16 @@ def edit():
         inputsform.selections.choices = inputchoices(parents, params)
         parentforms = make_selforms(parents)
         paramforms = make_entryforms(params)
-        alltriggers.selections.choices = triggerchoices(editstudy.triggers)
-        sel_trigger = editstudy[session.get('sel_trigger')]
-    else:
+        alltriggers.selections.choices = simplechoices(editstudy.triggers.keys())
+        sel_trigger = editstudy.get_trigger(trig_id)
+    except Exception as ex:  # TODO: specify
         editstudy = None
         studyname = ''
         procname = ''
         parentforms = {}
         paramforms = {}
         sel_trigger = None
+        print(ex)
 
     # Set up All Processes selection list
     procform = sel_form('Processes')
@@ -107,21 +109,24 @@ def edit():
 
     # Submit buttons for Triggers selection list
     if sel_trigger and alltriggers.validate_on_submit():
-        selections = alltriggers.selections.data
+        selection = alltriggers.selections.data
         if alltriggers.delete.data:
-            # TODO: Somehow id and remove the study
-            pass
+            editstudy.del_trigger(selection)
         elif alltriggers.choose.data:
-            # TODO: Somehow set the selected trigger to the session data
-            pass
+            session['sel_trigger'] = selection
         elif alltriggers.clear.data:
             session['sel_trigger'] = None
         return redirect(url_for('studies.edit'))
 
     # Save Study-associated Triggers
-    if triggerform.validate_on_submit():
-        # TODO: Add or update Triggers
-        pass
+    if editstudy and triggerform.validate_on_submit() and triggerform.matchtext.data:
+        editstudy.add_trigger(
+            triggerform.matchtext.data,
+            on=triggerform.alerttype.data,
+            condition=triggerform.condition.data,
+            actions=[triggerform[action].label for action in triggerform.actions if triggerform[action].data]
+            )
+        return redirect(url_for('studies.edit'))
 
     return render_template(
         'edit_study.html',
@@ -146,11 +151,6 @@ def inputchoices(parents, params):
 def simplechoices(iterable):
     """Convert an iterable into a list of duplicated tuples."""
     return zip(iterable, iterable)
-
-def triggerchoices(triggers):
-    """Convert the triggers into selection lists."""
-    triggervals = [(trigger.matchtext, trigger.condition, trigger.on) for trigger in triggers]
-    return [(on + cond + match, f"{match} ({cond}, {on})") for match, cond, on in triggervals]
 
 def make_selforms(parents):
     """Take a list or dict of object references and return a dict of forms."""
