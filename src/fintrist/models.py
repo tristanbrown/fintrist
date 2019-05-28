@@ -287,12 +287,12 @@ class Study(Document):
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
     triggers = MapField(EmbeddedDocumentField('Trigger'))
-    # TODO: Switch triggers to MapField
 
     # Meta
     schema_version = IntField(default=1)
     meta = {'strict': False}
 
+    # pylint: disable=no-member
     def clean(self):
         """Before saving, ensure process is an object ref."""
         if isinstance(self.process, str):
@@ -316,7 +316,7 @@ class Study(Document):
 
     def fire_alerts(self):
         """Fire alert triggers based on newly active and inactive alerts."""
-        for trigger in self.triggers:
+        for trigger in self.triggers.values():
             trigger.check_conds(self)
 
     def clear_log(self):
@@ -384,11 +384,14 @@ class Study(Document):
     @data.setter
     def data(self, newdata):
         """Process the data for storage."""
-        if not self.file:
-            self.write_to(self.file, newdata)
+        if newdata is None:
+            self.remove_files()
         else:
-            self.write_to(self.newfile, newdata)
-            self.transfer_file()
+            if not self.file:
+                self.write_to(self.file, newdata)
+            else:
+                self.write_to(self.newfile, newdata)
+                self.transfer_file()
 
     def write_to(self, field, newdata):
         """Write data to a FileField."""
@@ -463,6 +466,7 @@ class Process(Document):
             # Set the args
             self.parents, self.params = self.get_proc_params(new_func)
 
+    # TODO: How to store and access older versions?
     @property
     def function(self):
         """Get the function corresponding to the Process name."""

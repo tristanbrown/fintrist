@@ -104,20 +104,18 @@
     </div>
     <div class="subsubcolumn">
       <form method="POST">
+        {{ parentparams.hidden_tag() }}
         <p>Parents:</p>
-        {% for key, parentform in parentforms.items() %}
-          {{ parentform.hidden_tag() }}
-          {{ parentform.selections.label }}<br>
-          {{ parentform.selections(size=4) }}<br><br>
+        {% for key in parentparams.parent_keys %}
+          {{ parentparams[key].label }}<br>
+          {{ parentparams[key](size=4) }}<br><br>
         {% endfor %}
         <p>Parameters:</p>
-        {% for key, paramform in paramforms.items() %}
-          {{ paramform.hidden_tag() }}
-          {{ paramform.entry.label }} <br>
-          {{ paramform.entry() }}<br><br>
+        {% for key in parentparams.param_keys %}
+          {{ parentparams[key].label }}<br>
+          {{ parentparams[key]() }}<br><br>
         {% endfor %}
-        {# { saveinputs.hidden_tag() } #}
-        {{ saveinputs.submit() }}<br><br>
+        {{ parentparams.submit() }}<br><br>
       </form>
     </div>
   </div>
