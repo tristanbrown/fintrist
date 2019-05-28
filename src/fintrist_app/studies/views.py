@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Study, Process, Trigger
 from fintrist_app.studies.forms import (
-    sel_form, mini_sel_form, multisel_form, add_form, trigger_build)
+    sel_form, mini_sel_form, multisel_form, add_form, trigger_build, inputs_build)
 from fintrist_app import util
 
 studies_blueprint = Blueprint('studies',
@@ -40,8 +40,8 @@ def edit():
         editstudy = None
         studyname = ''
         procname = ''
-        parentforms = {}
-        paramforms = {}
+        parents = {}
+        params = {}
         sel_trigger = None
         print(ex)
 
@@ -55,6 +55,7 @@ def edit():
 
     # Trigger components
     triggerform = trigger_build(sel_trigger)
+    parentparams = inputs_build(parents, params)
 
     # Clear the selections
     if studyform.clear.data:
@@ -98,17 +99,17 @@ def edit():
         return redirect(url_for('studies.edit'))
 
     # Save Study-associated Inputs
-    if editstudy and saveinputs.is_submitted():
-        newparents = {key: form.selections.data
-                      for key, form in parentforms.items() if form.selections.data != 'None'}
+    if editstudy and parentparams.validate_on_submit():
+        newparents = {key: parentparams[key].data
+                      for key in parentparams.parent_keys if parentparams[key].data != 'None'}
         editstudy.add_parents(newparents)
-        newparams = {key: form.entry.data
-                     for key, form in paramforms.items() if form.entry.data}
+        newparams = {key: parentparams[key].data
+                     for key in parentparams.param_keys if parentparams[key].data}
         editstudy.add_params(newparams)
         return redirect(url_for('studies.edit'))
 
-    # Submit buttons for Triggers selection list
-    if sel_trigger and alltriggers.validate_on_submit():
+    # Submit buttons for Triggers selection list    
+    if alltriggers.validate_on_submit():
         selection = alltriggers.selections.data
         if alltriggers.delete.data:
             editstudy.del_trigger(selection)
@@ -119,12 +120,12 @@ def edit():
         return redirect(url_for('studies.edit'))
 
     # Save Study-associated Triggers
-    if editstudy and triggerform.validate_on_submit() and triggerform.matchtext.data:
+    if editstudy and triggerform.validate_on_submit():
         editstudy.add_trigger(
             triggerform.matchtext.data,
             on=triggerform.alerttype.data,
             condition=triggerform.condition.data,
-            actions=[triggerform[action].label for action in triggerform.actions if triggerform[action].data]
+            actions=[action for action in triggerform.actions if triggerform[action].data]
             )
         return redirect(url_for('studies.edit'))
 
@@ -136,8 +137,7 @@ def edit():
         addform=addform,
         procsel=procform,
         inputsform=inputsform,
-        parentforms=parentforms,
-        paramforms=paramforms,
+        parentparams=parentparams,
         saveinputs=saveinputs,
         alltriggers=alltriggers,
         triggerform=triggerform,

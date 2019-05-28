@@ -2,7 +2,8 @@ from flask_wtf import FlaskForm
 from wtforms import (StringField, IntegerField, SubmitField, SelectField,
     SelectMultipleField, BooleanField,)
 
-from fintrist import Trigger
+from fintrist import Study, Trigger
+from fintrist_app import util
 
 def add_form(label):
     """Generate a selection form."""
@@ -73,6 +74,19 @@ def trigger_build(sel_trigger):
         checked = action in def_actions
         setattr(TriggerForm, action, BooleanField(label=action, default=checked))
     return TriggerForm()
+
+def inputs_build(parents, params):
+    """Generate inputs entry fields."""
+    class InputsForm(FlaskForm):
+        parent_keys = parents
+        param_keys = params
+        submit = SubmitField('Save')
+    db_objects = util.get_choices(Study.objects())
+    for key in parents:
+        setattr(InputsForm, key, SelectField(key, choices=db_objects))
+    for key in params:
+        setattr(InputsForm, key, StringField(key))
+    return InputsForm()
 
 def simplechoices(iterable):
     """Convert an iterable into a list of duplicated tuples."""
