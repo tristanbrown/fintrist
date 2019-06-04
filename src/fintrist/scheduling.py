@@ -7,8 +7,15 @@ from fintrist.settings import Config
 
 def create_scheduler():
     """Create a configured scheduler."""
-    config = Config()
-    jobstores = {'default': MongoDBJobStore(database=config.DATABASE_NAME)}
+    jobstores = {
+        'default': MongoDBJobStore(
+            database=Config.DATABASE_NAME,
+            host=Config.DB_HOST,
+            port=Config.DB_PORT,
+            username=Config.USERNAME,
+            password=Config.PASSWORD,
+            authSource='admin',
+            )}
     executors = {'default': ProcessPoolExecutor(max_workers=4)}
     job_defaults = {'coalesce': True, 'max_instances': 1, 'misfire_grace_time': 5,}
 
