@@ -9,7 +9,7 @@ REQUIREMENTS = [
     'python-dotenv',
     'mongoengine',
     'blinker',
-    'flask_apscheduler',
+    'apscheduler',
     'alpha_vantage>=2.0.0',
 ]
 
