@@ -10,6 +10,7 @@ def create_scheduler():
     jobstores = {
         'default': MongoDBJobStore(
             database=Config.DATABASE_NAME,
+            collection=f"jobs_{Config.APP_HOST}",
             host=Config.DB_HOST,
             port=Config.DB_PORT,
             username=Config.USERNAME,
