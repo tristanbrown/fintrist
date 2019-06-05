@@ -14,3 +14,4 @@ class Config():
     PASSWORD = os.getenv('DB_PASSWORD')
     DB_HOST = os.getenv('DB_HOST')
     DB_PORT = int(os.getenv('DB_PORT'))
+    APP_HOST = os.getenv('COMPUTERNAME')
