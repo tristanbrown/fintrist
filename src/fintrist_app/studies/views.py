@@ -1,5 +1,7 @@
+"""HTTP views related to Studies"""
+
 from flask import Blueprint, render_template, redirect, url_for, session
-from fintrist import Study, Process, Trigger
+from fintrist import Study, Process
 from fintrist_app.studies.forms import (
     sel_form, multisel_form, add_form, trigger_build, inputs_build)
 from fintrist_app import util
@@ -34,7 +36,7 @@ def edit():
         inputsform.selections.choices = inputchoices(parents, params)
         alltriggers.selections.choices = simplechoices(editstudy.triggers.keys())
         sel_trigger = editstudy.get_trigger(trig_id)
-    except Exception as ex:
+    except Exception as ex:  #pylint: disable=broad-except
         editstudy = None
         studyname = ''
         procname = ''
