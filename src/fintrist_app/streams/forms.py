@@ -1,11 +1,10 @@
+"""Forms allowing CRUD operations for Streams"""
+
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SubmitField, SelectField, SelectMultipleField, validators
-
-from fintrist import Stream
-
+from wtforms import (StringField, IntegerField, SubmitField, SelectField,
+                     SelectMultipleField, validators)
 
 class AddForm(FlaskForm):
-
     name = StringField('Name of Stream:')
     refresh = IntegerField('Refresh Interval (sec):', validators=[validators.Optional(),])
     submit = SubmitField('Save')

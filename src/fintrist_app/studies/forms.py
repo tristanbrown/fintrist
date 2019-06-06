@@ -1,6 +1,8 @@
+"""Forms allowing CRUD operations for Studies"""
+
 from flask_wtf import FlaskForm
-from wtforms import (StringField, IntegerField, SubmitField, SelectField,
-    SelectMultipleField, BooleanField,)
+from wtforms import (StringField, SubmitField, SelectField,
+                     SelectMultipleField, BooleanField,)
 
 from fintrist import Study, Trigger
 from fintrist_app import util

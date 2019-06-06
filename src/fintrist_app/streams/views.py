@@ -1,4 +1,4 @@
-import time
+"""HTTP views related to Streams"""
 
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Stream, Study
@@ -78,7 +78,7 @@ def edit():
         selrefresh = int(editstream.refresh)
         new_objects = util.get_choices(editstream.studies)
         assocform.selections.choices = new_objects
-    except Exception as ex:
+    except Exception as ex:  #pylint: disable=broad-except
         editstream = None
         streamname = ''
         selrefresh = None
