@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Study, Process, Trigger
 from fintrist_app.studies.forms import (
-    sel_form, mini_sel_form, multisel_form, add_form, trigger_build, inputs_build)
+    sel_form, multisel_form, add_form, trigger_build, inputs_build)
 from fintrist_app import util
 
 studies_blueprint = Blueprint('studies',
@@ -32,11 +32,9 @@ def edit():
         parents = editstudy.all_parents
         params = editstudy.all_params
         inputsform.selections.choices = inputchoices(parents, params)
-        parentforms = make_selforms(parents)
-        paramforms = make_entryforms(params)
         alltriggers.selections.choices = simplechoices(editstudy.triggers.keys())
         sel_trigger = editstudy.get_trigger(trig_id)
-    except Exception as ex:  # TODO: specify
+    except Exception as ex:
         editstudy = None
         studyname = ''
         procname = ''
@@ -51,7 +49,6 @@ def edit():
 
     # Set up Add/Edit
     addform = add_form('Study Name')
-    saveinputs = add_form('Inputs')
 
     # Trigger components
     triggerform = trigger_build(sel_trigger)
@@ -138,7 +135,6 @@ def edit():
         procsel=procform,
         inputsform=inputsform,
         parentparams=parentparams,
-        saveinputs=saveinputs,
         alltriggers=alltriggers,
         triggerform=triggerform,
         )
@@ -151,12 +147,3 @@ def inputchoices(parents, params):
 def simplechoices(iterable):
     """Convert an iterable into a list of duplicated tuples."""
     return zip(iterable, iterable)
-
-def make_selforms(parents):
-    """Take a list or dict of object references and return a dict of forms."""
-    db_objects = util.get_choices(Study.objects())
-    return {key: mini_sel_form(key, db_objects) for key in parents}
-
-def make_entryforms(params):
-    """Take a list or dict of parameter names and return a dict of forms."""
-    return {key: add_form(key) for key in params}

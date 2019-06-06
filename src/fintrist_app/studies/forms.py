@@ -8,7 +8,6 @@ from fintrist_app import util
 def add_form(label):
     """Generate a selection form."""
     class AddForm(FlaskForm):
-
         entry = StringField(label)
         submit = SubmitField('Save')
     return AddForm(prefix=label)
@@ -27,12 +26,6 @@ def sel_form(label):
         activate = SubmitField(f'Activate {label}')
         deactivate = SubmitField(f'Deactivate {label}')
     return SelForm(prefix=label)
-
-def mini_sel_form(label, def_choices):
-    """Generate a selection form."""
-    class MiniSelForm(FlaskForm):
-        selections = SelectField(label, choices=def_choices)
-    return MiniSelForm(prefix=label)
 
 def multisel_form(label):
     """Generate a selection form."""
