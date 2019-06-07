@@ -9,6 +9,15 @@ load_dotenv()
 
 class Config():
     APIKEY = os.getenv('APIKEY')
-    DATABASE_NAME = os.getenv('DATABASE_NAME')
-    USERNAME = os.getenv('USERNAME')
-    PASSWORD = os.getenv('PASSWORD')
+    APP_HOST = os.getenv('COMPUTERNAME')
+    DATABASE_NAME = os.getenv('DB_NAME')
+    local = int(os.getenv('DB_LOCAL'))
+    if local:
+        USERNAME = None
+        PASSWORD = None
+        DB_HOST = 'localhost'
+    else:
+        USERNAME = os.getenv('DB_USERNAME')
+        PASSWORD = os.getenv('DB_PASSWORD')
+        DB_HOST = os.getenv('DB_HOST')
+    DB_PORT = int(os.getenv('DB_PORT'))

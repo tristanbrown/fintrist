@@ -1,6 +1,9 @@
+"""HTTP views related to Studies"""
+
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Study, Process
-from fintrist_app.studies.forms import sel_form, mini_sel_form, multisel_form, add_form
+from fintrist_app.studies.forms import (
+    sel_form, multisel_form, add_form, trigger_build, inputs_build)
 from fintrist_app import util
 
 studies_blueprint = Blueprint('studies',
@@ -18,25 +21,29 @@ def edit():
     db_objects = util.get_choices(Study.objects())
     studyform.selections.choices = db_objects
 
-    inputsform = multisel_form('Inputs')
-
     # Set up the Study to edit and associated inputs
     editstudy_id = session.get('editstudy')
-    if editstudy_id:
+    inputsform = multisel_form('Inputs')
+    alltriggers = sel_form('Triggers')
+    trig_id = session.get('sel_trigger')
+
+    try:
         editstudy = Study.objects(id=editstudy_id).get()
         studyname = editstudy.name
         procname = editstudy.process.name
         parents = editstudy.all_parents
         params = editstudy.all_params
         inputsform.selections.choices = inputchoices(parents, params)
-        parentforms = make_selforms(parents)
-        paramforms = make_entryforms(params)
-    else:
+        alltriggers.selections.choices = simplechoices(editstudy.triggers.keys())
+        sel_trigger = editstudy.get_trigger(trig_id)
+    except Exception as ex:  #pylint: disable=broad-except
         editstudy = None
         studyname = ''
         procname = ''
-        parentforms = {}
-        paramforms = {}
+        parents = {}
+        params = {}
+        sel_trigger = None
+        print(ex)
 
     # Set up All Processes selection list
     procform = sel_form('Processes')
@@ -44,7 +51,10 @@ def edit():
 
     # Set up Add/Edit
     addform = add_form('Study Name')
-    saveinputs = add_form('Inputs')
+
+    # Trigger components
+    triggerform = trigger_build(sel_trigger)
+    parentparams = inputs_build(parents, params)
 
     # Clear the selections
     if studyform.clear.data:
@@ -88,13 +98,34 @@ def edit():
         return redirect(url_for('studies.edit'))
 
     # Save Study-associated Inputs
-    if editstudy and saveinputs.is_submitted():
-        newparents = {key: form.selections.data
-            for key, form in parentforms.items() if form.selections.data != 'None'}
+    if editstudy and parentparams.validate_on_submit():
+        newparents = {key: parentparams[key].data
+                      for key in parentparams.parent_keys if parentparams[key].data != 'None'}
         editstudy.add_parents(newparents)
-        newparams = {key: form.entry.data
-            for key, form in paramforms.items() if form.entry.data}
+        newparams = {key: parentparams[key].data
+                     for key in parentparams.param_keys if parentparams[key].data}
         editstudy.add_params(newparams)
+        return redirect(url_for('studies.edit'))
+
+    # Submit buttons for Triggers selection list
+    if alltriggers.validate_on_submit():
+        selection = alltriggers.selections.data
+        if alltriggers.delete.data:
+            editstudy.del_trigger(selection)
+        elif alltriggers.choose.data:
+            session['sel_trigger'] = selection
+        elif alltriggers.clear.data:
+            session['sel_trigger'] = None
+        return redirect(url_for('studies.edit'))
+
+    # Save Study-associated Triggers
+    if editstudy and triggerform.validate_on_submit():
+        editstudy.add_trigger(
+            triggerform.matchtext.data,
+            on=triggerform.alerttype.data,
+            condition=triggerform.condition.data,
+            actions=[action for action in triggerform.actions if triggerform[action].data]
+            )
         return redirect(url_for('studies.edit'))
 
     return render_template(
@@ -105,9 +136,9 @@ def edit():
         addform=addform,
         procsel=procform,
         inputsform=inputsform,
-        parentforms=parentforms,
-        paramforms=paramforms,
-        saveinputs=saveinputs,
+        parentparams=parentparams,
+        alltriggers=alltriggers,
+        triggerform=triggerform,
         )
 
 def inputchoices(parents, params):
@@ -115,11 +146,6 @@ def inputchoices(parents, params):
     parentnames = [(key, parent.name) if parent else (key, None) for key, parent in parents.items()]
     return [(key, f"{key}: {val}") for key, val in parentnames + list(params.items())]
 
-def make_selforms(parents):
-    """Take a list or dict of object references and return a dict of forms."""
-    db_objects = util.get_choices(Study.objects())
-    return {key: mini_sel_form(key, db_objects) for key in parents}
-
-def make_entryforms(params):
-    """Take a list or dict of parameter names and return a dict of forms."""
-    return {key: add_form(key) for key in params}
+def simplechoices(iterable):
+    """Convert an iterable into a list of duplicated tuples."""
+    return zip(iterable, iterable)

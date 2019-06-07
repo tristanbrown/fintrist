@@ -1,53 +1,121 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+.column
+{
+    float: left;
+    padding: 10px;
+    width: 750px;
+}
+.subcolumn
+{
+    float: left;
+    padding: 10px;
+    width: 250px;
+}
+.subsubcolumn
+{
+    float: right;
+    padding: 10px;
+    width: 25%;
+}
+.section{
+        float: left;
+        width: 75%;
+        padding: 10px;
+    }
+.subsection{
+    width:25%;
+    margin:5px 5px 5px 5px;
+    float: left;
+}
+</style>
 <div class="jumbotron">
   <h1>Editing Study: {{ studyname }}</h1><br>
   <div class="row">
-    <div class="column", style="width: 250px;">
-      <form method="POST">
-        {{ studyform.hidden_tag() }}
-        {{ studyform.selections.label }}<br>
-        {{ studyform.selections(size=10) }}<br>
-        {{ studyform.clear() }}<br>
-        {{ studyform.edit() }}<br>
-        {{ studyform.delete() }}<br><br>
-      </form>
+    <div class="section">
+      <div class="row">
+        <div class="subcolumn">
+          <form method="POST">
+            {{ studyform.hidden_tag() }}
+            {{ studyform.selections.label }}<br>
+            {{ studyform.selections(size=10) }}<br>
+            {{ studyform.clear() }}<br>
+            {{ studyform.edit() }}<br>
+            {{ studyform.delete() }}<br><br>
+          </form>
+        </div>
+        <div class="subcolumn">
+          <form method="POST">
+            {{ addform.hidden_tag() }}
+            {{ addform.entry.label }} <br>
+            {{ addform.entry() }}<br>
+            <p>Selected Process:<br>{{ procname }}</p>
+            {{ procsel.hidden_tag() }}
+            {{ procsel.selections.label }}<br>
+            {{ procsel.selections(size=8) }}<br>
+            {{ addform.submit() }}<br><br>
+          </form>
+        </div>
+        <div class="subcolumn">
+          <form method="POST">
+            {{ inputsform.hidden_tag() }}
+            {{ inputsform.selections.label }}<br>
+            {{ inputsform.selections(size=10) }}<br>
+            {{ inputsform.delete() }}<br><br>
+          </form>
+        </div>
+      </div>
+      <div class="row">
+        <div class="subcolumn">
+          <form method="POST">
+            {{ alltriggers.hidden_tag() }}
+            {{ alltriggers.selections.label }}<br>
+            {{ alltriggers.selections(size=5) }}<br>
+            {{ alltriggers.clear() }}<br>
+            {{ alltriggers.edit() }}<br>
+            {{ alltriggers.delete() }}<br><br>
+          </form>
+        </div>
+        <form method="POST">
+          <div class="subcolumn">
+            {{ triggerform.hidden_tag() }}
+            {{ triggerform.matchtext.label }}<br>
+            {{ triggerform.matchtext() }}<br>
+            {{ triggerform.submit() }}<br>
+            <div class="subcolumn", style="width: 100px;">
+              {{ triggerform.alerttype.label }}<br>
+              {{ triggerform.alerttype(size=3) }}<br>
+            </div>
+            <div class="subcolumn", style="width: 100px;">
+              {{ triggerform.condition.label }}<br>
+              {{ triggerform.condition(size=2) }}<br>
+            </div>
+          </div>
+          <div class="subcolumn">
+            <p>Actions:</p>
+            {% for action in triggerform.actions %}
+              {{ triggerform[action]() }}
+              {{ triggerform[action].label }}<br>
+            {% endfor %}
+          </div>
+        </form>
+      </div>
     </div>
-    <div class="column", style="width: 250px;">
+    <div class="subsubcolumn">
       <form method="POST">
-        {{ addform.hidden_tag() }}
-        {{ addform.entry.label }} <br> {{ addform.entry() }}<br>
-        <p>Selected Process:<br>{{ procname }}</p>
-        {{ procsel.hidden_tag() }}
-        {{ procsel.selections.label }}<br>
-        {{ procsel.selections(size=8) }}<br>
-        {{ addform.submit() }}<br><br>
-      </form>
-    </div>
-    <div class="column", style="width: 250px;">
-      <form method="POST">
-        {{ inputsform.hidden_tag() }}
-        {{ inputsform.selections.label }}<br>
-        {{ inputsform.selections(size=10) }}<br>
-        {{ inputsform.delete() }}<br><br>
-      </form>
-    </div>
-    <div class="column", style="width: 250px;">
-      <form method="POST">
+        {{ parentparams.hidden_tag() }}
         <p>Parents:</p>
-        {% for key, parentform in parentforms.items() %}
-          {{ parentform.hidden_tag() }}
-          {{ parentform.selections.label }}<br>
-          {{ parentform.selections(size=4) }}<br><br>
+        {% for key in parentparams.parent_keys %}
+          {{ parentparams[key].label }}<br>
+          {{ parentparams[key](size=4) }}<br><br>
         {% endfor %}
         <p>Parameters:</p>
-        {% for key, paramform in paramforms.items() %}
-          {{ paramform.hidden_tag() }}
-          {{ paramform.entry.label }} <br>
-          {{ paramform.entry() }}<br><br>
+        {% for key in parentparams.param_keys %}
+          {{ parentparams[key].label }}<br>
+          {{ parentparams[key]() }}<br><br>
         {% endfor %}
-        {# { saveinputs.hidden_tag() } #}
-        {{ saveinputs.submit() }}<br><br>
+        {{ parentparams.submit() }}<br><br>
       </form>
     </div>
   </div>

@@ -1,0 +1,35 @@
+Configuration of the MongoDB database for remote access. 
+
+Set up the mongo CLI:
+1. Go to the *\data subdirectory under the MongoDB install
+2. Open a terminal here.
+3. mongod -dbpath .
+4. CTRL+C and then restart the MongoDB service.
+
+Enable authentication:
+1. Type `mongo` in the terminal to start the CLI. 
+2. use admin
+3. type the following:
+db.createUser({
+user: "<<newUsername>>",
+pwd: "<<password>>",
+roles: [ { role: "userAdminAnyDatabase", db: "admin" },
+    { role: "readWriteAnyDatabase", db: "admin" },
+    #possibly# { role: "root", db: "admin" },
+     ]
+})
+4. in *\bin\mongo.cfg, include the lines:
+security:
+  authorization: "enabled"
+5. Restart the MongoDB service. 
+6. Should now be able to log in using Compass Community or pymongo. 
+
+Enable remote access:
+1. in mongo.cfg, include:
+# network interfaces
+net:
+  port: 27017
+  bindIp: 0.0.0.0
+2. In firewall, open port 27017.
+3. On router, set up port-forwarding to 27017. 
+4. Find the host's public ip and use this in the .env file. 
