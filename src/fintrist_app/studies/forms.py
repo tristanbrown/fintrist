@@ -68,7 +68,7 @@ def trigger_build(sel_trigger):
     for action in TriggerForm.actions:
         checked = action in def_actions
         setattr(TriggerForm, action, BooleanField(label=action, default=checked))
-    return TriggerForm()
+    return TriggerForm(prefix='trigger')
 
 def inputs_build(parents, params):
     """Generate inputs entry fields."""
@@ -81,7 +81,7 @@ def inputs_build(parents, params):
         setattr(InputsForm, key, SelectField(key, choices=db_objects))
     for key in params:
         setattr(InputsForm, key, StringField(key))
-    return InputsForm()
+    return InputsForm(prefix='inputs')
 
 def simplechoices(iterable):
     """Convert an iterable into a list of duplicated tuples."""
