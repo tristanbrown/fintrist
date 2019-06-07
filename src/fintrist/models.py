@@ -295,8 +295,6 @@ class Study(Document):
     # pylint: disable=no-member
     def clean(self):
         """Before saving, ensure process is an object ref."""
-        if isinstance(self.process, str):
-            self._set_process(self.process)
         self.alertslog.trim()
 
     def run(self):
@@ -331,18 +329,8 @@ class Study(Document):
 
     def set_process(self, name):
         """Saving wrapper for set_process."""
-        self._set_process(name)
+        self.process = Process.objects(name=name).get()
         self.save()
-
-    def _set_process(self, name):
-        """Set a new Process to the Study."""
-        proc = Process().get_newest(name)
-        self.process = proc
-
-    def update_process(self):
-        """Update the associated Process to the latest version."""
-        name = self.process.name
-        self.set_process(name)
 
     @property
     def all_parents(self):
@@ -413,7 +401,7 @@ class Study(Document):
         """Remove the data."""
         self.file.delete()
         self.newfile.delete()
-        self.save()
+        self.save(validate=False)
 
     def get_trigger(self, trig_id):
         """Return the desired trigger."""
@@ -437,9 +425,7 @@ class Process(Document):
     Parent arguments and parameters are parsed from the function docstring.
     """
     # Identity
-    name = StringField(max_length=120, required=True)
-    checksum = StringField(required=True, primary_key=True)
-    version = IntField(required=True)
+    name = StringField(max_length=120, required=True, primary_key=True)
 
     # Args
     parents = ListField(StringField())
@@ -449,24 +435,10 @@ class Process(Document):
     schema_version = IntField(default=1)
 
     def clean(self):
-        """Encode a function as a hash."""
-        if not isinstance(self.checksum, str) or len(self.checksum) != 40:
-            new_func = self.function
-            # Check the hash
-            funcstring = str.encode(inspect.getsource(new_func))
-            self.checksum = hashlib.sha1(funcstring).hexdigest()
+        """Ensure the function is encoded properly."""
+        # Set the args
+        self.parents, self.params = self.get_proc_params(self.function)
 
-            # Check for previous versions
-            recent = self.get_newest(self.name)
-            if recent:
-                self.version = recent.version + 1
-            else:
-                self.version = 1
-
-            # Set the args
-            self.parents, self.params = self.get_proc_params(new_func)
-
-    # TODO: How to store and access older versions?
     @property
     def function(self):
         """Get the function corresponding to the Process name."""
@@ -484,7 +456,3 @@ class Process(Document):
             elif line.startswith('::params::'):
                 params.extend(words[1:])
         return parents, params
-
-    def get_newest(self, name):
-        """Return the most recent version of a process."""
-        return Process.objects(name=name).order_by("-version").limit(-1).first()
