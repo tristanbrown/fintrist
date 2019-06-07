@@ -107,7 +107,7 @@ def edit():
         editstudy.add_params(newparams)
         return redirect(url_for('studies.edit'))
 
-    # Submit buttons for Triggers selection list    
+    # Submit buttons for Triggers selection list
     if alltriggers.validate_on_submit():
         selection = alltriggers.selections.data
         if alltriggers.delete.data:

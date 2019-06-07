@@ -417,6 +417,7 @@ class Study(Document):
         """Delete the specified trigger."""
         try:
             del self.triggers[trig_id]
+            self.save()
         except KeyError:
             print(f"Trigger '{trig_id}' not found.")
 
