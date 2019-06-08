@@ -4,7 +4,6 @@ The engine that applies analyses to data and generates alerts.
 import logging
 import pickle
 import inspect
-import hashlib
 import re
 from datetime import datetime as dt
 from dateutil.tz import tzlocal
@@ -283,6 +282,7 @@ class Study(Document):
     file = FileField()
     newfile = FileField()
     timestamp = DateTimeField(default=dt.now(tzlocal()))
+    valid_age = IntField(default=0)
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
@@ -293,8 +293,16 @@ class Study(Document):
     meta = {'strict': False}
 
     # pylint: disable=no-member
+    # pylint: disable=unsupported-delete-operation
+    # pylint: disable=not-a-mapping
+    # pylint: disable=unsupported-assignment-operation
     def clean(self):
-        """Before saving, ensure process is an object ref."""
+        """Clean attributes."""
+        # Parents
+        for key, parent in self.parents.items():
+            if isinstance(parent, DBRef):
+                del self.parents[key]
+        # Alertslog
         self.alertslog.trim()
 
     def run(self):
@@ -306,6 +314,92 @@ class Study(Document):
         self.alertslog.record_alerts(newalerts, self.timestamp)
         self.save()
         self.fire_alerts()
+
+    @property
+    def valid(self):
+        """Check if the Study data is still valid."""
+        # Check the age of the data
+        current = self.timestamp + dt.timedelta(seconds=self.valid_age) >= dt.now(tzlocal())
+        # Check if the parents are valid too
+        for parent in self.parents.values():
+            if not parent.valid:
+                current = False
+                break
+        return current
+
+    def activate(self):
+        """Periodically run the Study."""
+        scheduler.add_job(
+            self.schedule_study,
+            args=[str(self.id)],
+            trigger='interval',
+            seconds=self.valid_age,
+            id=str(self.id),
+            name=self.name,
+            replace_existing=True,
+        )
+
+    def deactivate(self):
+        """Stop the Study from running periodically."""
+        try:
+            scheduler.remove_job(str(self.id))
+            scheduler.remove_job(str(self.id) + '_waiting')
+        except JobLookupError:
+            print("Job not found")
+
+    @property
+    def active(self):
+        """Boolean value of whether the Study is active in the scheduler."""
+        return bool(scheduler.get_job(str(self.id)))
+
+    def run_study_once(self):
+        """Submit a job to run the whole Study once."""
+        scheduler.add_job(
+            self.schedule_study,
+            args=[str(self.id)],
+            id=str(self.id) + '_once',
+            name=self.name + ' once',
+            replace_existing=False,
+        )
+
+    def schedule(self):
+        """Schedule the Study to run when all of its inputs are valid."""
+        cls = self.__class__
+        job_id = str(self.id) + '_waiting'
+        if not bool(scheduler.get_job(job_id)):
+            scheduler.add_job(
+                cls.wait_study,
+                args=[str(self.id)],
+                trigger='interval',
+                seconds=5,
+                id=job_id,
+                name=self.name + ' waiting',
+                replace_existing=True,
+                max_instances=1,
+            )
+
+    @staticmethod
+    def schedule_study(study_id):
+        """Static wrapper for `schedule`."""
+        this_study = Study.objects(id=study_id).get()
+        this_study.schedule()
+
+    def wait(self):
+        """Wait for the inputs to be valid and then run."""
+        all_valid = True
+        for parent in self.parents.values():
+            if not parent.valid:
+                all_valid = False
+                parent.schedule()
+        if all_valid:
+            scheduler.remove_job(str(self.id) + '_waiting')
+            self.run()
+
+    @staticmethod
+    def wait_study(study_id):
+        """Static wrapper for `wait`."""
+        this_study = Study.objects(id=study_id).get()
+        this_study.wait()
 
     @property
     def alerts(self):
@@ -326,9 +420,20 @@ class Study(Document):
         """Rename the Study."""
         self.name = newname
         self.save()
+        self.reload()
+        if self.active:
+            scheduler.modify_job(str(self.id), name=self.name)
+
+    def update_valid_age(self, new_age):
+        """Update the valid age for the data."""
+        self.valid_age = new_age
+        self.save()
+        self.reload()
+        if self.active:
+            scheduler.reschedule_job(str(self.id), trigger='interval', seconds=self.valid_age)
 
     def set_process(self, name):
-        """Saving wrapper for set_process."""
+        """Set the Study's Process based on a name."""
         self.process = Process.objects(name=name).get()
         self.save()
 
