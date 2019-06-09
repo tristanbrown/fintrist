@@ -48,12 +48,13 @@
         <div class="subcolumn">
           <form method="POST">
             {{ addform.hidden_tag() }}
-            {{ addform.entry.label }} <br>
-            {{ addform.entry() }}<br>
-            <p>Selected Process:<br>{{ procname }}</p>
+            {{ addform.name.label }} {{ studyname }} <br>
+            {{ addform.name() }}<br>
+            {{ addform.timevalid.label }} {{ timevalid }}<br>
+            {{ addform.timevalid() }}<br><br>
             {{ procsel.hidden_tag() }}
-            {{ procsel.selections.label }}<br>
-            {{ procsel.selections(size=8) }}<br>
+            {{ "Process: " }} {{ procname }}<br>
+            {{ procsel.selections(size=6) }}<br>
             {{ addform.submit() }}<br><br>
           </form>
         </div>

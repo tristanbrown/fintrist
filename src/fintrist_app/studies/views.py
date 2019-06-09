@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Study, Process
 from fintrist_app.studies.forms import (
-    sel_form, multisel_form, add_form, trigger_build, inputs_build)
+    sel_form, multisel_form, AddForm, trigger_build, inputs_build)
 from fintrist_app import util
 
 studies_blueprint = Blueprint('studies',
@@ -31,6 +31,7 @@ def edit():
         editstudy = Study.objects(id=editstudy_id).get()
         studyname = editstudy.name
         procname = editstudy.process.name
+        seltimevalid = int(editstudy.valid_age)
         parents = editstudy.all_parents
         params = editstudy.all_params
         inputsform.selections.choices = inputchoices(parents, params)
@@ -40,6 +41,7 @@ def edit():
         editstudy = None
         studyname = ''
         procname = ''
+        seltimevalid = 0
         parents = {}
         params = {}
         sel_trigger = None
@@ -50,7 +52,7 @@ def edit():
     procform.selections.choices = util.get_choices(Process.objects())
 
     # Set up Add/Edit
-    addform = add_form('Study Name')
+    addform = AddForm(prefix='add')
 
     # Trigger components
     triggerform = trigger_build(sel_trigger)
@@ -77,15 +79,18 @@ def edit():
 
     # Update Study or create new
     if addform.validate_on_submit() and addform.submit.data:
-        name = addform.entry.data
+        name = addform.name.data
+        newage = addform.timevalid.data
         newproc = Process.objects(pk=procform.selections.data)
         if editstudy:
             if name:
                 editstudy.rename(name)
+            if isinstance(newage, int):
+                editstudy.update_valid_age(newage)
             if newproc:
                 editstudy.set_process(newproc.get().name)
         else:
-            new_study = Study(name=name)
+            new_study = Study(name=name, valid_age=newage)
             new_study.set_process(newproc.get().name)
             new_study.reload()
             session['editstudy'] = str(new_study.id)  #pylint: disable=no-member
@@ -134,6 +139,7 @@ def edit():
         studyform=studyform,
         procname=procname,
         addform=addform,
+        timevalid=seltimevalid,
         procsel=procform,
         inputsform=inputsform,
         parentparams=parentparams,
