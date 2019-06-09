@@ -1,18 +1,16 @@
 """Forms allowing CRUD operations for Studies"""
 
 from flask_wtf import FlaskForm
-from wtforms import (StringField, SubmitField, SelectField,
-                     SelectMultipleField, BooleanField,)
+from wtforms import (StringField, SubmitField, SelectField, IntegerField,
+                     SelectMultipleField, BooleanField, validators)
 
 from fintrist import Study, Trigger
 from fintrist_app import util
 
-def add_form(label):
-    """Generate a selection form."""
-    class AddForm(FlaskForm):
-        entry = StringField(label)
-        submit = SubmitField('Save')
-    return AddForm(prefix=label)
+class AddForm(FlaskForm):
+    name = StringField("Study Name:")
+    timevalid = IntegerField('Time Valid (sec):', validators=[validators.Optional(),])
+    submit = SubmitField('Save')
 
 def sel_form(label):
     """Generate a selection form."""

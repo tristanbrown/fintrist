@@ -12,44 +12,44 @@ streams_blueprint = Blueprint('streams',
 
 @streams_blueprint.route('/manage', methods=['GET','POST'])
 def manage():
-    """Manage the running of Streams.
+    """Manage the running of Studies.
     """
     active_jobs = [job.id for job in scheduler.get_jobs()]
-    # Set up Inactive Streams selection list
-    inactiveform = multisel_form('Streams')
-    inactive_streams = Stream.objects(id__not__in=active_jobs)
-    inactive_choices = util.get_choices(inactive_streams())
+    # Set up Inactive studies selection list
+    inactiveform = multisel_form('Studies')
+    inactive_studies = Study.objects(id__not__in=active_jobs)
+    inactive_choices = util.get_choices(inactive_studies())
     inactiveform.selections.choices = inactive_choices
-    # Set up Active Streams selection list
-    activeform = multisel_form('Streams')
-    active_streams = Stream.objects(id__in=active_jobs)
-    active_choices = util.get_choices(active_streams())
+    # Set up Active studies selection list
+    activeform = multisel_form('Studies')
+    active_studies = Study.objects(id__in=active_jobs)
+    active_choices = util.get_choices(active_studies())
     activeform.selections.choices = active_choices
-    # Activate Streams
+    # Activate studies
     if inactiveform.validate_on_submit() and inactiveform.moveright.data:
         selections = inactiveform.selections.data
-        editstreams = Stream.objects(id__in=selections)
-        for stream in editstreams:
-            stream.activate()
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.activate()
         return redirect(url_for('streams.manage'))
-    # Deactivate Streams
+    # Deactivate studies
     elif activeform.validate_on_submit() and activeform.moveleft.data:
         selections = activeform.selections.data
-        editstreams = Stream.objects(id__in=selections)
-        for stream in editstreams:
-            stream.deactivate()
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.deactivate()
         return redirect(url_for('streams.manage'))
-    # Run selected Streams once
+    # Run selected studies once
     elif inactiveform.validate_on_submit() and inactiveform.runonce.data:
         selections = inactiveform.selections.data
-        editstreams = Stream.objects(id__in=selections)
-        for stream in editstreams:
-            stream.run_stream_once()
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.run_study_once()
     elif activeform.validate_on_submit() and activeform.runonce.data:
         selections = activeform.selections.data
-        editstreams = Stream.objects(id__in=selections)
-        for stream in editstreams:
-            stream.run_stream_once()
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.run_study_once()
 
     return render_template(
         'manage_stream.html',
