@@ -222,10 +222,10 @@ class Stream(Document):
         for study in self.studies:
             study.run()
 
-    @staticmethod
-    def run_stream(stream_id):
+    @classmethod
+    def run_stream(cls, stream_id):
         """Static wrapper for `run`."""
-        this_stream = Stream.objects(id=stream_id).get()
+        this_stream = cls.objects(id=stream_id).get()
         this_stream.run()
 
     def activate(self):
@@ -275,6 +275,9 @@ class Study(Document):
 
     # Defining the analysis that generated the data
     process = ReferenceField('Process', required=True)
+    valid_age = IntField(default=0)  # Zero means always valid
+
+    # Data Inputs
     parents = MapField(ReferenceField('Study'))  # Precursor data used by the Analysis
     params = DictField()  # Processing parameters.
 
@@ -282,7 +285,6 @@ class Study(Document):
     file = FileField()
     newfile = FileField()
     timestamp = DateTimeField(default=dt.now(tzlocal()))
-    valid_age = IntField(default=0)
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
@@ -305,27 +307,50 @@ class Study(Document):
         # Alertslog
         self.alertslog.trim()
 
-    def run(self):
-        """Run the Study process on the inputs and return any alerts."""
-        function = self.process.function
-        parent_data = {name: study.data for name, study in self.parents.items()}
-        self.data, newalerts = function(**parent_data, **self.params)
-        self.timestamp = dt.now(tzlocal())
-        self.alertslog.record_alerts(newalerts, self.timestamp)
+    ## Methods defining the Study ##
+
+    def rename(self, newname):
+        """Rename the Study."""
+        self.name = newname
         self.save()
-        self.fire_alerts()
+        self.reload()
+        if self.active:
+            scheduler.modify_job(str(self.id), name=self.name)
+
+    def set_process(self, name):
+        """Set the Study's Process based on a name."""
+        self.process = Process.objects(name=name).get()
+        self.save()
+
+    def update_valid_age(self, new_age):
+        """Update the valid age for the data."""
+        self.valid_age = new_age
+        self.save()
+        self.reload()
+        if self.active:
+            scheduler.reschedule_job(str(self.id), trigger='interval', seconds=self.valid_age)
+
+    ## Methods related to scheduling runs ##
 
     @property
     def valid(self):
         """Check if the Study data is still valid."""
         # Check the age of the data
-        current = self.timestamp + dt.timedelta(seconds=self.valid_age) >= dt.now(tzlocal())
+        if self.valid_age == 0:
+            current = True
+        else:
+            current = self.timestamp + dt.timedelta(seconds=self.valid_age) >= dt.now(tzlocal())
         # Check if the parents are valid too
         for parent in self.parents.values():
             if not parent.valid:
                 current = False
                 break
         return current
+
+    @property
+    def active(self):
+        """Boolean value of whether the Study is active in the scheduler."""
+        return bool(scheduler.get_job(str(self.id)))
 
     def activate(self):
         """Periodically run the Study."""
@@ -347,11 +372,6 @@ class Study(Document):
         except JobLookupError:
             print("Job not found")
 
-    @property
-    def active(self):
-        """Boolean value of whether the Study is active in the scheduler."""
-        return bool(scheduler.get_job(str(self.id)))
-
     def run_study_once(self):
         """Submit a job to run the whole Study once."""
         scheduler.add_job(
@@ -362,13 +382,18 @@ class Study(Document):
             replace_existing=False,
         )
 
+    @classmethod
+    def schedule_study(cls, study_id):
+        """Static wrapper for `schedule`."""
+        this_study = cls.objects(id=study_id).get()
+        this_study.schedule()
+
     def schedule(self):
         """Schedule the Study to run when all of its inputs are valid."""
-        cls = self.__class__
         job_id = str(self.id) + '_waiting'
         if not bool(scheduler.get_job(job_id)):
             scheduler.add_job(
-                cls.wait_study,
+                self.queue_study,
                 args=[str(self.id)],
                 trigger='interval',
                 seconds=5,
@@ -378,13 +403,13 @@ class Study(Document):
                 max_instances=1,
             )
 
-    @staticmethod
-    def schedule_study(study_id):
-        """Static wrapper for `schedule`."""
-        this_study = Study.objects(id=study_id).get()
-        this_study.schedule()
+    @classmethod
+    def queue_study(cls, study_id):
+        """Static wrapper for `wait`."""
+        this_study = cls.objects(id=study_id).get()
+        this_study.queue()
 
-    def wait(self):
+    def queue(self):
         """Wait for the inputs to be valid and then run."""
         all_valid = True
         for parent in self.parents.values():
@@ -395,46 +420,34 @@ class Study(Document):
             scheduler.remove_job(str(self.id) + '_waiting')
             self.run()
 
-    @staticmethod
-    def wait_study(study_id):
-        """Static wrapper for `wait`."""
-        this_study = Study.objects(id=study_id).get()
-        this_study.wait()
+    def run(self):
+        """Run the Study process on the inputs and return any alerts."""
+        function = self.process.function
+        parent_data = {name: study.data for name, study in self.parents.items()}
+        self.data, newalerts = function(**parent_data, **self.params)
+        self.timestamp = dt.now(tzlocal())
+        self.alertslog.record_alerts(newalerts, self.timestamp)
+        self.save()
+        self.fire_alerts()
 
-    @property
-    def alerts(self):
-        """Most recent alerts."""
-        return self.alertslog.get_alerts(0)
+    ## Methods for handling inputs ##
 
-    def fire_alerts(self):
-        """Fire alert triggers based on newly active and inactive alerts."""
-        for trigger in self.triggers.values():
-            trigger.check_conds(self)
-
-    def clear_log(self):
-        """Remove log entries."""
-        self.alertslog.clear()
+    def add_parents(self, newparents):
+        """Add all of the parents in the given dict of ids."""
+        parent_objects = {key: Study.objects(id=val).get() for key, val in newparents.items()}
+        self.parents.update(parent_objects)
         self.save()
 
-    def rename(self, newname):
-        """Rename the Study."""
-        self.name = newname
+    def add_params(self, newparams):
+        """Add all of the params in the given dict."""
+        self.params.update(newparams)
         self.save()
-        self.reload()
-        if self.active:
-            scheduler.modify_job(str(self.id), name=self.name)
 
-    def update_valid_age(self, new_age):
-        """Update the valid age for the data."""
-        self.valid_age = new_age
-        self.save()
-        self.reload()
-        if self.active:
-            scheduler.reschedule_job(str(self.id), trigger='interval', seconds=self.valid_age)
-
-    def set_process(self, name):
-        """Set the Study's Process based on a name."""
-        self.process = Process.objects(name=name).get()
+    def remove_inputs(self, inputs):
+        """Remove all of the inputs in the given iterable of names."""
+        for key in inputs:
+            self.parents.pop(key, None)
+            self.params.pop(key, None)
         self.save()
 
     @property
@@ -447,23 +460,8 @@ class Study(Document):
         """Full dict of param kwargs, even if not set yet."""
         return {key: self.params.get(key) for key in self.process.params}
 
-    def remove_inputs(self, inputs):
-        """Remove all of the inputs in the given iterable of names."""
-        for key in inputs:
-            self.parents.pop(key, None)
-            self.params.pop(key, None)
-        self.save()
 
-    def add_parents(self, newparents):
-        """Add all of the parents in the given dict of ids."""
-        parent_objects = {key: Study.objects(id=val).get() for key, val in newparents.items()}
-        self.parents.update(parent_objects)
-        self.save()
-
-    def add_params(self, newparams):
-        """Add all of the params in the given dict."""
-        self.params.update(newparams)
-        self.save()
+    ## Methods for handling the saved data ##
 
     @property
     def data(self):
@@ -507,6 +505,23 @@ class Study(Document):
         self.file.delete()
         self.newfile.delete()
         self.save(validate=False)
+
+    ## Methods for handling alerts ##
+
+    @property
+    def alerts(self):
+        """Most recent alerts."""
+        return self.alertslog.get_alerts(0)
+
+    def clear_log(self):
+        """Remove log entries."""
+        self.alertslog.clear()
+        self.save()
+
+    def fire_alerts(self):
+        """Fire alert triggers based on newly active and inactive alerts."""
+        for trigger in self.triggers.values():
+            trigger.check_conds(self)
 
     def get_trigger(self, trig_id):
         """Return the desired trigger."""
