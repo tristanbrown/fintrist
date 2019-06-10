@@ -12,6 +12,8 @@ REQUIREMENTS = [
     'mongoengine',
     'blinker',
     'apscheduler',
+    'dask',
+    'cloudpickle',
     'alpha_vantage>=2.0.0',
 ]
 
