@@ -1,18 +1,15 @@
 """Set up Flask app"""
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect
+import dash
+import dash_html_components as html
 
 import fintrist
 from fintrist_app.settings import Config
-from fintrist_app.version2.views import dash_blueprint
-from fintrist_app.studies.views import studies_blueprint
+# from fintrist_app.studies.views import studies_blueprint
+# from fintrist_app.version2.views import dash_blueprint
 
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 # Set up Flask
-app = Flask(__name__)
-app.config.from_object(Config())
-
-app.register_blueprint(studies_blueprint, url_prefix="/studies")
-app.register_blueprint(dash_blueprint, url_prefix="/version2")
-
-@app.route("/")
-def index():
-    return render_template('home.html')
+app = dash.Dash(__name__)
+server = app.server
+server.config.from_object(Config())
