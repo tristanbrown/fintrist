@@ -2,6 +2,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, session
 from fintrist import Study, Process
+from fintrist.scheduling import scheduler
 from fintrist_app.studies.forms import (
     sel_form, multisel_form, AddForm, trigger_build, inputs_build)
 from fintrist_app import util
@@ -9,6 +10,53 @@ from fintrist_app import util
 studies_blueprint = Blueprint('studies',
                               __name__,
                               template_folder='templates/studies')
+
+@studies_blueprint.route('/manage', methods=['GET', 'POST'])
+def manage():
+    """Manage the running of Studies.
+    """
+    active_jobs = [job.id for job in scheduler.get_jobs()]
+    # Set up Inactive studies selection list
+    inactiveform = multisel_form('Studies')
+    inactive_studies = Study.objects(id__not__in=active_jobs)
+    inactive_choices = util.get_choices(inactive_studies())
+    inactiveform.selections.choices = inactive_choices
+    # Set up Active studies selection list
+    activeform = multisel_form('Studies')
+    active_studies = Study.objects(id__in=active_jobs)
+    active_choices = util.get_choices(active_studies())
+    activeform.selections.choices = active_choices
+    # Activate studies
+    if inactiveform.validate_on_submit() and inactiveform.moveright.data:
+        selections = inactiveform.selections.data
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.activate()
+        return redirect(url_for('studies.manage'))
+    # Deactivate studies
+    elif activeform.validate_on_submit() and activeform.moveleft.data:
+        selections = activeform.selections.data
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.deactivate()
+        return redirect(url_for('studies.manage'))
+    # Run selected studies once
+    elif inactiveform.validate_on_submit() and inactiveform.runonce.data:
+        selections = inactiveform.selections.data
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.run_study_once()
+    elif activeform.validate_on_submit() and activeform.runonce.data:
+        selections = activeform.selections.data
+        editstudies = Study.objects(id__in=selections)
+        for study in editstudies:
+            study.run_study_once()
+
+    return render_template(
+        'manage_study.html',
+        activeform=activeform,
+        inactiveform=inactiveform,
+        )
 
 @studies_blueprint.route('/edit', methods=['GET', 'POST'])
 def edit():

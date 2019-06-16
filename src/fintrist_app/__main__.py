@@ -1,4 +1,4 @@
-"""Main module for the Flask app for Fintrist."""
+"""Main module for running the Flask app for Fintrist."""
 from fintrist.scheduling import scheduler
 from fintrist_app import app
 
