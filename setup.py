@@ -8,6 +8,7 @@ REQUIREMENTS = [
     'flask',
     'flask_wtf',
     'wtforms',
+    'dash',
     'python-dotenv',
     'mongoengine',
     'blinker',
