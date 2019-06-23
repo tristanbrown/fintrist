@@ -5,23 +5,24 @@ from dash.dependencies import Input, Output
 from fintrist_app import app
 
 layout = html.Div([
-    html.H3('App 1'),
+    html.H3('App 2'),
     dcc.Dropdown(
-        id='app-1-dropdown',
+        id='app-2-dropdown',
         options=[
-            {'label': 'App 1 - {}'.format(i), 'value': i} for i in [
+            {'label': 'App 2 - {}'.format(i), 'value': i} for i in [
                 'NYC', 'MTL', 'LA'
             ]
         ]
     ),
-    html.Div(id='app-1-display-value'),
-    dcc.Link('Go to App 2', href='/apps/app2')
+    html.Div(id='app-2-display-value'),
+    dcc.Link('Go to App 1', href='/apps/app1'),
+    html.A('Manage Studies', href='/studies/manage'),
+    html.A('Edit Studies', href='/studies/edit'),
 ])
 
 
 @app.callback(
-    Output('app-1-display-value', 'children'),
-    [Input('app-1-dropdown', 'value')])
-
+    Output('app-2-display-value', 'children'),
+    [Input('app-2-dropdown', 'value')])
 def display_value(value):
     return 'You have selected "{}"'.format(value)
