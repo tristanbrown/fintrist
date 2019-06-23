@@ -15,13 +15,14 @@ layout = html.Div([
         ]
     ),
     html.Div(id='app-1-display-value'),
-    dcc.Link('Go to App 2', href='/apps/app2')
+    dcc.Link('Go to App 2', href='/apps/app2'),
+    html.A('Manage Studies', href='/studies/manage'),
+    html.A('Edit Studies', href='/studies/edit'),
 ])
 
 
 @app.callback(
     Output('app-1-display-value', 'children'),
     [Input('app-1-dropdown', 'value')])
-
 def display_value(value):
     return 'You have selected "{}"'.format(value)
