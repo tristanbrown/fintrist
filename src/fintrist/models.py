@@ -17,9 +17,11 @@ from mongoengine.fields import (
 from mongoengine import signals
 from apscheduler.jobstores.base import JobLookupError
 from bson.dbref import DBRef
-import dask.multiprocessing as daskmp
+# import dask.multiprocessing as daskmp
+import dask.threaded as daskth
 
 from fintrist import processes, util
+from fintrist.settings import Config
 from fintrist.scheduling import scheduler
 from fintrist.notify import Notification
 
@@ -149,6 +151,9 @@ class Study(Document):
     schema_version = IntField(default=1)
     meta = {'strict': False}
 
+    def __repr__(self):
+        return f"Study: {self.name}"
+
     # pylint: disable=no-member
     # pylint: disable=unsupported-delete-operation
     # pylint: disable=not-a-mapping
@@ -247,7 +252,7 @@ class Study(Document):
 
     def schedule(self, force=False):
         """Schedule the Study to run when all of its inputs are valid."""
-        daskmp.get(self.get_dag(force), str(self.id))
+        daskth.get(self.get_dag(force), str(self.id), num_workers=Config.NUM_WORKERS)
 
     def get_dag(self, force=False):
         """Get the directed acyclic graph for this Study."""
@@ -320,9 +325,12 @@ class Study(Document):
     def data(self):
         """Preprocess the data field to return the data in a usable format."""
         self.transfer_file()
+        file_obj = self.file.get()
         try:
-            return pickle.loads(self.file.read())
-        except TypeError:
+            result = file_obj.read()
+            file_obj.seek(0)
+            return pickle.loads(result)
+        except:
             return None
 
     @data.setter
