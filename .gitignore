@@ -12,7 +12,7 @@
 !.gitignore
 
 # Ignore generated data
-data/*
+data/
 
 # Ignore scratchwork
 scratch*
