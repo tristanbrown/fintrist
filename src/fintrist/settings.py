@@ -11,7 +11,7 @@ class Config():
     APIKEY = os.getenv('APIKEY')
     APP_HOST = os.getenv('COMPUTERNAME')
     DATABASE_NAME = os.getenv('DB_NAME')
-    local = int(os.getenv('DB_LOCAL'))
+    local = int(os.getenv('DB_LOCAL') or 0)
     if local:
         USERNAME = None
         PASSWORD = None
@@ -20,4 +20,5 @@ class Config():
         USERNAME = os.getenv('DB_USERNAME')
         PASSWORD = os.getenv('DB_PASSWORD')
         DB_HOST = os.getenv('DB_HOST')
-    DB_PORT = int(os.getenv('DB_PORT'))
+    DB_PORT = int(os.getenv('DB_PORT') or 5000)
+    NUM_WORKERS = int(os.getenv('NUM_WORKERS') or 4)

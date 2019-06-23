@@ -6,7 +6,7 @@ import mongoengine
 from .settings import Config
 from .models import *
 
-__all__ = ('Stream',)
+__all__ = ('Study',)
 
 mongoengine.connect(
     Config.DATABASE_NAME,
