@@ -1,7 +1,7 @@
 """
 The engine that chooses a scraper and returns data.
 """
-
+import pandas as pd
 from fintrist.settings import Config
 from fintrist.processes.scrapers.equity import Equity
 
@@ -21,5 +21,7 @@ def stock(symbol, frequency):
         data = scraper.weekly()
     elif frequency == 'monthly':
         data = scraper.monthly()
+    data.index = pd.to_datetime(data.index)
+    data.columns = [col.split()[1] for col in data.columns]
     alerts = ['got data']
     return (data, alerts)

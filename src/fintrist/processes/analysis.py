@@ -21,8 +21,8 @@ def moving_avg(data):
     ::parents:: data
     """
     centering = False
-    outdf = data[['4. close']]
-    outdf = outdf.rename(columns={'4. close': 'close_price'})
+    outdf = data[['close']]
+    outdf = outdf.rename(columns={'close': 'close_price'})
     outdf['5-day avg'] = outdf.rolling(5, center=centering).mean()
     outdf['30-day avg'] = outdf['close_price'].rolling(30, center=centering).mean()
     outdf['100-day avg'] = outdf['close_price'].rolling(100, center=centering).mean()
