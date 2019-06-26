@@ -37,12 +37,13 @@ def sample_dates(data, N=100, window=365, backdate=0):
     ::parents:: data
     ::params:: N, window, backdate
     """
-    if isinstance(backdate, int):
-        backdt = dt.datetime.now() - dt.timedelta(days=backdate)
-    else:
+    try:
+        backdt = dt.datetime.now() - dt.timedelta(days=int(backdate))
+    except ValueError:
         backdt = dateutil.parser.parse(backdate)
     interval = data.index[
-        (data.index > backdt - dt.timedelta(days=window)) & (data.index <= backdt)]
-    sample_idx = np.random.choice(interval, N, replace=False)
+        (data.index > backdt - dt.timedelta(days=int(window))) & (data.index <= backdt)]
+    sample_idx = np.random.choice(interval, int(N), replace=False)
     sample_idx.sort()
-    return sample_idx
+    alerts = ['complete']
+    return (sample_idx, alerts)
