@@ -20,10 +20,11 @@ from bson.dbref import DBRef
 # import dask.multiprocessing as daskmp
 import dask.threaded as daskth
 
-from fintrist import processes, util
+from fintrist import util
 from fintrist.settings import Config
 from fintrist.scheduling import scheduler
 from fintrist.notify import Notification
+import fintrist_ds
 
 __all__ = ('Study', 'Process', 'Trigger')
 
@@ -424,7 +425,7 @@ class Process(Document):
     @property
     def function(self):
         """Get the function corresponding to the Process name."""
-        return processes.ALL[self.name]
+        return fintrist_ds.CATALOG[self.name]
 
     def get_proc_params(self, func):
         """Return the names for the parent data and parameter arguments."""

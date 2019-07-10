@@ -4,12 +4,13 @@ Database Management
 import sys
 
 from mongoengine.errors import NotUniqueError
-from fintrist import processes, util
+from fintrist_ds import CATALOG
+from fintrist import util
 from fintrist.models import Process
 
 def register():
     """Register all of the processes in the database."""
-    for name in processes.ALL:
+    for name in CATALOG:
         try:
             Process(name=name).save(force_insert=True)
             print("Inserted '{}'.".format(name))
