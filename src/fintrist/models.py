@@ -19,6 +19,7 @@ from apscheduler.jobstores.base import JobLookupError
 from bson.dbref import DBRef
 # import dask.multiprocessing as daskmp
 import dask.threaded as daskth
+import pandas as pd
 
 from fintrist import util
 from fintrist.settings import Config
@@ -26,7 +27,7 @@ from fintrist.scheduling import scheduler
 from fintrist.notify import Notification
 import fintrist_ds
 
-__all__ = ('Study', 'Process', 'Trigger')
+__all__ = ('Study', 'Backtest', 'Process', 'Trigger')
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,11 @@ class AlertsLog(EmbeddedDocument):
             return set()
 
     @property
+    def newest(self):
+        """Most recent alerts."""
+        return self.get_alerts(0)
+
+    @property
     def newactive(self):
         """Newly active alerts."""
         return self.get_alerts(0) - self.get_alerts(1)
@@ -99,22 +105,35 @@ class Trigger(EmbeddedDocument):
     def __str__(self):
         return f"{self.matchtext} {self.condition} {self.on}"
 
-    def check_conds(self, study):
+    def check_fire(self, study):
+        """Check if the trigger should be fired, and then run actions."""
+        triggered = self.check_conds(study.alertslog)
+        if triggered:
+            self.fire(study=study, alerts=triggered)
+
+    def get_actions(self, alertslog):
+        """Return any actions that should be triggered."""
+        triggered = self.check_conds(alertslog)
+        if triggered:
+            return self.actions
+        else:
+            return []
+
+    def check_conds(self, alertslog):
         """Check if the conditions for triggering have been met by the alert."""
         if self.on == 'active':
-            alerts = study.alertslog.newactive
+            alerts = alertslog.newactive
         elif self.on == 'inactive':
-            alerts = study.alertslog.newinactive
+            alerts = alertslog.newinactive
         elif self.on == 'all':
-            alerts = study.alerts
+            alerts = alertslog.newest
         triggered = []
         for alert in alerts:
             if self.condition == 'in' and self.matchtext in alert:
                 triggered.append(alert)
             elif self.condition == 'is' and self.matchtext == alert:
                 triggered.append(alert)
-        if triggered:
-            self.fire(study=study, alerts=triggered)
+        return triggered
 
     def fire(self, **kwargs):
         """Trigger the specified actions."""
@@ -126,14 +145,10 @@ def clean_files(sender, document):  #pylint: disable=unused-argument
     document.remove_files()
 
 @clean_files.apply
-class Study(Document):
+class BaseStudy(Document):
     """Contains data process results."""
     # ID
     name = StringField(max_length=120, required=True)
-
-    # Defining the analysis that generated the data
-    process = ReferenceField('Process', required=True)
-    valid_age = IntField(default=0)  # Zero means always valid
 
     # Data Inputs
     parents = MapField(ReferenceField('Study'))  # Precursor data used by the Analysis
@@ -144,29 +159,26 @@ class Study(Document):
     newfile = FileField()
     timestamp = DateTimeField(default=dt.datetime.now(tzlocal()))
 
-    # Alerts
-    alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
-    triggers = MapField(EmbeddedDocumentField('Trigger'))
-
     # Meta
     schema_version = IntField(default=1)
-    meta = {'strict': False}
-
-    def __repr__(self):
-        return f"Study: {self.name}"
+    meta = {
+        'strict': False,
+        'collection': 'study',
+        'allow_inheritance': True,
+        }
 
     # pylint: disable=no-member
-    # pylint: disable=unsupported-delete-operation
-    # pylint: disable=not-a-mapping
-    # pylint: disable=unsupported-assignment-operation
     def clean(self):
         """Clean attributes."""
         # Parents
         for key, parent in self.parents.items():
             if isinstance(parent, DBRef):
                 del self.parents[key]
-        # Alertslog
-        self.alertslog.trim()
+        self.subclean()
+
+    def subclean(self):
+        """Cleaning operations for subclasses."""
+        pass
 
     ## Methods defining the Study ##
 
@@ -177,6 +189,106 @@ class Study(Document):
         self.reload()
         if self.active:
             scheduler.modify_job(str(self.id), name=self.name)
+
+    ## Methods related to scheduling runs ##
+
+    @property
+    def active(self):
+        """Boolean value of whether the Study is active in the scheduler."""
+        return False
+
+    ## Methods for handling inputs ##
+
+    def add_parents(self, newparents):
+        """Add all of the parents in the given dict of ids."""
+        parent_objects = {key: Study.objects(id=val).get() for key, val in newparents.items()}
+        self.parents.update(parent_objects)
+        self.save()
+
+    def add_params(self, newparams):
+        """Add all of the params in the given dict."""
+        self.params.update(newparams)
+        self.save()
+
+    def remove_inputs(self, inputs):
+        """Remove all of the inputs in the given iterable of names."""
+        for key in inputs:
+            self.parents.pop(key, None)
+            self.params.pop(key, None)
+        self.save()
+
+    ## Methods for handling the saved data ##
+
+    @property
+    def data(self):
+        """Preprocess the data field to return the data in a usable format."""
+        self.transfer_file()
+        file_obj = self.file.get()
+        try:
+            result = file_obj.read()
+            file_obj.seek(0)
+            return pickle.loads(result)
+        except:
+            return None
+
+    @data.setter
+    def data(self, newdata):
+        """Process the data for storage."""
+        if newdata is None:
+            self.remove_files()
+        else:
+            if not self.file:
+                self.write_to(self.file, newdata)
+            else:
+                self.write_to(self.newfile, newdata)
+                self.transfer_file()
+
+    def write_to(self, field, newdata):
+        """Write data to a FileField."""
+        field.new_file()
+        field.write(pickle.dumps(newdata))
+        field.close()
+        self.save()
+
+    def transfer_file(self):
+        """Transfer the data from newfile to file."""
+        if self.newfile:
+            newfile = self.newfile.read()
+            self.file.replace(newfile)
+            self.save()
+            self.newfile.delete()
+            self.save()
+
+    def remove_files(self):
+        """Remove the data."""
+        self.file.delete()
+        self.newfile.delete()
+        self.save(validate=False)
+
+@clean_files.apply
+class Study(BaseStudy):
+    """Contains data process results."""
+    # Defining the analysis that generated the data
+    process = ReferenceField('Process', required=True)
+    valid_age = IntField(default=0)  # Zero means always valid
+
+    # Alerts
+    alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
+    triggers = MapField(EmbeddedDocumentField('Trigger'))
+
+    # pylint: disable=no-member
+    # pylint: disable=not-a-mapping
+    # pylint: disable=unsupported-delete-operation
+    # pylint: disable=unsupported-assignment-operation
+    def __repr__(self):
+        return f"Study: {self.name}"
+
+    def subclean(self):
+        """Clean attributes."""
+        # Alertslog
+        self.alertslog.trim()
+
+    ## Methods defining the Study ##
 
     def set_process(self, name):
         """Set the Study's Process based on a name."""
@@ -284,24 +396,6 @@ class Study(Document):
 
     ## Methods for handling inputs ##
 
-    def add_parents(self, newparents):
-        """Add all of the parents in the given dict of ids."""
-        parent_objects = {key: Study.objects(id=val).get() for key, val in newparents.items()}
-        self.parents.update(parent_objects)
-        self.save()
-
-    def add_params(self, newparams):
-        """Add all of the params in the given dict."""
-        self.params.update(newparams)
-        self.save()
-
-    def remove_inputs(self, inputs):
-        """Remove all of the inputs in the given iterable of names."""
-        for key in inputs:
-            self.parents.pop(key, None)
-            self.params.pop(key, None)
-        self.save()
-
     @property
     def all_parents(self):
         """Full dict of parent kwargs, even if not set yet."""
@@ -320,60 +414,12 @@ class Study(Document):
             deps.update(parent.dependencies)
         return deps
 
-    ## Methods for handling the saved data ##
-
-    @property
-    def data(self):
-        """Preprocess the data field to return the data in a usable format."""
-        self.transfer_file()
-        file_obj = self.file.get()
-        try:
-            result = file_obj.read()
-            file_obj.seek(0)
-            return pickle.loads(result)
-        except:
-            return None
-
-    @data.setter
-    def data(self, newdata):
-        """Process the data for storage."""
-        if newdata is None:
-            self.remove_files()
-        else:
-            if not self.file:
-                self.write_to(self.file, newdata)
-            else:
-                self.write_to(self.newfile, newdata)
-                self.transfer_file()
-
-    def write_to(self, field, newdata):
-        """Write data to a FileField."""
-        field.new_file()
-        field.write(pickle.dumps(newdata))
-        field.close()
-        self.save()
-
-    def transfer_file(self):
-        """Transfer the data from newfile to file."""
-        if self.newfile:
-            newfile = self.newfile.read()
-            self.file.replace(newfile)
-            self.save()
-            self.newfile.delete()
-            self.save()
-
-    def remove_files(self):
-        """Remove the data."""
-        self.file.delete()
-        self.newfile.delete()
-        self.save(validate=False)
-
     ## Methods for handling alerts ##
 
     @property
     def alerts(self):
         """Most recent alerts."""
-        return self.alertslog.get_alerts(0)
+        return self.alertslog.newest
 
     def clear_log(self):
         """Remove log entries."""
@@ -383,7 +429,14 @@ class Study(Document):
     def fire_alerts(self):
         """Fire alert triggers based on newly active and inactive alerts."""
         for trigger in self.triggers.values():
-            trigger.check_conds(self)
+            trigger.check_fire(self)
+
+    def check_actions(self, alertslog):
+        """Check the triggered actions."""
+        actions = set()
+        for trigger in self.triggers.values():
+            actions.update(trigger.get_actions(alertslog))
+        return actions
 
     def get_trigger(self, trig_id):
         """Return the desired trigger."""
@@ -402,6 +455,41 @@ class Study(Document):
             self.save()
         except KeyError:
             print(f"Trigger '{trig_id}' not found.")
+
+@clean_files.apply
+class Backtest(BaseStudy):
+    """Contains backtesting results."""
+    days = IntField(default=365)
+    end = DateTimeField(default=dt.datetime.now(tzlocal()))
+
+    # pylint: disable=unsubscriptable-object
+    def __repr__(self):
+        return f"Backtest: {self.name}"
+
+    @property
+    def start(self):
+        return self.end - dt.timedelta(days=self.days)
+
+    def run(self):
+        """Backtest the model Study on the interval and record actions."""
+        model = self.parents['model']
+        function = model.process.function
+        parent_data = {name: study.data for name, study in model.parents.items()}
+
+        # Run on each day in the interval
+        simulated = []
+        alertslog = AlertsLog()
+        for view_date in model.data[self.start:self.end].index:
+            trunc_data = {name: data[:view_date] for name, data in parent_data.items()}
+            _, newalerts = function(**trunc_data, **model.params)
+            alertslog.record_alerts(newalerts, view_date)
+            actions = model.check_actions(alertslog)
+            simulated.append((view_date, actions))
+
+        # Save the data
+        self.data = pd.DataFrame(simulated, columns=['date', 'signals']).set_index('date')
+        self.timestamp = dt.datetime.now(tzlocal())
+        self.save()
 
 class Process(Document):
     """Handles for choosing the appropriate data-processing functions.
