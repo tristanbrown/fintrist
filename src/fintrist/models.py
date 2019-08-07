@@ -19,6 +19,7 @@ from apscheduler.jobstores.base import JobLookupError
 from bson.dbref import DBRef
 # import dask.multiprocessing as daskmp
 import dask.threaded as daskth
+import numpy as np
 import pandas as pd
 
 from fintrist import util
@@ -95,6 +96,7 @@ class Trigger(EmbeddedDocument):
     action_choices = ('log', 'printhead', 'email', 'sms', 'buy', 'sell')
     on = StringField(default='active', choices=alert_types)
     condition = StringField(default='in', choices=match_if)
+    # TODO: Change matchtext to populate choices based on the analysis
     matchtext = StringField(max_length=120)
     actions = ListField(StringField(choices=action_choices))
 
@@ -458,7 +460,21 @@ class Study(BaseStudy):
 
 @clean_files.apply
 class Backtest(BaseStudy):
-    """Contains backtesting results."""
+    """Contains backtesting results.
+
+    days: Length of the backtesting interval.
+    end: Last date of the backtesting interval.
+
+    super.parents (dict):
+        model: Study containing the analysis to backtest
+        prices: Study containing historical price data
+
+    run: Run the analysis on each day of the interval, recording the action
+        signals that are triggered.
+
+    trade: Simulates a trading portfolio based on the action signals stored
+        after Backtest.run.
+    """
     days = IntField(default=365)
     end = DateTimeField(default=dt.datetime.now(tzlocal()))
 
@@ -468,11 +484,13 @@ class Backtest(BaseStudy):
 
     @property
     def start(self):
+        """The first date of the interval"""
         return self.end - dt.timedelta(days=self.days)
 
     def run(self):
         """Backtest the model Study on the interval and record actions."""
         model = self.parents['model']
+        prices = self.parents['price']
         function = model.process.function
         parent_data = {name: study.data for name, study in model.parents.items()}
 
@@ -487,7 +505,10 @@ class Backtest(BaseStudy):
             simulated.append((view_date, actions))
 
         # Save the data
-        self.data = pd.DataFrame(simulated, columns=['date', 'signals']).set_index('date')
+        simdata = pd.DataFrame(simulated, columns=['date', 'signals']).set_index('date')
+        pricedata = prices.data
+        simdata['price'] = (pricedata['high'] + pricedata['low'])/2
+        self.data = simdata
         self.timestamp = dt.datetime.now(tzlocal())
         self.save()
 
