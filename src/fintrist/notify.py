@@ -21,6 +21,10 @@ class Notification():
         """Send an sms text about the alert."""
         print("'sms' not implemented")
 
-    def trade(self, study, alerts, **kwargs):
-        """Initiate a trade based on the alert."""
-        print("'trade' not implemented")
+    def buy(self, study, alerts, **kwargs):
+        """Initiate a buy trade based on the alert."""
+        print("'buy' not implemented")
+
+    def sell(self, study, alerts, **kwargs):
+        """Initiate a buy trade based on the alert."""
+        print("'buy' not implemented")

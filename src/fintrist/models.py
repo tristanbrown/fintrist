@@ -92,7 +92,7 @@ class Trigger(EmbeddedDocument):
     """A rule determining how an action is triggered."""
     alert_types = ('active', 'inactive', 'all')
     match_if = ('in', 'is',)
-    action_choices = ('log', 'printhead', 'email', 'sms', 'trade')
+    action_choices = ('log', 'printhead', 'email', 'sms', 'buy', 'sell')
     on = StringField(default='active', choices=alert_types)
     condition = StringField(default='in', choices=match_if)
     matchtext = StringField(max_length=120)
