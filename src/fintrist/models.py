@@ -28,7 +28,7 @@ from fintrist.scheduling import scheduler
 from fintrist.notify import Notification
 import fintrist_ds
 
-__all__ = ('Study', 'Backtest', 'Process', 'Trigger')
+__all__ = ('BaseStudy', 'Study', 'Backtest', 'Process', 'Trigger')
 
 logger = logging.getLogger(__name__)
 
@@ -153,13 +153,14 @@ class BaseStudy(Document):
     name = StringField(max_length=120, required=True)
 
     # Data Inputs
-    parents = MapField(ReferenceField('Study'))  # Precursor data used by the Analysis
+    parents = MapField(ReferenceField('BaseStudy'))  # Precursor data used by the Analysis
     params = DictField()  # Processing parameters.
 
     # Data Outputs
     file = FileField()
     newfile = FileField()
     timestamp = DateTimeField(default=dt.datetime.now(tzlocal()))
+    valid_age = IntField(default=0)  # Zero means always valid
 
     # Meta
     schema_version = IntField(default=1)
@@ -195,15 +196,48 @@ class BaseStudy(Document):
     ## Methods related to scheduling runs ##
 
     @property
+    def valid(self):
+        """Check if the Study data is still valid."""
+        # Check the age of the data
+        if self.valid_age == 0:
+            current = True
+        else:
+            current = dt.datetime.utcnow() - self.timestamp < dt.timedelta(seconds=self.valid_age)
+        # Check if the parents are valid too
+        if current:
+            for parent in self.parents.values():
+                if not parent.valid:
+                    current = False
+                    break
+        return current
+
+    @property
+    def dependencies(self):
+        """Create a dictionary of dependencies."""
+        deps = {str(self.id): [str(parent.id) for parent in self.parents.values()]}
+        for parent in self.parents.values():
+            deps.update(parent.dependencies)
+        return deps
+
+    @property
     def active(self):
         """Boolean value of whether the Study is active in the scheduler."""
         return False
+
+    def run_if(self, dummy=None):
+        """Run the Study if it's no longer valid."""
+        if not self.valid:
+            self.run()
+
+    def run(self, dummy=None):
+        """Run the Study process on the inputs and return any alerts."""
+        raise Exception("Cannot run from BaseStudy objects.")
 
     ## Methods for handling inputs ##
 
     def add_parents(self, newparents):
         """Add all of the parents in the given dict of ids."""
-        parent_objects = {key: Study.objects(id=val).get() for key, val in newparents.items()}
+        parent_objects = {key: BaseStudy.objects(id=val).get() for key, val in newparents.items()}
         self.parents.update(parent_objects)
         self.save()
 
@@ -272,7 +306,6 @@ class Study(BaseStudy):
     """Contains data process results."""
     # Defining the analysis that generated the data
     process = ReferenceField('Process', required=True)
-    valid_age = IntField(default=0)  # Zero means always valid
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
@@ -306,22 +339,6 @@ class Study(BaseStudy):
             scheduler.reschedule_job(str(self.id), trigger='interval', seconds=self.valid_age)
 
     ## Methods related to scheduling runs ##
-
-    @property
-    def valid(self):
-        """Check if the Study data is still valid."""
-        # Check the age of the data
-        if self.valid_age == 0:
-            current = True
-        else:
-            current = dt.datetime.utcnow() - self.timestamp < dt.timedelta(seconds=self.valid_age)
-        # Check if the parents are valid too
-        if current:
-            for parent in self.parents.values():
-                if not parent.valid:
-                    current = False
-                    break
-        return current
 
     @property
     def active(self):
@@ -373,18 +390,13 @@ class Study(BaseStudy):
         """Get the directed acyclic graph for this Study."""
         dag = {}
         for key, deps in self.dependencies.items():
-            study_obj = Study.objects(id=key).get()
+            study_obj = BaseStudy.objects(id=key).get()
             if force or key == str(self.id):
                 run = study_obj.run
             else:
                 run = study_obj.run_if
             dag[key] = (run, deps)
         return dag
-
-    def run_if(self, dummy=None):
-        """Run the Study if it's no longer valid."""
-        if not self.valid:
-            self.run()
 
     def run(self, dummy=None):
         """Run the Study process on the inputs and return any alerts."""
@@ -407,14 +419,6 @@ class Study(BaseStudy):
     def all_params(self):
         """Full dict of param kwargs, even if not set yet."""
         return {key: self.params.get(key) for key in self.process.params}
-
-    @property
-    def dependencies(self):
-        """Create a dictionary of dependencies."""
-        deps = {str(self.id): [str(parent.id) for parent in self.parents.values()]}
-        for parent in self.parents.values():
-            deps.update(parent.dependencies)
-        return deps
 
     ## Methods for handling alerts ##
 
@@ -487,7 +491,7 @@ class Backtest(BaseStudy):
         """The first date of the interval"""
         return self.end - dt.timedelta(days=self.days)
 
-    def run(self):
+    def run(self, dummy=None):
         """Backtest the model Study on the interval and record actions."""
         model = self.parents['model']
         prices = self.parents['price']

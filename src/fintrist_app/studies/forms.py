@@ -4,7 +4,7 @@ from flask_wtf import FlaskForm
 from wtforms import (StringField, SubmitField, SelectField, IntegerField,
                      SelectMultipleField, BooleanField, validators)
 
-from fintrist import Study, Trigger
+from fintrist import Study, BaseStudy, Trigger
 from fintrist_app import util
 
 class AddForm(FlaskForm):
@@ -74,7 +74,7 @@ def inputs_build(parents, params):
         parent_keys = parents
         param_keys = params
         submit = SubmitField('Save')
-    db_objects = util.get_choices(Study.objects())
+    db_objects = util.get_choices(BaseStudy.objects())
     for key in parents:
         setattr(InputsForm, key, SelectField(key, choices=db_objects))
     for key in params:

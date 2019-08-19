@@ -62,6 +62,9 @@ def simulate(backtest, cash=10000, weightstep=0.1, confidence=2):
     """
     # TODO: allow sub-intervals of dates
     # TODO: implement random sampling of start dates/intervals
+    cash = int(cash)
+    weightstep = int(weightstep)
+    confidence = int(confidence)
     history = []
     portfolio = Portfolio(cash, 0, 0)
 
