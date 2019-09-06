@@ -515,6 +515,7 @@ class Backtest(BaseStudy):
         self.data = simdata
         self.timestamp = dt.datetime.now(tzlocal())
         self.save()
+        Notification(['printhead'], study=self, alerts=[])
 
 class Process(Document):
     """Handles for choosing the appropriate data-processing functions.

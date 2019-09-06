@@ -6,7 +6,7 @@ import pandas as pd
 import datetime as dt
 import dateutil
 
-__all__ = ['any_data', 'moving_avg', 'sample_dates', 'simulate']
+__all__ = ['any_data', 'moving_avg', 'sample_dates', 'simulate', 'multisim']
 
 def any_data(data):
     """If there is data, raise alert.
@@ -44,27 +44,54 @@ def sample_dates(data, N=100, window=365, backdate=0):
     ::params:: N, window, backdate
     """
     try:
-        backdt = dt.datetime.now() - dt.timedelta(days=int(backdate))
+        backdt = data.index[-1] - dt.timedelta(days=int(backdate))
     except ValueError:
         backdt = dateutil.parser.parse(backdate)
-    interval = data.index[
-        (data.index > backdt - dt.timedelta(days=int(window))) & (data.index <= backdt)]
-    sample_idx = np.random.choice(interval, int(N), replace=False)
+    interval = data[backdt - dt.timedelta(days=int(window)):backdt]
+    sample_idx = np.random.choice(interval.index, int(N), replace=False)
     sample_idx.sort()
     alerts = ['complete']
     return (sample_idx, alerts)
 
-def simulate(backtest, cash=10000, weightstep=0.1, confidence=2):
+def multisim(backtest, cash=10000, weightstep=0.1, confidence=2, days=50, N=10):
+    """Run the simulation across various sampled date intervals.
+
+    ::parents:: backtest
+    ::params:: cash, weightstep, confidence, days, N
+    """
+    days = int(days)
+    window = backtest.index[-1] - backtest.index[0] - dt.timedelta(days=days)
+    start_dates, _ = sample_dates(backtest, N=N, window=window.days, backdate=days)
+    cols = ['start date', 'end date', 'market return', '% return', 'alpha']
+    results = []
+    for start in start_dates:
+        start = pd.Timestamp(start)
+        end = start + dt.timedelta(days=days)
+        trial, _ = simulate(backtest, cash, weightstep, confidence, start, days)
+        endvals = trial.tail(1)[['market return', '% return', 'alpha']].values[0]
+        results.append([start, end, *endvals])
+    data = pd.DataFrame(results, columns=cols)
+    alerts = ['complete']
+    return data, alerts
+
+def simulate(backtest, cash=10000, weightstep=0.5, confidence=2, start_date=None, days=0):
     """Calculate the portfolio value gains/losses over the backtest period.
 
     ::parents:: backtest
-    ::params:: cash, weightstep, confidence
+    ::params:: cash, weightstep, confidence, start_date, days
     """
-    # TODO: allow sub-intervals of dates
-    # TODO: implement random sampling of start dates/intervals
     cash = int(cash)
-    weightstep = int(weightstep)
+    weightstep = float(weightstep)
     confidence = int(confidence)
+    days = int(days)
+    # Set up sub-intervals
+    if start_date and days:
+        if isinstance(start_date, str):
+            start_date = dateutil.parser.parse(start_date)
+        end_date = start_date + dt.timedelta(days=days)
+        backtest = backtest[start_date:end_date]
+
+    # Run the portfolio
     history = []
     portfolio = Portfolio(cash, 0, 0)
 
@@ -75,7 +102,7 @@ def simulate(backtest, cash=10000, weightstep=0.1, confidence=2):
         history.append(portfolio.as_dict.copy())
 
     history_df = pd.DataFrame(history, backtest.index)
-    record = history_df[['cash', 'shares', 'value', '% return', 'market return']]
+    record = history_df[['cash', 'shares', 'value', 'market return', '% return', 'alpha']]
     alerts = ['complete']
     return (record, alerts)
 
@@ -117,6 +144,7 @@ class Portfolio():
         adict['value'] = self.value
         adict['% return'] = self.pct_ret
         adict['market return'] = self.mkt_ret
+        adict['alpha'] = self.pct_ret - self.mkt_ret
         del adict['start_value']
         del adict['start_price']
         del adict['_price']
