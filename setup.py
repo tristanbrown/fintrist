@@ -17,6 +17,8 @@ REQUIREMENTS = [
     'cloudpickle',
     'alpha_vantage>=2.0.0',
     'pymc3',
+    'finta',
+    'tulipy',
 ]
 
 setup(
