@@ -2,6 +2,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ProcessPoolExecutor
 from apscheduler.jobstores.mongodb import MongoDBJobStore
+from distributed import Client
 
 from fintrist.settings import Config
 
@@ -27,3 +28,4 @@ def create_scheduler():
     )
 
 scheduler = create_scheduler()
+client = Client(Config.DASK_HOST)

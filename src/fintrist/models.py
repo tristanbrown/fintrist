@@ -19,12 +19,13 @@ from apscheduler.jobstores.base import JobLookupError
 from bson.dbref import DBRef
 # import dask.multiprocessing as daskmp
 import dask.threaded as daskth
+
 import numpy as np
 import pandas as pd
 
 from fintrist import util
 from fintrist.settings import Config
-from fintrist.scheduling import scheduler
+from fintrist.scheduling import scheduler, client
 from fintrist.notify import Notification
 import fintrist_ds
 
@@ -384,7 +385,7 @@ class Study(BaseStudy):
 
     def schedule(self, force=False):
         """Schedule the Study to run when all of its inputs are valid."""
-        daskth.get(self.get_dag(force), str(self.id), num_workers=Config.NUM_WORKERS)
+        client.get(self.get_dag(force), str(self.id), num_workers=Config.NUM_WORKERS)
 
     def get_dag(self, force=False):
         """Get the directed acyclic graph for this Study."""
