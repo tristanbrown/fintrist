@@ -1,0 +1,27 @@
+{symbol} daily:
+  process: stock
+  valid_age: 60
+  params:
+    symbol: {symbol}
+    frequency: daily
+  triggers:
+    - got data:
+        cond: all
+        actions:
+          - printhead
+          - log
+
+{symbol} avg:
+  process: moving_avg
+  valid_age: 60
+  parents:
+    - {symbol} daily
+  triggers:
+    - 5d under 30d:
+        cond: active
+        actions:
+          - buy
+    - 5d under 30d:
+        cond: inactive
+        actions:
+          - sell
