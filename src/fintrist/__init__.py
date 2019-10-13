@@ -1,9 +1,9 @@
 """
 Start Fintrist, connect to the DB, and expose public methods.
 """
-
 import mongoengine
 from .settings import Config
+from .scheduling import scheduler, client
 from .models import *
 
 __all__ = ('Study',)

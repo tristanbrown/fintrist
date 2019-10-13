@@ -2,7 +2,7 @@
 The engine that chooses a scraper and returns data.
 """
 import pandas as pd
-from fintrist.settings import Config
+from fintrist import Config
 from fintrist_ds.scrapers.equity import Equity
 
 __all__ = ['stock']

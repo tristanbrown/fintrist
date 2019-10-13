@@ -4,7 +4,7 @@ from apscheduler.executors.pool import ProcessPoolExecutor
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from distributed import Client
 
-from fintrist.settings import Config
+from fintrist import Config
 
 def create_scheduler():
     """Create a configured scheduler."""
@@ -19,8 +19,7 @@ def create_scheduler():
             authSource='admin',
             )}
     executors = {'default': ProcessPoolExecutor(max_workers=4)}
-    job_defaults = {'coalesce': True, 'max_instances': 1, 'misfire_grace_time': 5,}
-
+    job_defaults = {'coalesce': True, 'max_instances': 1, 'misfire_grace_time': 15,}
     return BackgroundScheduler(
         jobstores=jobstores,
         executors=executors,

@@ -30,7 +30,7 @@ def choose_host(options):
             return host
     raise ConnectionError("No available host connection.")
 
-class Config():
+class ConfigObj():
     APIKEY = os.getenv('APIKEY')
     APP_HOST = os.getenv('COMPUTERNAME')
     DATABASE_NAME = os.getenv('DB_NAME')
@@ -47,3 +47,5 @@ class Config():
     DASK_PORT = int(os.getenv('DASK_PORT') or 8786)
     NUM_WORKERS = int(os.getenv('NUM_WORKERS') or 4)
     DASK_HOST = f"{DB_HOST}:{DASK_PORT}"
+
+Config = ConfigObj()
