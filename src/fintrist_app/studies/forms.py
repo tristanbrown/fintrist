@@ -45,23 +45,22 @@ def multisel_form(label):
 
 def trigger_build(sel_trigger):
     """Generate a boolean form."""
-    alerttypes = simplechoices(Trigger.alert_types)
-    conds = simplechoices(Trigger.match_if)
-
+    alerttypes = util.simplechoices(Trigger.alert_types)
     if sel_trigger:
         def_type = sel_trigger.on
-        def_cond = sel_trigger.condition
         def_actions = sel_trigger.actions
+        all_alerts = util.simplechoices(sel_trigger._instance.process.alerts)
+        def_match = sel_trigger.matchtext
     else:
-        def_type = def_cond = None
+        def_type = None
         def_actions = []
-
+        all_alerts = []
+        def_match = None
     class TriggerForm(FlaskForm):
         actions = Trigger.action_choices
-        matchtext = StringField('Trigger match text')
+        matchtext = SelectField('Trigger match text', choices=all_alerts, default=def_match)
         submit = SubmitField('Save')
         alerttype = SelectField('Alert type', choices=alerttypes, default=def_type)
-        condition = SelectField('Match condition', choices=conds, default=def_cond)
 
     for action in TriggerForm.actions:
         checked = action in def_actions
@@ -80,7 +79,3 @@ def inputs_build(parents, params):
     for key in params:
         setattr(InputsForm, key, StringField(key))
     return InputsForm(prefix='inputs')
-
-def simplechoices(iterable):
-    """Convert an iterable into a list of duplicated tuples."""
-    return zip(iterable, iterable)

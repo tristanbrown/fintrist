@@ -90,11 +90,9 @@ class AlertsLog(EmbeddedDocument):
 
 class Trigger(EmbeddedDocument):
     """A rule determining how an action is triggered."""
-    alert_types = ('active', 'inactive', 'all')
-    match_if = ('in', 'is',)
+    alert_types = ('all', 'active', 'inactive')
     action_choices = ('log', 'printhead', 'email', 'sms', 'buy', 'sell')
     on = StringField(default='active', choices=alert_types)
-    condition = StringField(default='in', choices=match_if)
     # TODO: Change matchtext to populate choices based on the analysis
     matchtext = StringField(max_length=120)
     actions = ListField(StringField(choices=action_choices))
@@ -104,7 +102,7 @@ class Trigger(EmbeddedDocument):
     meta = {'strict': False}
 
     def __str__(self):
-        return f"{self.matchtext} {self.condition} {self.on}"
+        return f"{self.matchtext} {self.on}"
 
     def check_fire(self, study):
         """Check if the trigger should be fired, and then run actions."""
@@ -128,12 +126,7 @@ class Trigger(EmbeddedDocument):
             alerts = alertslog.newinactive
         elif self.on == 'all':
             alerts = alertslog.newest
-        triggered = []
-        for alert in alerts:
-            if self.condition == 'in' and self.matchtext in alert:
-                triggered.append(alert)
-            elif self.condition == 'is' and self.matchtext == alert:
-                triggered.append(alert)
+        triggered = [alert for alert in alerts if self.matchtext == alert]
         return triggered
 
     def fire(self, **kwargs):
@@ -526,6 +519,7 @@ class Process(Document):
     # Args
     parents = ListField(StringField())
     params = ListField(StringField())
+    alerts = ListField(StringField())
 
     # Meta
     schema_version = IntField(default=1)
@@ -533,7 +527,7 @@ class Process(Document):
     def clean(self):
         """Ensure the function is encoded properly."""
         # Set the args
-        self.parents, self.params = self.get_proc_params(self.function)
+        self.parents, self.params, self.alerts = self.get_proc_params(self.function)
 
     @property
     def function(self):
@@ -544,11 +538,14 @@ class Process(Document):
         """Return the names for the parent data and parameter arguments."""
         parents = []
         params = []
+        alerts = []
         docstr = inspect.getdoc(func)
         for line in docstr.splitlines():
-            words = re.findall(r"[\w']+", line)
+            words = line.split(":: ")[-1].split(', ')
             if line.startswith('::parents::'):
-                parents.extend(words[1:])
+                parents.extend(words)
             elif line.startswith('::params::'):
-                params.extend(words[1:])
-        return parents, params
+                params.extend(words)
+            elif line.startswith('::alerts::'):
+                alerts.extend(words)
+        return parents, params, alerts

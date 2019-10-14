@@ -11,6 +11,7 @@ __all__ = ['any_data', 'moving_avg', 'sample_dates', 'simulate', 'multisim']
 def any_data(data):
     """If there is data, raise alert.
     ::parents:: data
+    ::alerts:: data exists, data does not exist
     """
     alerts = []
     if isinstance(data, pd.DataFrame) and not data.empty:
@@ -22,6 +23,7 @@ def any_data(data):
 def moving_avg(data):
     """Calculate the moving average values from the closing price.
     ::parents:: data
+    ::alerts:: MVA: 5d over 30d, MVA: 5d under 30d
     """
     alerts = []
     centering = False
@@ -42,6 +44,7 @@ def sample_dates(data, N=100, window=365, backdate=0):
     """Sample the available dates in the data.
     ::parents:: data
     ::params:: N, window, backdate
+    ::alerts:: complete
     """
     try:
         backdt = data.index[-1] - dt.timedelta(days=int(backdate))
@@ -58,6 +61,7 @@ def multisim(backtest, cash=10000, weightstep=0.1, confidence=2, days=50, N=10):
 
     ::parents:: backtest
     ::params:: cash, weightstep, confidence, days, N
+    ::alerts:: complete
     """
     days = int(days)
     window = backtest.index[-1] - backtest.index[0] - dt.timedelta(days=days)
@@ -79,6 +83,7 @@ def simulate(backtest, cash=10000, weightstep=0.5, confidence=2, start_date=None
 
     ::parents:: backtest
     ::params:: cash, weightstep, confidence, start_date, days
+    ::alerts:: complete
     """
     cash = int(cash)
     weightstep = float(weightstep)

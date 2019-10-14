@@ -11,8 +11,9 @@ def stock(symbol, frequency):
     """Get a stock quote history.
 
     ::params:: symbol, frequency
+    ::alerts:: got data
     """
-    scraper = Equity(Config().APIKEY, symbol)
+    scraper = Equity(Config.APIKEY, symbol)
     if frequency == 'min':
         data = scraper.intraday()
     elif frequency == 'daily':

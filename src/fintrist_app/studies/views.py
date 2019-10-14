@@ -83,7 +83,7 @@ def edit():
         parents = editstudy.all_parents
         params = editstudy.all_params
         inputsform.selections.choices = inputchoices(parents, params)
-        alltriggers.selections.choices = simplechoices(editstudy.triggers.keys())
+        alltriggers.selections.choices = util.simplechoices(editstudy.triggers.keys())
         sel_trigger = editstudy.get_trigger(trig_id)
     except Exception as ex:  #pylint: disable=broad-except
         editstudy = None
@@ -109,6 +109,7 @@ def edit():
     # Clear the selections
     if studyform.clear.data:
         session['editstudy'] = None
+        session['sel_trigger'] = None
         return redirect(url_for('studies.edit'))
 
     # Submit buttons for Studies selection list
@@ -123,6 +124,7 @@ def edit():
         elif studyform.delete.data:
             editstudy.delete()
             session['editstudy'] = None
+            session['sel_trigger'] = None
         return redirect(url_for('studies.edit'))
 
     # Update Study or create new
@@ -160,15 +162,18 @@ def edit():
         editstudy.add_params(newparams)
         return redirect(url_for('studies.edit'))
 
+    # Clear Trigger selections
+    if alltriggers.is_submitted() and alltriggers.clear.data:
+        session['sel_trigger'] = None
+        return redirect(url_for('studies.edit'))
+
     # Submit buttons for Triggers selection list
     if alltriggers.validate_on_submit():
         selection = alltriggers.selections.data
         if alltriggers.delete.data:
             editstudy.del_trigger(selection)
-        elif alltriggers.choose.data:
+        elif alltriggers.edit.data:
             session['sel_trigger'] = selection
-        elif alltriggers.clear.data:
-            session['sel_trigger'] = None
         return redirect(url_for('studies.edit'))
 
     # Save Study-associated Triggers
@@ -176,7 +181,6 @@ def edit():
         editstudy.add_trigger(
             triggerform.matchtext.data,
             on=triggerform.alerttype.data,
-            condition=triggerform.condition.data,
             actions=[action for action in triggerform.actions if triggerform[action].data]
             )
         return redirect(url_for('studies.edit'))
@@ -199,7 +203,3 @@ def inputchoices(parents, params):
     """Convert the parents and params into selection lists."""
     parentnames = [(key, parent.name) if parent else (key, None) for key, parent in parents.items()]
     return [(key, f"{key}: {val}") for key, val in parentnames + list(params.items())]
-
-def simplechoices(iterable):
-    """Convert an iterable into a list of duplicated tuples."""
-    return zip(iterable, iterable)
