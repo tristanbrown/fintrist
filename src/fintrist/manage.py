@@ -1,11 +1,13 @@
 """
 Database Management
+
+usage: ./manage.py [function]
 """
 import sys
 
 from mongoengine.errors import NotUniqueError
 from fintrist_ds import CATALOG
-from fintrist import util
+from fintrist import util, client
 from fintrist.models import Process
 
 def register():
@@ -21,6 +23,10 @@ def clear():
     """Delete all processes in the database."""
     Process.drop_collection()
     print("Cleared the processes database.")
+
+def restart_workers():
+    """Restart the Dask workers to refresh the package cache."""
+    client.restart()
 
 @util.not_implemented
 def test():
