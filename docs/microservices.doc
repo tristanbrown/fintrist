@@ -14,13 +14,16 @@ Reorganize app into microservices.
     - Receives activate and (re)schedule messages. <DB-id, time-interval>
     - Sends run messages to Fintrist DS. <DB-id>
     - Agnostic to DB objects.
-4. Fintrist DS 
+4. Fintrist DS (microservice)
     - imports Fintrist
     - Recieves run messages. <DB-id>
     - Pulls the database object. 
-    - Runs the analysis (dask). 
+    - Connects to dask.
+    - Runs the analysis. 
     - Updates the object data, alerts, triggers. 
     - Logs results. 
+
+Use RabbitMQ as a message broker.
 
 Dependency graph
 - MongoDB > everything
