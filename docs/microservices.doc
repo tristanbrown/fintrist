@@ -1,0 +1,36 @@
+Reorganize app into microservices.
+
+0. MongoDB (service)
+1. Fintrist (package)
+    - Creates and updates database objects.
+    - Connects to MongoDB
+    - Contains mongoengine objects
+2. Fintrist Webapp (microservice)
+    - imports Fintrist
+    - Flask-based UI.
+    - Sends CRUD messages to DB. <user-input strings>
+    - Sends activate and schedule messages to Scheduler. <DB-id>
+3. Fintrist Scheduler (microservice)
+    - Receives activate and (re)schedule messages. <DB-id, time-interval>
+    - Sends run messages to Fintrist DS. <DB-id>
+    - Agnostic to DB objects.
+4. Fintrist DS 
+    - imports Fintrist
+    - Recieves run messages. <DB-id>
+    - Pulls the database object. 
+    - Runs the analysis (dask). 
+    - Updates the object data, alerts, triggers. 
+    - Logs results. 
+
+Dependency graph
+- MongoDB > everything
+- Fintrist > Fintrist Webapp, Fintrist DS
+- Fintrist Scheduler > None
+- Fintrist App > None
+- Fintrist DS > None
+
+Advantages
+ - Frequent Fintrist DS updates will not disrupt other services.
+ - Scheduler stays up.
+ - Webapp stays up.
+ - Multiple UI apps possible simultaneously.
