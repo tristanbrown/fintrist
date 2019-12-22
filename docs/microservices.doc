@@ -16,7 +16,7 @@ Reorganize app into microservices.
     - Agnostic to DB objects.
 4. Fintrist DS (microservice)
     - imports Fintrist
-    - Recieves run messages. <DB-id>
+    - Receives run messages. <DB-id>
     - Pulls the database object. 
     - Connects to dask.
     - Runs the analysis. 
