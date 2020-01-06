@@ -3,8 +3,12 @@
 version: "3"
 
 services:
-   rabbitmq:
-     image: rabbitmq:3-management-alpine
-     ports:
-       - "5672"
-       - "15672:15672"
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672"
+      - "15672:15672"
+    env_file: .env
+  crontris:
+    image: tristanbrown/crontris
+    env_file: .env
