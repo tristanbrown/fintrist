@@ -7,24 +7,33 @@ services:
     image: mongo:4.2
     ports:
       - "27017:27017"
-    env_file: .env
+    env_file: .env_mongo
     volumes:
-      - type: volume
-        source: mongodata
-        target: /data/db
-        volume:
-          nocopy: true
-      # - type: bind
-      #   source: ~/AppData/Roaming/MongoDB/data_docker
-      #   target: /data/db
+      - mongodata:/data/db
+      - mongotemp:/tmp/mongodb
+    labels:
+      - docker-volume-backup.exec-pre-backup=mongodump --archive=/tmp/mongodb/mongo.dump
+      - docker-volume-backup.exec-post-backup=rm -rfv /tmp/mongodb
+      # Restore backup by cp into mongodb container, $ mongorestore --archive=mongo.dump
+  backup:
+    image: futurice/docker-volume-backup:2.0.0
+    env_file: .env_backup
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - mongotemp:/backup/mongodb:ro
+      - ${BACKUP_DIR}:/archive
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
       - "5672"
       - "15672:15672"
-    env_file: .env
+    env_file: .env_rabbit
   crontris:
-    image: tristanbrown/crontris
-    env_file: .env
+    image: tristanbrown/crontris:dev
+    env_file: .env_crontris
+    depends_on:
+      - rabbitmq
+      - mongodb
 volumes:
   mongodata:
+  mongotemp:
