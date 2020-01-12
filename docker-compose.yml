@@ -7,7 +7,6 @@ services:
     image: mongo:4.2
     ports:
       - "27017:27017"
-    env_file: .env_mongo
     volumes:
       - mongodata:/data/db
       - mongotemp:/tmp/mongodb
@@ -17,23 +16,24 @@ services:
       # Restore backup by cp into mongodb container, $ mongorestore --archive=mongo.dump
   backup:
     image: futurice/docker-volume-backup:2.0.0
-    env_file: .env_backup
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - mongotemp:/backup/mongodb:ro
       - ${BACKUP_DIR}:/archive
+    environment:
+      - BACKUP_CRON_EXPRESSION=${BACKUP_CRON_EXPRESSION}
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
       - "5672"
       - "15672:15672"
-    env_file: .env_rabbit
   crontris:
-    image: tristanbrown/crontris:dev
-    env_file: .env_crontris
+    image: tristanbrown/crontris:${CRONTRIS_TAG:-latest}
     depends_on:
       - rabbitmq
       - mongodb
+    environment:
+      - COMPUTERNAME=${COMPUTERNAME}
 volumes:
   mongodata:
   mongotemp:
