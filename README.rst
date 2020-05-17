@@ -6,7 +6,20 @@ A data analysis engine focused on time-dependent data.
 Install
 =======
 
-Coming soon
+To install:
+
+- Install Docker Desktop.
+- Pull the microservice images.
+
+Setup
+=====
+
+To set up the microservices:
+
+- Run ``docker-compose up -d``
+- This will start the docker network with containers for rabbitmq, mongodb,
+  monbodb-backup, and crontris.
+- Use ``docker ps -a`` to check that all of the containers started correctly.
 
 Studies
 =======
