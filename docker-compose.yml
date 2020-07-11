@@ -1,4 +1,11 @@
-# docker-compose.yml
+### docker-compose.yml ###
+
+# Port-forwarding formats:
+# "host:container"
+# "container" (randomly generates the host value in "host:container")
+# Use expose: - "container" to document a port accessible in the container,
+#  but not on the host.
+# Container ports are accessible within Docker networks by default.
 
 version: "3.7"
 
