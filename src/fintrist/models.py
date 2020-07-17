@@ -140,7 +140,10 @@ def clean_files(sender, document):  #pylint: disable=unused-argument
 
 @clean_files.apply
 class BaseStudy(Document):
-    """Contains data process results."""
+    """Contains data process results.
+
+    Can act as a generic data archive.
+    """
     # ID
     name = StringField(max_length=120, required=True)
 
@@ -210,11 +213,6 @@ class BaseStudy(Document):
         for parent in self.parents.values():
             deps.update(parent.dependencies)
         return deps
-
-    @property
-    def active(self):
-        """Boolean value of whether the Study is active in the scheduler."""
-        return False
 
     def run_if(self, dummy=None):
         """Run the Study if it's no longer valid."""
@@ -331,42 +329,6 @@ class Study(BaseStudy):
             scheduler.reschedule_job(str(self.id), trigger='interval', seconds=self.valid_age)
 
     ## Methods related to scheduling runs ##
-
-    @property
-    def active(self):
-        """Boolean value of whether the Study is active in the scheduler."""
-        return bool(scheduler.get_job(str(self.id)))
-
-    def activate(self):
-        """Periodically run the Study."""
-        scheduler.add_job(
-            self.schedule_study,
-            args=[str(self.id)],
-            trigger='interval',
-            seconds=self.valid_age,
-            id=str(self.id),
-            name=self.name,
-            replace_existing=True,
-            next_run_time=dt.datetime.now()
-        )
-
-    def deactivate(self):
-        """Stop the Study from running periodically."""
-        try:
-            scheduler.remove_job(str(self.id))
-            scheduler.remove_job(str(self.id) + '_waiting')
-        except JobLookupError:
-            print("Job not found")
-
-    def run_study_once(self, force=False):
-        """Submit a job to run the whole Study once."""
-        scheduler.add_job(
-            self.schedule_study,
-            args=[str(self.id), force],
-            id=str(self.id) + '_once',
-            name=self.name + ' once',
-            replace_existing=False,
-        )
 
     @classmethod
     def schedule_study(cls, study_id, force=False):
