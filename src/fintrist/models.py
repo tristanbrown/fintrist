@@ -145,7 +145,7 @@ class BaseStudy(Document):
     Can act as a generic data archive.
     """
     # ID
-    name = StringField(max_length=120, required=True)
+    name = StringField(max_length=120, required=True, unique=True)
 
     # Data Inputs
     parents = MapField(ReferenceField('BaseStudy'))  # Precursor data used by the Analysis
