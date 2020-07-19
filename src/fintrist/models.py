@@ -23,7 +23,7 @@ import dask.threaded as daskth
 import numpy as np
 import pandas as pd
 
-from fintrist import util, Config, scheduler, client
+from fintrist import util, Config
 from fintrist.notify import Notification
 import fintrist_ds
 
