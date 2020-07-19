@@ -41,7 +41,16 @@ class ConfigObj():
     else:
         USERNAME = os.getenv('DB_USERNAME')
         PASSWORD = os.getenv('DB_PASSWORD')
-        DB_HOST = choose_host([os.getenv('DB_HOST'), os.getenv('DB_HOST_LAN')])
+        remote_host = os.getenv('DB_HOST')
+        lan_host = os.getenv('DB_HOST_LAN')
+        if remote_host and lan_host:
+            DB_HOST = choose_host([remote_host, lan_host])
+        elif remote_host:
+            DB_HOST = remote_host
+        elif lan_host:
+            DB_HOST = lan_host
+        else:
+            DB_HOST = 'localhost'
     DB_PORT = int(os.getenv('DB_PORT') or 27017)
 
 Config = ConfigObj()
