@@ -5,12 +5,13 @@ Reorganize app into microservices.
     - Creates and updates database objects.
     - Connects to MongoDB
     - Contains mongoengine objects
+    - Sends activate and schedule messages to Scheduler. <DB-id>
 2. Fintrist Webapp (microservice)
     - imports Fintrist
     - Flask-based UI.
     - Sends CRUD messages to DB. <user-input strings>
     - Sends activate and schedule messages to Scheduler. <DB-id>
-3. Fintrist Scheduler (microservice)
+3. Crontris (microservice)
     - Receives activate and (re)schedule messages. <DB-id, time-interval>
     - Sends run messages to Fintrist DS. <DB-id>
     - Agnostic to DB objects.

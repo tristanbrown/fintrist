@@ -23,3 +23,6 @@ def store_result(name, process, parents=None, params=None):
             newstudy.add_params(params)
     newstudy.run(local_func=process)
     newstudy.save()
+
+def run_study():
+    """"""
