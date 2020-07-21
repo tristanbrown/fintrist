@@ -13,6 +13,7 @@ from mongoengine.fields import (
     DateTimeField, DictField, EmbeddedDocumentField,
     EmbeddedDocumentListField, IntField, FileField,
     ListField, MapField, ReferenceField, StringField,
+    BooleanField,
 )
 from mongoengine import signals
 from apscheduler.jobstores.base import JobLookupError
@@ -25,7 +26,6 @@ import pandas as pd
 
 from fintrist import util, Config
 from fintrist.notify import Notification
-import fintrist_ds
 
 __all__ = ('BaseStudy', 'Study', 'Backtest', 'Process', 'Trigger')
 
@@ -227,7 +227,7 @@ class BaseStudy(Document):
 
     def add_parents(self, newparents):
         """Add all of the parents in the given dict of ids."""
-        parent_objects = {key: BaseStudy.objects(id=val).get() for key, val in newparents.items()}
+        parent_objects = {key: BaseStudy.objects(name=val).get() for key, val in newparents.items()}
         self.parents.update(parent_objects)
         self.save()
 
@@ -352,9 +352,12 @@ class Study(BaseStudy):
             dag[key] = (run, deps)
         return dag
 
-    def run(self, dummy=None):
+    def run(self, dummy=None, local_func=None):
         """Run the Study process on the inputs and return any alerts."""
-        function = self.process.function
+        if local_func:
+            function = local_func
+        else:
+            function = self.process.function
         parent_data = {name: study.data for name, study in self.parents.items()}
         self.data, newalerts = function(**parent_data, **self.params)
         self.timestamp = dt.datetime.now(tzlocal())
@@ -477,6 +480,7 @@ class Process(Document):
     """
     # Identity
     name = StringField(max_length=120, required=True, primary_key=True)
+    local = BooleanField(default=False)
 
     # Args
     parents = ListField(StringField())
@@ -489,12 +493,14 @@ class Process(Document):
     def clean(self):
         """Ensure the function is encoded properly."""
         # Set the args
-        self.parents, self.params, self.alerts = self.get_proc_params(self.function)
+        if not self.local:
+            self.parents, self.params, self.alerts = self.get_proc_params(self.function)
 
     @property
     def function(self):
         """Get the function corresponding to the Process name."""
-        return fintrist_ds.CATALOG[self.name]
+        # return fintrist_ds.CATALOG[self.name]
+        print("NOT IMPLEMENTED")
 
     def get_proc_params(self, func):
         """Return the names for the parent data and parameter arguments."""

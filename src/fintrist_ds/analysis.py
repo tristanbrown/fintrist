@@ -1,5 +1,5 @@
 """
-The engine that applies analyses to data and generates alerts.
+A library of analytical methods.
 """
 import numpy as np
 import pandas as pd

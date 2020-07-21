@@ -6,7 +6,7 @@ from .settings import Config
 from .services import *
 from .models import *
 
-__all__ = ('Study','BaseStudy')
+__all__ = ('Study','BaseStudy', 'get_study')
 
 mongoengine.connect(
     Config.DATABASE_NAME,

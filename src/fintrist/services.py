@@ -1,7 +1,7 @@
 """Helper functions."""
 import logging
 from mongoengine.errors import SaveConditionError, DoesNotExist
-from .models import Study, BaseStudy
+from .models import Study, BaseStudy, Process
 
 logger = logging.getLogger(__name__)
 
@@ -30,3 +30,10 @@ def get_data(name):
     obj = get_study(name)
     if obj:
         return obj.data
+
+def get_process(name):
+    """Get a certain Study name or BaseStudy by name."""
+    try:
+        return Process.objects(name=name).get()
+    except DoesNotExist:
+        logger.debug(f"Process '{name}' does not exist.")

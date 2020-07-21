@@ -4,6 +4,7 @@ Import all of the process functions.
 import sys
 import inspect as ins
 
+from fintrist_ds.engine import *
 from fintrist_ds.scrapers.base import *
 from fintrist_ds.analysis import *
 
