@@ -18,12 +18,15 @@ def store_data(data, name, overwrite=False):
     archive.save()
     return get_data(name)
 
-def get_study(name):
+def get_study(study_id):
     """Get a certain Study name or BaseStudy by name."""
-    try:
-        return BaseStudy.objects(name=name).get()
-    except DoesNotExist:
-        logger.debug(f"Study '{name}' does not exist.")
+    if isinstance(study_id, Study):
+        return study_id
+    elif isinstance(study_id, str):
+        try:
+            return BaseStudy.objects(name=study_id).get()
+        except DoesNotExist:
+            logger.debug(f"Study '{study_id}' does not exist.")
 
 def get_data(name):
     """Get the data by a certain Study name or BaseStudy name."""
