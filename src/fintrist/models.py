@@ -352,7 +352,7 @@ class Study(BaseStudy):
     #         dag[key] = (run, deps)
     #     return dag
 
-    def run(self, function=None, dummy=None):
+    def run(self, function=None, depends=None):
         """Run the Study process on the inputs and return any alerts."""
         parent_data = {name: study.data for name, study in self.parents.items()}
         self.data, newalerts = function(**parent_data, **self.params)
