@@ -61,3 +61,4 @@ def store_result(name, process, parents=None, params=None):
             newstudy.add_params(params)
     newstudy.run(function=process)
     newstudy.save()
+    return newstudy
