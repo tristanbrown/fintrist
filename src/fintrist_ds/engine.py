@@ -5,7 +5,9 @@ import datetime
 from dateutil.tz import tzlocal
 
 from dask.distributed import Client
-client = Client()
+client = Client(processes=False)
+## NOTE: processes=True doesn't currently work
+## - Possibly because study.run function does not serialize
 
 from fintrist import (get_study, get_process, Process, BaseStudy,
     Study, create_study)
@@ -32,6 +34,7 @@ def get_function(name):
 
 def schedule_study(a_study, force=False):
     """Schedule the Study to run when all of its inputs are valid."""
+    a_study = get_study(a_study)
     client.get(build_dag(a_study, force), str(a_study.id), num_workers=Config.NUM_WORKERS)
 
 def store_result(name, process, parents=None, params=None):
