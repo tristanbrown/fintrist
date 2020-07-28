@@ -41,14 +41,15 @@ def get_process(name):
     except DoesNotExist:
         logger.debug(f"Process '{name}' does not exist.")
 
-def store_result(name, process, parents=None, params=None):
-    """Use a local function to create a new Study."""
+def create_study(name, process, parents=None, params=None):
+    """Use a local or library function to create a new Study."""
     new_procname = process.__name__
     existproc = get_process(new_procname)
     if existproc:
         newproc = existproc
     else:
         newproc = Process(name=new_procname, local=True)
+        newproc.get_params(process)
         newproc.save()
     existstudy = get_study(name)
     if existstudy:
@@ -59,6 +60,4 @@ def store_result(name, process, parents=None, params=None):
             newstudy.add_parents(parents)
     if params:
             newstudy.add_params(params)
-    newstudy.run(function=process)
-    newstudy.save()
     return newstudy

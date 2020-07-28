@@ -492,6 +492,8 @@ class Process(Document):
         params = []
         alerts = []
         docstr = inspect.getdoc(func)
+        if docstr is None:
+            return
         for line in docstr.splitlines():
             words = line.split(":: ")[-1].split(', ')
             if line.startswith('::parents::'):
