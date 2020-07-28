@@ -6,18 +6,25 @@ usage: ./manage.py [function]
 import sys
 
 from mongoengine.errors import NotUniqueError
-from fintrist_ds import CATALOG
-from fintrist import util, client
+from .catalog import CATALOG
+from .engine import client
 from fintrist.models import Process
+
+__all__ = ['register', 'clear', 'restart_workers']
 
 def register():
     """Register all of the processes in the database."""
-    for name in CATALOG:
+    for name, func in CATALOG.items():
         try:
-            Process(name=name).save(force_insert=True)
-            print("Inserted '{}'.".format(name))
+            new_proc = Process(name=name)
+            new_proc.get_params(func)
+            new_proc.save(force_insert=True)
+            print(f"Inserted '{name}'.")
         except NotUniqueError:
-            print("'{}' skipped: Already registered.".format(name))
+            print(f"'{name}' skipped: Already registered.")
+        except Exception as ex:
+            print(f"'{name}' skipped: ")
+            print(ex)
 
 def clear():
     """Delete all processes in the database."""
@@ -28,12 +35,8 @@ def restart_workers():
     """Restart the Dask workers to refresh the package cache."""
     client.restart()
 
-@util.not_implemented
-def test():
-    print("Test function")
-
 def main():
-    """Run the function specified by the command line argument."""
+    """Run the manage.py functions from the command line."""
     arg = sys.argv[1]
     globals()[arg]()
 

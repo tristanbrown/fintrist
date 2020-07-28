@@ -486,20 +486,8 @@ class Process(Document):
     # Meta
     schema_version = IntField(default=1)
 
-    def clean(self):
-        """Ensure the function is encoded properly."""
-        # Set the args
-        if not self.local:
-            self.parents, self.params, self.alerts = self.get_proc_params(self.function)
-
-    @property
-    def function(self):
-        """Get the function corresponding to the Process name."""
-        # return fintrist_ds.CATALOG[self.name]
-        print("NOT IMPLEMENTED")
-
-    def get_proc_params(self, func):
-        """Return the names for the parent data and parameter arguments."""
+    def get_params(self, func):
+        """Store the names for the parent data and parameter arguments."""
         parents = []
         params = []
         alerts = []
@@ -512,4 +500,6 @@ class Process(Document):
                 params.extend(words)
             elif line.startswith('::alerts::'):
                 alerts.extend(words)
-        return parents, params, alerts
+        self.parents = parents
+        self.params = params
+        self.alerts = alerts
