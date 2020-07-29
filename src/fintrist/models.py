@@ -328,28 +328,6 @@ class Study(BaseStudy):
 
     ## Methods related to scheduling runs ##
 
-    # @classmethod
-    # def schedule_study(cls, study_id, force=False):
-    #     """Static wrapper for `schedule`."""
-    #     this_study = cls.objects(id=study_id).get()
-    #     this_study.schedule(force)
-
-    # def schedule(self, force=False):
-    #     """Schedule the Study to run when all of its inputs are valid."""
-    #     client.get(self.get_dag(force), str(self.id), num_workers=Config.NUM_WORKERS)
-
-    # def get_dag(self, force=False):
-    #     """Get the directed acyclic graph for this Study."""
-    #     dag = {}
-    #     for key, deps in self.dependencies.items():
-    #         study_obj = BaseStudy.objects(id=key).get()
-    #         if force or key == str(self.id):
-    #             run = study_obj.run
-    #         else:
-    #             run = study_obj.run_if
-    #         dag[key] = (run, deps)
-    #     return dag
-
     def run(self, function=None, depends=None):
         """Run the Study process on the inputs and return any alerts."""
         parent_data = {name: study.data for name, study in self.parents.items()}
