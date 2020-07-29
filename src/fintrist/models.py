@@ -18,8 +18,6 @@ from mongoengine.fields import (
 from mongoengine import signals
 from apscheduler.jobstores.base import JobLookupError
 from bson.dbref import DBRef
-# import dask.multiprocessing as daskmp
-import dask.threaded as daskth
 
 import numpy as np
 import pandas as pd
@@ -214,12 +212,12 @@ class BaseStudy(Document):
             deps.update(parent.dependencies)
         return deps
 
-    def run_if(self, dummy=None):
+    def run_if(self, function=None, depends=None):
         """Run the Study if it's no longer valid."""
         if not self.valid:
-            self.run()
+            self.run(function, depends)
 
-    def run(self, dummy=None):
+    def run(self, function=None, depends=None):
         """Run the Study process on the inputs and return any alerts."""
         raise Exception("Cannot run from BaseStudy objects.")
 

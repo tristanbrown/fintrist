@@ -41,7 +41,7 @@ def get_process(name):
     except DoesNotExist:
         logger.debug(f"Process '{name}' does not exist.")
 
-def create_study(name, process, parents=None, params=None):
+def create_study(name, process, parents=None, params=None, **kwargs):
     """Use a local or library function to create a new Study."""
     new_procname = process.__name__
     existproc = get_process(new_procname)
@@ -54,10 +54,18 @@ def create_study(name, process, parents=None, params=None):
     existstudy = get_study(name)
     if existstudy:
         newstudy = existstudy
+        if kwargs:
+            newstudy.update(**kwargs)
     else:
-        newstudy = Study(name=name, process=newproc)
+        newstudy = Study(name=name, process=newproc, **kwargs)
     if parents:
             newstudy.add_parents(parents)
     if params:
             newstudy.add_params(params)
+    newstudy.save()
     return newstudy
+
+def see_proc_args(name):
+    proc = get_process(name)
+    print(f"Parents: {proc.parents}")
+    print(f"Params: {proc.params}")

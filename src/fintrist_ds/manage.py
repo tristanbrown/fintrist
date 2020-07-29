@@ -7,7 +7,7 @@ import sys
 
 from mongoengine.errors import NotUniqueError
 from .catalog import CATALOG
-from .engine import client
+# from .engine import client
 from fintrist.models import Process
 
 __all__ = ['register', 'clear', 'restart_workers']
@@ -32,8 +32,9 @@ def clear():
     print("Cleared the processes database.")
 
 def restart_workers():
-    """Restart the Dask workers to refresh the package cache."""
-    client.restart()
+#     """Restart the Dask workers to refresh the package cache."""
+#     client.restart()
+    return
 
 def main():
     """Run the manage.py functions from the command line."""
