@@ -12,21 +12,29 @@ from fintrist import (get_study, get_process, Process, BaseStudy,
 from .catalog import CATALOG
 from .settings import Config
 
-__all__ = ['test_func', 'build_dag', 'schedule_study', 'store_result',
-    'get_function', 'dsk']
+__all__ = ['build_dag', 'schedule_study', 'store_result', 'get_function']
 
 def build_dag(root_study, force=False):
     """Get the directed acyclic graph for this Study."""
     dag = {}
     for key, deps in root_study.dependencies.items():
-        study_obj = BaseStudy.objects(id=key).get()
-        if force or key == str(root_study.id):
-            run = study_obj.run
-        else:
-            run = study_obj.run_if
-        proc_func = get_function(study_obj.process.name)
-        dag[key] = (run, proc_func, deps)
+        ## Must tag ids to avoid counting them as dag dependencies.
+        key_tag = f"{key}_tag"
+        root_id = f"{str(root_study.id)}_tag"
+        dag[key] = (run_study, key_tag, root_id, force, deps)
     return dag
+
+def run_study(key, root_id, force=False, depends=None):
+    """Function to be scheduled:
+    Query the Study and run it (if no longer valid).
+    """
+    key = key.split("_")[0]
+    study_obj = BaseStudy.objects(id=key).get()
+    proc_func = get_function(study_obj.process.name)
+    if force or key == root_id:
+        study_obj.run(proc_func)
+    else:
+        study_obj.run_if(proc_func)
 
 def get_function(name):
     return CATALOG[name]
