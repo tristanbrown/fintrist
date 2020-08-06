@@ -12,7 +12,6 @@ REQUIREMENTS = [
     'python-dotenv',
     'mongoengine',
     'blinker',
-    'apscheduler',
     'dask[distributed]',
     'bokeh>=0.13.0',
     'jupyter-server-proxy',

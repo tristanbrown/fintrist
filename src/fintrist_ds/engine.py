@@ -53,3 +53,18 @@ def store_result(name, process, parents=None, params=None, **kwargs):
     newstudy.run(function=process)
     newstudy.save()
     return newstudy
+
+def backtest_study(name, process):
+    """"""
+    ## Create Backtest object, with desired study as the parent.
+
+    ## Run Backtest object to generate history of alerts and buy/sell signals.
+    ### - Every row is a run of the parent Study.
+    ### - Each run generates alerts.
+    ### - Alerts trigger the Study's Triggers, giving buy/sell signals.
+
+    ## Run simulate to generate portfolio value over a section of the backtest.
+    ### - This is where we specify the size of buy/sell actions.
+
+    ## Or use multisim to generate multiple time-slice samples over which to evaluate
+    ## the portfolio.

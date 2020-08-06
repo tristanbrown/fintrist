@@ -420,11 +420,10 @@ class Backtest(BaseStudy):
         """The first date of the interval"""
         return self.end - dt.timedelta(days=self.days)
 
-    def run(self, dummy=None):
+    def run(self, function=None, depends=None):
         """Backtest the model Study on the interval and record actions."""
         model = self.parents['model']
         prices = self.parents['price']
-        function = model.process.function
         parent_data = {name: study.data for name, study in model.parents.items()}
 
         # Run on each day in the interval
