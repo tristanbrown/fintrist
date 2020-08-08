@@ -480,3 +480,39 @@ class Process(Document):
         self.parents = parents
         self.params = params
         self.alerts = alerts
+
+class Stream(Document):
+    """A recipe for a series of sequential Study objects.
+    """
+    # Identity
+    name = StringField(max_length=120, required=True, primary_key=True)
+
+    # Args
+    recipes = EmbeddedDocumentListField('Recipe')
+    params = ListField(StringField())
+
+
+    # Meta
+    schema_version = IntField(default=1)
+
+class Recipe(EmbeddedDocument):
+    """Recipe for a Study
+
+    """
+    # ID
+    name = StringField(max_length=120, required=True, unique=True)
+
+    # Data Inputs
+    parents = MapField(StringField())  # Precursor data used by the Analysis
+    params = DictField()  # Processing parameters.
+
+    # Running parameters
+    process = StringField()
+    valid_age = IntField(default=0)
+    triggers = EmbeddedDocumentListField('Trigger')
+
+    # Meta
+    schema_version = IntField(default=1)
+    meta = {
+        'strict': False,
+        }

@@ -5,23 +5,23 @@
     symbol: {symbol}
     frequency: daily
   triggers:
-    - got data:
-        cond: all
-        actions:
-          - printhead
-          - log
+    - matchtext: got data
+      on: all
+      actions:
+        - printhead
+        - log
 
 {symbol} avg:
   process: moving_avg
   valid_age: 60
   parents:
-    - {symbol} daily
+    data: {symbol} daily
   triggers:
-    - 5d under 30d:
-        cond: active
-        actions:
-          - buy
-    - 5d under 30d:
-        cond: inactive
-        actions:
-          - sell
+    - matchtext: 5d under 30d
+      on: active
+      actions:
+        - buy
+    - matchtext: 5d under 30d
+      on: inactive
+      actions:
+        - sell
