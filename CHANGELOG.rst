@@ -1,0 +1,68 @@
+#########
+CHANGELOG
+#########
+
+==================
+0.3.0 - 2020-08-09
+==================
+
+Added
+-----
+* Services in fintrist for creating and manipulating database objects.
+* Services in fintrist_ds for running and scheduling studies.
+* Recipe and Stream objects for templating Studies.
+
+Changed
+-------
+* Split app up into microservices architecture.
+* Scheduler is now a separate package, crontris.
+* fintrist_ds now handles dask and all data processing.
+
+
+==================
+0.2.0 - 2019-10-19
+==================
+
+Added
+-----
+* moving_avg
+* Backtest
+* simulate
+* multisim
+* Dask processing
+
+Changed
+-------
+* Removed Stream model.
+* Implemented dependency resolution at the Study level.
+* Split processes off to fintrist_ds subpackage.
+
+==================
+0.1.0 - 2019-06-06
+==================
+
+Added
+-----
+* MongoDB backend for data storage.
+* fintrist_app
+* APScheduler
+
+==================
+0.0.1 - 2018-03-23
+==================
+
+Added
+-----
+* Stock indicators
+
+Changed
+-------
+* Switched to Alpha Vantage stock data.
+
+==================
+0.0.0 - 2016-12-12
+==================
+
+Added
+-----
+* fintrist origin
