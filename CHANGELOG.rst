@@ -18,7 +18,6 @@ Changed
 * Scheduler is now a separate package, crontris.
 * fintrist_ds now handles dask and all data processing.
 
-
 ==================
 0.2.0 - 2019-10-19
 ==================
@@ -29,13 +28,24 @@ Added
 * Backtest
 * simulate
 * multisim
+
+Changed
+-------
+* Split processes off to fintrist_ds subpackage.
+
+==================
+0.1.1 - 2019-06-23
+==================
+
+Added
+-----
 * Dask processing
+* Dash app (fintrist_app v2)
 
 Changed
 -------
 * Removed Stream model.
 * Implemented dependency resolution at the Study level.
-* Split processes off to fintrist_ds subpackage.
 
 ==================
 0.1.0 - 2019-06-06
