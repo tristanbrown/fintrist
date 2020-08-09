@@ -194,7 +194,7 @@ class BaseStudy(Document):
         if self.valid_age == 0:
             current = True
         else:
-            current = dt.datetime.utcnow() - self.timestamp < dt.timedelta(seconds=self.valid_age)
+            current = dt.datetime.utcnow() - self.timestamp < dt.timedelta(hours=self.valid_age)
         # Check if the parents are valid too
         if current:
             for parent in self.parents.values():
