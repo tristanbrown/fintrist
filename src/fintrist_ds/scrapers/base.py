@@ -24,5 +24,6 @@ def stock(symbol, frequency):
         data = scraper.monthly()
     data.index = pd.to_datetime(data.index)
     data.columns = [col.split()[1] for col in data.columns]
+    data = data.sort_index()
     alerts = ['got data']
     return (data, alerts)
