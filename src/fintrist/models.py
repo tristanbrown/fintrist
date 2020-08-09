@@ -487,7 +487,7 @@ class Stream(Document):
     """A recipe for a series of sequential Study objects.
     """
     # Identity
-    name = StringField(max_length=120, required=True, primary_key=True)
+    name = StringField(max_length=120, required=True, unique=True)
 
     # Args
     recipes = ListField(ReferenceField('Recipe'))
@@ -500,9 +500,9 @@ class Stream(Document):
         }
 
     def get_metaparams(self):
-        all_metaparams = []
+        all_metaparams = set()
         for recipe in self.recipes:
-            all_metaparams.extend(recipe.metaparams)
+            all_metaparams.update(recipe.metaparams)
         for recipe_param in all_metaparams:
             if not self.metaparams.get(recipe_param):
                 self.metaparams[recipe_param] = None
@@ -542,9 +542,10 @@ class Recipe(Document):
             *self.params.values(),
             *[trigger.matchtext for trigger in self.triggers],
         ]
-        self.metaparams = [
-            *util.get_variables(case) for case in searchables
-        ]
+        new_metaparams = set()
+        for case in searchables:
+            new_metaparams.update(util.get_variables(case))
+        self.metaparams = list(new_metaparams)
 
     def get_trigger(self, trig_id):
         """Return the desired trigger."""

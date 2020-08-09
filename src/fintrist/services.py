@@ -18,15 +18,19 @@ def store_data(data, name, overwrite=False):
     archive.save()
     return get_data(name)
 
+def get_object(obj_id, obj_cls):
+    """Get an object by name"""
+    if isinstance(obj_id, obj_cls):
+        return obj_id
+    elif isinstance(obj_id, str):
+        try:
+            return obj_cls.objects(name=obj_id).get()
+        except DoesNotExist:
+            logger.debug(f"{obj_cls.__name__} '{obj_id}' does not exist.")
+
 def get_study(study_id):
     """Get a certain Study name or BaseStudy by name."""
-    if isinstance(study_id, Study):
-        return study_id
-    elif isinstance(study_id, str):
-        try:
-            return BaseStudy.objects(name=study_id).get()
-        except DoesNotExist:
-            logger.debug(f"Study '{study_id}' does not exist.")
+    return get_object(recipe_id, BaseStudy)
 
 def get_data(name):
     """Get the data by a certain Study name or BaseStudy name."""
@@ -71,8 +75,8 @@ def see_proc_args(name):
     print(f"Params: {proc.params}")
 
 def create_recipe(name, studyname, process, **kwargs):
-    existproc = get_process(new_procname)
-    existstudy = get_study(name)
+    existproc = get_process(process)
+    existrecipe = get_recipe(name)
     if existrecipe:
         newrecipe = existrecipe
         if kwargs:
@@ -80,22 +84,26 @@ def create_recipe(name, studyname, process, **kwargs):
     else:
         newrecipe = Recipe(name=name, studyname=studyname, process=existproc, **kwargs)
     newrecipe.get_metaparams()
+    logger.debug(newrecipe.to_json())
     newrecipe.save()
     return newrecipe
 
 def get_recipe(recipe_id):
     """Get a certain Recipe by name."""
-    if isinstance(recipe_id, Recipe):
-        return recipe_id
-    elif isinstance(recipe_id, str):
-        try:
-            return Recipe.objects(name=recipe_id).get()
-        except DoesNotExist:
-            logger.debug(f"Recipe '{recipe_id}' does not exist.")
+    return get_object(recipe_id, Recipe)
 
 def create_stream(name, recipe_list):
     recipes = [get_recipe(recipe) for recipe in recipe_list]
-    newstream = Stream(name=name, recipe_list=recipes)
+    existstream = get_stream(name)
+    if existstream:
+        newstream = existstream
+        existstream.recipes = recipes
+    else:
+        newstream = Stream(name=name, recipes=recipes)
     newstream.get_metaparams()
     newstream.save()
     return newstream
+
+def get_stream(stream_id):
+    """Get a certain Recipe by name."""
+    return get_object(stream_id, Stream)
