@@ -4,7 +4,6 @@ The engine that applies analyses to data and generates alerts.
 import logging
 import pickle
 import inspect
-import re
 import datetime as dt
 from dateutil.tz import tzlocal
 
@@ -460,6 +459,9 @@ class Process(Document):
 
     # Meta
     schema_version = IntField(default=1)
+    meta = {
+        'strict': False,
+        }
 
     def get_params(self, func):
         """Store the names for the parent data and parameter arguments."""
@@ -488,26 +490,41 @@ class Stream(Document):
     name = StringField(max_length=120, required=True, primary_key=True)
 
     # Args
-    recipes = EmbeddedDocumentListField('Recipe')
-    params = ListField(StringField())
-
+    recipes = ListField(ReferenceField('Recipe'))
+    metaparams = DictField()  # All Recipe's metaparams. Can be None or filled in.
 
     # Meta
     schema_version = IntField(default=1)
+    meta = {
+        'strict': False,
+        }
 
-class Recipe(EmbeddedDocument):
+    def get_metaparams(self):
+        all_metaparams = []
+        for recipe in self.recipes:
+            all_metaparams.extend(recipe.metaparams)
+        for recipe_param in all_metaparams:
+            if not self.metaparams.get(recipe_param):
+                self.metaparams[recipe_param] = None
+
+    def fill_metaparam(self, key, value):
+        self.metaparams[key] = value
+
+class Recipe(Document):
     """Recipe for a Study
 
     """
     # ID
     name = StringField(max_length=120, required=True, unique=True)
+    studyname = StringField(max_length=120, required=True)
 
     # Data Inputs
-    parents = MapField(StringField())  # Precursor data used by the Analysis
+    parents = MapField(StringField())  # Names of precursor data used by the Analysis
     params = DictField()  # Processing parameters.
+    metaparams = ListField(StringField())  # Modifiable portions of recipe
 
     # Running parameters
-    process = StringField()
+    process = ReferenceField('Process', required=True)
     valid_age = IntField(default=0)
     triggers = EmbeddedDocumentListField('Trigger')
 
@@ -516,3 +533,33 @@ class Recipe(EmbeddedDocument):
     meta = {
         'strict': False,
         }
+
+    def get_metaparams(self):
+        """Find all curly-bracked variables and store them."""
+        searchables = [
+            self.studyname,
+            *self.parents.values(),
+            *self.params.values(),
+            *[trigger.matchtext for trigger in self.triggers],
+        ]
+        self.metaparams = [
+            *util.get_variables(case) for case in searchables
+        ]
+
+    def get_trigger(self, trig_id):
+        """Return the desired trigger."""
+        return self.triggers.get(trig_id)
+
+    def add_trigger(self, matchtext, **kwargs):
+        """Add a Trigger to the Study, or update a matching one."""
+        new = Trigger(matchtext=matchtext, **kwargs)
+        self.triggers[str(new)] = new
+        self.save()
+
+    def del_trigger(self, trig_id):
+        """Delete the specified trigger."""
+        try:
+            del self.triggers[trig_id]
+            self.save()
+        except KeyError:
+            print(f"Trigger '{trig_id}' not found.")

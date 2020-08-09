@@ -1,4 +1,5 @@
 """Utility functions"""
+import re
 
 def not_implemented(function):
     """"""
@@ -17,3 +18,7 @@ def handler(event):
         return fn
 
     return decorator
+
+def get_variables(astr):
+    """Get the bracketed variable names from a string."""
+    return re.findall(r"\{([A-Za-z0-9_]+)\}", astr)

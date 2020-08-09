@@ -20,6 +20,7 @@ REQUIREMENTS = [
     'pymc3',
     'finta',
     'tulipy',
+    'ruamel.yaml',
 ]
 
 setup(
