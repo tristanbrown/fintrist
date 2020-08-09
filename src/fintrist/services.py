@@ -30,7 +30,7 @@ def get_object(obj_id, obj_cls):
 
 def get_study(study_id):
     """Get a certain Study name or BaseStudy by name."""
-    return get_object(recipe_id, BaseStudy)
+    return get_object(study_id, BaseStudy)
 
 def get_data(name):
     """Get the data by a certain Study name or BaseStudy name."""
@@ -38,21 +38,17 @@ def get_data(name):
     if obj:
         return obj.data
 
-def get_process(name):
+def get_process(process_id):
     """Get a certain Study name or BaseStudy by name."""
-    try:
-        return Process.objects(name=name).get()
-    except DoesNotExist:
-        logger.debug(f"Process '{name}' does not exist.")
+    return get_object(process_id, Process)
 
 def create_study(name, process, parents=None, params=None, **kwargs):
     """Use a local or library function to create a new Study."""
-    new_procname = process.__name__
-    existproc = get_process(new_procname)
+    existproc = get_process(process)
     if existproc:
         newproc = existproc
     else:
-        newproc = Process(name=new_procname, local=True)
+        newproc = Process(name=process.__name__, local=True)
         newproc.get_params(process)
         newproc.save()
     existstudy = get_study(name)
@@ -107,3 +103,29 @@ def create_stream(name, recipe_list):
 def get_stream(stream_id):
     """Get a certain Recipe by name."""
     return get_object(stream_id, Stream)
+
+def spawn_study(rec_name, **kwargs):
+    """Spawn a study from a recipe."""
+    recipe = get_recipe(rec_name)
+    newstudy = create_study(
+        name=recipe.studyname.format(**kwargs),
+        process=recipe.process,
+        parents={key: val.format(**kwargs) for key, val in recipe.parents.items()},
+        params={key: val.format(**kwargs) for key, val in recipe.params.items()},
+        valid_age=recipe.valid_age,
+    )
+    for trigger in recipe.triggers.values():
+        newstudy.add_trigger(
+            trigger.matchtext.format(**kwargs),
+            on=trigger.on,
+            actions=trigger.actions
+        )
+    newstudy.save()
+    return newstudy
+
+def spawn_stream(stream_name, **kwargs):
+    stream_obj = get_stream(stream_name)
+    newstudies = [
+        spawn_study(recipe, **kwargs) for recipe in stream_obj.recipes
+    ]
+    return newstudies

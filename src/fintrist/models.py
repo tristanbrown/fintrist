@@ -98,6 +98,9 @@ class Trigger(EmbeddedDocument):
     schema_version = IntField(default=1)
     meta = {'strict': False}
 
+    def __repr__(self):
+        return f"Trigger: {str(self)}"
+
     def __str__(self):
         return f"{self.matchtext} {self.on}"
 
@@ -161,6 +164,9 @@ class BaseStudy(Document):
         'collection': 'study',
         'allow_inheritance': True,
         }
+
+    def __repr__(self):
+        return f"BaseStudy: {self.name}"
 
     # pylint: disable=no-member
     def clean(self):
@@ -463,6 +469,9 @@ class Process(Document):
         'strict': False,
         }
 
+    def __repr__(self):
+        return f"Process: {self.name}"
+
     def get_params(self, func):
         """Store the names for the parent data and parameter arguments."""
         parents = []
@@ -499,6 +508,9 @@ class Stream(Document):
         'strict': False,
         }
 
+    def __repr__(self):
+        return f"Stream: {self.name}"
+
     def get_metaparams(self):
         all_metaparams = set()
         for recipe in self.recipes:
@@ -526,7 +538,7 @@ class Recipe(Document):
     # Running parameters
     process = ReferenceField('Process', required=True)
     valid_age = IntField(default=0)
-    triggers = EmbeddedDocumentListField('Trigger')
+    triggers = MapField(EmbeddedDocumentField('Trigger'))
 
     # Meta
     schema_version = IntField(default=1)
@@ -534,13 +546,16 @@ class Recipe(Document):
         'strict': False,
         }
 
+    def __repr__(self):
+        return f"Recipe: {self.name}"
+
     def get_metaparams(self):
         """Find all curly-bracked variables and store them."""
         searchables = [
             self.studyname,
             *self.parents.values(),
             *self.params.values(),
-            *[trigger.matchtext for trigger in self.triggers],
+            *[trigger.matchtext for trigger in self.triggers.values()],
         ]
         new_metaparams = set()
         for case in searchables:
