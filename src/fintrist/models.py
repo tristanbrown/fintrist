@@ -359,7 +359,11 @@ class Study(BaseStudy):
     @property
     def alerts(self):
         """Most recent alerts."""
-        return self.alertslog.newest
+        return {
+            'current': self.alertslog.newest,
+            'newactive': self.alertslog.newactive,
+            'newinactive': self.alertslog.newinactive,
+        }
 
     def clear_log(self):
         """Remove log entries."""

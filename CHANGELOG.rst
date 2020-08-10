@@ -2,6 +2,18 @@
 CHANGELOG
 #########
 
+==========
+Unreleased
+==========
+
+Added
+-----
+* Visualization library, including plot_sma.
+
+Changed
+-------
+* Study.alerts now shows newactive and newinactive as well.
+
 ==================
 0.3.0 - 2020-08-09
 ==================
