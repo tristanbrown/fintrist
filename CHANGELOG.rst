@@ -14,6 +14,7 @@ Added
 Changed
 -------
 * Study.alerts now shows newactive and newinactive as well.
+* Alerts are now overwritten if the run is forced.
 
 ==================
 0.3.0 - 2020-08-09

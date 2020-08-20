@@ -32,9 +32,9 @@ def run_study(key, root_id, force=False, depends=None):
     study_obj = BaseStudy.objects(id=key).get()
     proc_func = get_function(study_obj.process.name)
     if force or key == root_id:
-        study_obj.run(proc_func)
+        study_obj.run(proc_func, force)
     else:
-        study_obj.run_if(proc_func)
+        study_obj.run_if(proc_func, force)
 
 def get_function(name):
     return CATALOG[name]

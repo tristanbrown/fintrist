@@ -5,6 +5,7 @@ import logging
 import pickle
 import inspect
 import datetime as dt
+import arrow
 from dateutil.tz import tzlocal
 
 from mongoengine.document import Document, EmbeddedDocument
@@ -58,6 +59,11 @@ class AlertsLog(EmbeddedDocument):
         """
         newalerts = Alerts(timestamp=timestamp, active=alerts)
         self.log = [newalerts] + self.log
+    
+    def remove_alert(self, idx=0):
+        """Delete the alert at the index. First by default."""
+        if self.log:
+            self.log.pop(idx)
 
     def get_alerts(self, idx):
         """Get the alerts at the given lookback index."""
@@ -200,7 +206,10 @@ class BaseStudy(Document):
         if self.valid_age == 0:
             current = True
         else:
-            current = dt.datetime.utcnow() - self.timestamp < dt.timedelta(hours=self.valid_age)
+            try:
+                current = dt.datetime.now(tzlocal()) - arrow.get(self.timestamp) < dt.timedelta(hours=self.valid_age)
+            except Exception as ex:
+                raise Exception(f"{arrow.get(self.timestamp)}, {dt.datetime.now(tzlocal())}")
         # Check if the parents are valid too
         if current:
             for parent in self.parents.values():
@@ -217,12 +226,12 @@ class BaseStudy(Document):
             deps.update(parent.dependencies)
         return deps
 
-    def run_if(self, function=None, depends=None):
+    def run_if(self, function=None):
         """Run the Study if it's no longer valid."""
         if not self.valid:
-            self.run(function, depends)
+            self.run(function)
 
-    def run(self, function=None, depends=None):
+    def run(self, function=None, force=False):
         """Run the Study process on the inputs and return any alerts."""
         raise Exception("Cannot run from BaseStudy objects.")
 
@@ -333,11 +342,13 @@ class Study(BaseStudy):
 
     ## Methods related to scheduling runs ##
 
-    def run(self, function=None, depends=None):
+    def run(self, function=None, force=False):
         """Run the Study process on the inputs and return any alerts."""
         parent_data = {name: study.data for name, study in self.parents.items()}
         self.data, newalerts = function(**parent_data, **self.params)
         self.timestamp = dt.datetime.now(tzlocal())
+        if self.valid:
+            self.alertslog.remove_alert()
         self.alertslog.record_alerts(newalerts, self.timestamp)
         self.save()
         self.fire_alerts()
