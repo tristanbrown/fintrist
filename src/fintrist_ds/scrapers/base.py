@@ -2,28 +2,25 @@
 The engine that chooses a scraper and returns data.
 """
 import pandas as pd
+import pandas_datareader as pdr
 from fintrist_ds.settings import Config
-from fintrist_ds.scrapers.equity import Equity
 
 __all__ = ['stock']
 
-def stock(symbol, frequency):
+def stock(symbol, frequency='daily', source=None):
     """Get a stock quote history.
 
-    ::params:: symbol, frequency
-    ::alerts:: got data
+    ::params:: symbol, frequency, source
+    ::alerts:: data source
     """
-    scraper = Equity(Config.APIKEY, symbol)
-    if frequency == 'min':
-        data = scraper.intraday()
-    elif frequency == 'daily':
-        data = scraper.daily()
-    elif frequency == 'weekly':
-        data = scraper.weekly()
-    elif frequency == 'monthly':
-        data = scraper.monthly()
-    data.index = pd.to_datetime(data.index)
-    data.columns = [col.split()[1] for col in data.columns]
-    data = data.sort_index()
-    alerts = ['got data']
+    if not source:
+        source = 'Tiingo'
+    if source == 'AV':
+        data = pdr.get_data_alphavantage(symbol, api_key=Config.APIKEY_AV, start='1900')
+        data.index = pd.to_datetime(data.index)
+    elif source == 'Tiingo':
+        data = pdr.get_data_tiingo(symbol, api_key=Config.APIKEY_TIINGO, start='1900')
+        data = data.droplevel('symbol')  # Multiple stock symbols are possible
+        data.index = data.index.date
+    alerts = [f'data source: {source}']
     return (data, alerts)

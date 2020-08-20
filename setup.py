@@ -21,6 +21,7 @@ REQUIREMENTS = [
     'finta',
     'tulipy',
     'ruamel.yaml',
+    'pandas-datareader',
 ]
 
 setup(

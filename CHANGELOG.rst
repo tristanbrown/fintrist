@@ -10,6 +10,7 @@ Added
 -----
 * Visualization library, including plot_sma.
 * TO DO list.
+* Tiingo stock scraper.
 
 Changed
 -------

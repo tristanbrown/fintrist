@@ -11,8 +11,8 @@ def plot_stream(str_name, window='1y', **kwargs):
     print(f"Alerts: {study.alerts}")
     data = study.data
     if window == '1y':
-        today = datetime.datetime.now()
-        last_year = datetime.datetime.now() - datetime.timedelta(weeks=52)
+        today = datetime.datetime.now().date()
+        last_year = today - datetime.timedelta(weeks=52)
         data = data[last_year:today]
     data.plot(title=study.name)
 
