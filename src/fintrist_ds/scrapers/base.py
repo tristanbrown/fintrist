@@ -11,7 +11,7 @@ def stock(symbol, frequency='daily', source=None):
     """Get a stock quote history.
 
     ::params:: symbol, frequency, source
-    ::alerts:: data source
+    ::alerts:: source: AV, source: Tiingo, ex-dividend, split, reverse split
     """
     if not source:
         source = 'Tiingo'
@@ -22,5 +22,15 @@ def stock(symbol, frequency='daily', source=None):
         data = pdr.get_data_tiingo(symbol, api_key=Config.APIKEY_TIINGO, start='1900')
         data = data.droplevel('symbol')  # Multiple stock symbols are possible
         data.index = data.index.date
-    alerts = [f'data source: {source}']
+
+    ## Create alerts
+    alerts = [f'source: {source}']
+    div = data.loc[data.index.max(), 'divCash']
+    if div > 0:
+        alerts.append('ex-dividend')
+    splitf = data.loc[data.index.max(), 'splitFactor']
+    if splitf > 1:
+        alerts.append('split')
+    elif splitf < 1:
+        alerts.append('reverse split')
     return (data, alerts)
