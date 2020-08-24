@@ -56,6 +56,7 @@ def create_study(name, process, parents=None, params=None, **kwargs):
         newstudy = existstudy
         if kwargs:
             newstudy.update(**kwargs)
+            newstudy.reload()
     else:
         newstudy = Study(name=name, process=newproc, **kwargs)
     if parents:
@@ -77,6 +78,7 @@ def create_recipe(name, studyname, process, **kwargs):
         newrecipe = existrecipe
         if kwargs:
             newrecipe.update(**kwargs)
+            newrecipe.reload()
     else:
         newrecipe = Recipe(name=name, studyname=studyname, process=existproc, **kwargs)
     newrecipe.get_metaparams()

@@ -16,6 +16,7 @@ Added
 Fixed
 -----
 * Metaparams on Stream failed to update due to mongoengine bug.
+* Objects need to be reloaded after Document.update().
 
 Changed
 -------
