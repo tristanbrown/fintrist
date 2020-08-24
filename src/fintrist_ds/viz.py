@@ -6,7 +6,7 @@ from .engine import schedule_study
 
 def plot_stream(str_name, window='1y', **kwargs):
     study = spawn_stream(str_name, **kwargs)[-1]
-    schedule_study(study.name, force=True)  # NOTE: check if this is finished?
+    schedule_study(study.name, force=False)  # NOTE: check if this is finished?
     study = get_study(study.name)  # Refresh the study with new data.
     print(f"Alerts: {study.alerts}")
     data = study.data

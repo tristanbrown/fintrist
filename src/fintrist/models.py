@@ -18,6 +18,7 @@ from mongoengine.fields import (
 from mongoengine import signals
 from apscheduler.jobstores.base import JobLookupError
 from bson.dbref import DBRef
+import pandas_market_calendars as mcal
 
 import numpy as np
 import pandas as pd
@@ -162,6 +163,7 @@ class BaseStudy(Document):
     newfile = FileField()
     timestamp = DateTimeField(default=dt.datetime.now(tzlocal()))
     valid_age = IntField(default=0)  # Zero means always valid
+    valid_type = StringField(max_length=120, default='market')
 
     # Meta
     schema_version = IntField(default=1)
@@ -203,13 +205,12 @@ class BaseStudy(Document):
     def valid(self):
         """Check if the Study data is still valid."""
         # Check the age of the data
-        if self.valid_age == 0:
+        if self.valid_type == 'market':
+            current = self.market_valid(arrow.get(self.timestamp, Config.TZ))
+        elif self.valid_age == 0:
             current = True
         else:
-            try:
-                current = dt.datetime.now(tzlocal()) - arrow.get(self.timestamp) < dt.timedelta(hours=self.valid_age)
-            except Exception as ex:
-                raise Exception(f"{arrow.get(self.timestamp)}, {dt.datetime.now(tzlocal())}")
+            current = arrow.now(Config.TZ) - arrow.get(self.timestamp, Config.TZ) < dt.timedelta(days=self.valid_age)
         # Check if the parents are valid too
         if current:
             for parent in self.parents.values():
@@ -217,6 +218,22 @@ class BaseStudy(Document):
                     current = False
                     break
         return current
+
+    @staticmethod
+    def market_valid(timestamp):
+        now = arrow.now(Config.TZ)
+        nyse = mcal.get_calendar('NYSE')
+        schedule = nyse.schedule(start_date=timestamp.datetime, end_date=now.datetime)
+        for col in schedule.columns:
+            schedule[col] = schedule[col].dt.tz_convert(Config.TZ)
+        is_open = nyse.open_at_time(schedule, now.datetime)  # Market currently open
+        open_close_dt = pd.DataFrame([], index=schedule.values.flatten())  ## Market day boundaries
+        if is_open:  ## If the market is open, the data should be refreshed
+            return False
+        elif len(open_close_dt[timestamp.datetime:now.datetime]) > 0: ## A market day boundary has passed
+            return False
+        else:  ## The market hasn't changed. The data is still valid.
+            return True
 
     @property
     def dependencies(self):
@@ -553,6 +570,7 @@ class Recipe(Document):
     # Running parameters
     process = ReferenceField('Process', required=True)
     valid_age = IntField(default=0)
+    valid_type = StringField(max_length=120, default='market')
     triggers = MapField(EmbeddedDocumentField('Trigger'))
 
     # Meta

@@ -34,7 +34,7 @@ def run_study(key, root_id, force=False, depends=None):
     if force or key == root_id:
         study_obj.run(proc_func, force)
     else:
-        study_obj.run_if(proc_func, force)
+        study_obj.run_if(proc_func)
 
 def get_function(name):
     return CATALOG[name]

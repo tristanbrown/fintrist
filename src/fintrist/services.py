@@ -113,6 +113,7 @@ def spawn_study(rec_name, **kwargs):
         parents={key: val.format(**kwargs) for key, val in recipe.parents.items()},
         params={key: val.format(**kwargs) for key, val in recipe.params.items()},
         valid_age=recipe.valid_age,
+        valid_type=recipe.valid_type,
     )
     for trigger in recipe.triggers.values():
         newstudy.add_trigger(

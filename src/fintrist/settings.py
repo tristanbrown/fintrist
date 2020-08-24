@@ -52,5 +52,6 @@ class ConfigObj():
         else:
             DB_HOST = 'localhost'
     DB_PORT = int(os.getenv('DB_PORT') or 27017)
+    TZ = os.getenv('TIMEZONE') or 'UTC'
 
 Config = ConfigObj()
