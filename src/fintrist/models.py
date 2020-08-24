@@ -547,9 +547,10 @@ class Stream(Document):
         all_metaparams = set()
         for recipe in self.recipes:
             all_metaparams.update(recipe.metaparams)
-        for recipe_param in all_metaparams:
-            if not self.metaparams.get(recipe_param):
-                self.metaparams[recipe_param] = None
+        updated_params = {  ## Can't update one at a time (mongoengine bug)
+            recipe_param: self.metaparams.get(recipe_param)
+            for recipe_param in all_metaparams}
+        self.metaparams = updated_params
 
     def fill_metaparam(self, key, value):
         self.metaparams[key] = value

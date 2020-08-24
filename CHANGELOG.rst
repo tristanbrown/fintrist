@@ -13,6 +13,10 @@ Added
 * Tiingo stock scraper.
 * Validity check against market day.
 
+Fixed
+-----
+* Metaparams on Stream failed to update due to mongoengine bug.
+
 Changed
 -------
 * Study.alerts now shows newactive and newinactive as well.
