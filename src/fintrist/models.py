@@ -358,9 +358,9 @@ class Study(BaseStudy):
         """Run the Study process on the inputs and return any alerts."""
         parent_data = {name: study.data for name, study in self.parents.items()}
         self.data, newalerts = function(**parent_data, **self.params)
-        if self.alert_overwrite(arrow.get(self.timestamp)):
+        if self.alert_overwrite(arrow.get(self.timestamp, Config.TZ)):
             self.alertslog.remove_alert()
-        self.timestamp = arrow.now(Config.TZ).datetime
+        self.timestamp = arrow.get(self.timestamp, Config.TZ).datetime
         self.alertslog.record_alerts(newalerts, self.timestamp)
         self.save()
         self.fire_alerts()
