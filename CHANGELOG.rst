@@ -21,7 +21,7 @@ Fixed
 Changed
 -------
 * Study.alerts now shows newactive and newinactive as well.
-* Alerts are now overwritten if the run is forced.
+* Alerts are now overwritten if a new market day has not started.
 
 ==================
 0.3.0 - 2020-08-09

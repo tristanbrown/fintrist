@@ -18,7 +18,6 @@ from mongoengine.fields import (
 )
 from mongoengine import signals
 from bson.dbref import DBRef
-import pandas_market_calendars as mcal
 
 from fintrist import util, Config
 from fintrist.notify import Notification
@@ -216,10 +215,7 @@ class BaseStudy(Document):
     @staticmethod
     def market_valid(timestamp):
         now = arrow.now(Config.TZ)
-        nyse = mcal.get_calendar('NYSE')
-        schedule = nyse.schedule(start_date=timestamp.datetime, end_date=now.datetime)
-        for col in schedule.columns:
-            schedule[col] = schedule[col].dt.tz_convert(Config.TZ)
+        schedule, nyse = util.market_schedule(timestamp, now)
         is_open = nyse.open_at_time(schedule, now.datetime)  # Market currently open
         open_close_dt = pd.DataFrame([], index=schedule.values.flatten())  ## Market day boundaries
         if is_open:  ## If the market is open, the data should be refreshed
@@ -229,6 +225,14 @@ class BaseStudy(Document):
         else:  ## The market hasn't changed. The data is still valid.
             return True
 
+    @staticmethod
+    def alert_overwrite(timestamp):
+        now = arrow.now(Config.TZ)
+        schedule, _ = util.market_schedule(timestamp, now)
+        ## New alert only if a new market day has begun. Otherwise, overwrite.
+        open_dt = pd.DataFrame([], index=schedule['market_open'])
+        return len(open_dt[timestamp.datetime:now.datetime]) == 0
+    
     @property
     def dependencies(self):
         """Create a dictionary of dependencies."""
@@ -354,9 +358,9 @@ class Study(BaseStudy):
         """Run the Study process on the inputs and return any alerts."""
         parent_data = {name: study.data for name, study in self.parents.items()}
         self.data, newalerts = function(**parent_data, **self.params)
-        self.timestamp = arrow.now(Config.TZ).datetime
-        if self.valid:
+        if self.alert_overwrite(arrow.get(self.timestamp)):
             self.alertslog.remove_alert()
+        self.timestamp = arrow.now(Config.TZ).datetime
         self.alertslog.record_alerts(newalerts, self.timestamp)
         self.save()
         self.fire_alerts()
