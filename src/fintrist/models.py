@@ -214,6 +214,7 @@ class BaseStudy(Document):
 
     @staticmethod
     def market_valid(timestamp):
+        """Check if the market has or hasn't progressed since the last timestamp."""
         now = arrow.now(Config.TZ)
         schedule, nyse = util.market_schedule(timestamp, now)
         is_open = nyse.open_at_time(schedule, now.datetime)  # Market currently open
@@ -227,6 +228,7 @@ class BaseStudy(Document):
 
     @staticmethod
     def alert_overwrite(timestamp):
+        """Check if the previous alert should be overwritten."""
         now = arrow.now(Config.TZ)
         schedule, _ = util.market_schedule(timestamp, now)
         ## New alert only if a new market day has begun. Otherwise, overwrite.
@@ -326,7 +328,6 @@ class Study(BaseStudy):
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
-    triggers = MapField(EmbeddedDocumentField('Trigger'))
 
     # pylint: disable=no-member
     # pylint: disable=not-a-mapping
@@ -363,7 +364,6 @@ class Study(BaseStudy):
         self.timestamp = arrow.get(self.timestamp, Config.TZ).datetime
         self.alertslog.record_alerts(newalerts, self.timestamp)
         self.save()
-        self.fire_alerts()
 
     ## Methods for handling inputs ##
 
@@ -393,10 +393,31 @@ class Study(BaseStudy):
         self.alertslog.clear()
         self.save()
 
-    def fire_alerts(self):
+class Strategy(Document):
+    """A set of triggers for market actions.
+
+    A Strategy should take in a Study, examine its alerts, and determine
+    whether to give a buy or sell signal.
+
+    A good Strategy will generate profit, when heeded.
+    """
+    # ID
+    name = StringField(max_length=120, required=True, unique=True)
+    triggers = MapField(EmbeddedDocumentField('Trigger'))
+
+    # Meta
+    schema_version = IntField(default=1)
+    meta = {
+        'strict': False,
+        }
+
+    def __repr__(self):
+        return f"Strategy: {self.name}"
+
+    def fire_alerts(self, study):
         """Fire alert triggers based on newly active and inactive alerts."""
         for trigger in self.triggers.values():
-            trigger.check_fire(self)
+            trigger.check_fire(study)
 
     def check_actions(self, alertslog):
         """Check the triggered actions."""
@@ -567,7 +588,6 @@ class Recipe(Document):
     process = ReferenceField('Process', required=True)
     valid_age = IntField(default=0)
     valid_type = StringField(max_length=120, default='market')
-    triggers = MapField(EmbeddedDocumentField('Trigger'))
 
     # Meta
     schema_version = IntField(default=1)
@@ -584,27 +604,8 @@ class Recipe(Document):
             self.studyname,
             *self.parents.values(),
             *self.params.values(),
-            *[trigger.matchtext for trigger in self.triggers.values()],
         ]
         new_metaparams = set()
         for case in searchables:
             new_metaparams.update(util.get_variables(case))
         self.metaparams = list(new_metaparams)
-
-    def get_trigger(self, trig_id):
-        """Return the desired trigger."""
-        return self.triggers.get(trig_id)
-
-    def add_trigger(self, matchtext, **kwargs):
-        """Add a Trigger to the Study, or update a matching one."""
-        new = Trigger(matchtext=matchtext, **kwargs)
-        self.triggers[str(new)] = new
-        self.save()
-
-    def del_trigger(self, trig_id):
-        """Delete the specified trigger."""
-        try:
-            del self.triggers[trig_id]
-            self.save()
-        except KeyError:
-            print(f"Trigger '{trig_id}' not found.")

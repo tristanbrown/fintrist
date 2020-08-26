@@ -117,12 +117,6 @@ def spawn_study(rec_name, **kwargs):
         valid_age=recipe.valid_age,
         valid_type=recipe.valid_type,
     )
-    for trigger in recipe.triggers.values():
-        newstudy.add_trigger(
-            trigger.matchtext.format(**kwargs),
-            on=trigger.on,
-            actions=trigger.actions
-        )
     newstudy.save()
     return newstudy
 

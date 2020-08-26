@@ -6,6 +6,14 @@ CHANGELOG
 Unreleased
 ==========
 
+Added
+-----
+* Strategy
+
+Changed
+-------
+* Transfer Triggers into new Strategy object.
+
 
 ==================
 0.3.1 - 2020-08-25
