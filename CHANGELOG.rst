@@ -6,6 +6,11 @@ CHANGELOG
 Unreleased
 ==========
 
+
+==================
+0.3.1 - 2020-08-25
+==================
+
 Added
 -----
 * Visualization library, including plot_sma.
