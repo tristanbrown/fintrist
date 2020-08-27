@@ -10,6 +10,10 @@ Added
 -----
 * Strategy
 
+Fixed
+-----
+* Timestamps weren't updating on runs.
+
 Changed
 -------
 * Transfer Triggers into new Strategy object.
