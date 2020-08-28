@@ -13,6 +13,7 @@ def any_data(data):
     ::parents:: data
     ::alerts:: data exists, data does not exist
     """
+    data = data.data
     alerts = []
     if isinstance(data, pd.DataFrame) and not data.empty:
         alerts.append('data exists')
@@ -25,6 +26,7 @@ def moving_avg(data):
     ::parents:: data
     ::alerts:: MVA: 5d over 30d, MVA: 5d under 30d
     """
+    data = data.data
     alerts = []
     centering = False
     outdf = data[['close']]
@@ -46,6 +48,7 @@ def sample_dates(data, N=100, window=365, backdate=0):
     ::params:: N, window, backdate
     ::alerts:: complete
     """
+    data = data.data
     try:
         backdt = data.index[-1] - dt.timedelta(days=int(backdate))
     except ValueError:

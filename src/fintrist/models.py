@@ -381,8 +381,7 @@ class Study(BaseStudy):
 
     def run(self, function=None, force=False):
         """Run the Study process on the inputs and return any alerts."""
-        parent_data = {name: study.data for name, study in self.parents.items()}
-        self.data, newalerts = function(**parent_data, **self.params)
+        self.data, newalerts = function(**self.parents, **self.params)
         if self.alert_overwrite(self.timestamp):
             self.alertslog.remove_alert()
         self.timestamp = arrow.now(Config.TZ)
