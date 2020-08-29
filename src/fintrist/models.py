@@ -66,7 +66,8 @@ class AlertsLog(EmbeddedDocument):
 
         alerts (list): [str]
         """
-        newalerts = Alerts(timestamp=timestamp, active=alerts)
+        newalerts = Alerts(active=alerts)
+        newalerts.timestamp = timestamp
         self.log = [newalerts] + self.log
     
     def remove_alert(self, idx=0):
