@@ -8,7 +8,9 @@ Unreleased
 
 Added
 -----
-* Strategy
+* `Strategy` object.
+* `fintrist.create_backtest`
+* `backtest`, in fintrist_ds CATALOG.
 
 Fixed
 -----
@@ -17,6 +19,8 @@ Fixed
 Changed
 -------
 * Transfer Triggers into new Strategy object.
+* Pass parent Study to analysis functions, instead of just data.
+* Make Backtest an ordinary Study, instead of its own object.
 
 
 ==================

@@ -1,9 +1,6 @@
 """
 The engine that applies analyses to studies.
 """
-import datetime
-from dateutil.tz import tzlocal
-
 from .dask import client
 
 from fintrist import (get_study, get_process, Process, BaseStudy,
@@ -54,8 +51,8 @@ def store_result(name, process, parents=None, params=None, **kwargs):
     newstudy.save()
     return newstudy
 
-def backtest_study(name, process):
-    """"""
+# def backtest_study(name, days=365, end=arrow.now(Config.TZ)):
+    # """"""
     ## Create Backtest object, with desired study as the parent.
 
     ## Run Backtest object to generate history of alerts and buy/sell signals.

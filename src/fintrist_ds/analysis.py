@@ -6,7 +6,8 @@ import pandas as pd
 import datetime as dt
 import dateutil
 
-__all__ = ['any_data', 'moving_avg', 'sample_dates', 'simulate', 'multisim']
+__all__ = ['any_data', 'moving_avg', 'backtest', 'sample_dates', 'simulate',
+    'multisim']
 
 def any_data(data):
     """If there is data, raise alert.
@@ -41,6 +42,15 @@ def moving_avg(data):
     else:
         alerts.append('MVA: 5d under 30d')
     return (outdf, alerts)
+
+def backtest(model, period):
+    """Run the model Study on previous dates over the period,
+    collecting the alerts.
+    ::parents:: model
+    ::params:: period
+    ::alerts:: complete
+    """
+    
 
 def sample_dates(data, N=100, window=365, backdate=0):
     """Sample the available dates in the data.
