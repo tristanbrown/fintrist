@@ -15,5 +15,6 @@ class ConfigObj():
     DASK_PORT = int(os.getenv('DASK_PORT') or 8786)
     NUM_WORKERS = int(os.getenv('NUM_WORKERS') or 4)
     DASK_HOST = f"{fintrist.Config.DB_HOST}:{DASK_PORT}"
+    TZ = fintrist.Config.TZ
 
 Config = ConfigObj()

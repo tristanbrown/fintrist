@@ -143,3 +143,11 @@ def create_strategy(name, **kwargs):
     logger.debug(newstrat.to_json())
     newstrat.save()
     return newstrat
+
+def create_backtest(name, period='1y'):
+    """Create a Study that can be used to backtest."""
+    model = get_study(name)
+    backtest = create_study(
+        f"{name} backtest", 'backtest',
+        parents={'model': model}, params={'period': period})
+    return backtest
