@@ -22,7 +22,7 @@ from bson.dbref import DBRef
 from fintrist import util, Config
 from fintrist.notify import Notification
 
-__all__ = ('BaseStudy', 'Study', 'Backtest', 'Process', 'Trigger', 'Recipe',
+__all__ = ('BaseStudy', 'Study', 'Process', 'Trigger', 'Recipe',
     'Stream', 'Strategy')
 
 logger = logging.getLogger(__name__)
@@ -472,60 +472,6 @@ class Strategy(Document):
             self.save()
         except KeyError:
             print(f"Trigger '{trig_id}' not found.")
-
-@clean_files.apply
-class Backtest(BaseStudy):
-    """Contains backtesting results.
-
-    days: Length of the backtesting interval.
-    end: Last date of the backtesting interval.
-
-    super.parents (dict):
-        model: Study containing the analysis to backtest
-        prices: Study containing historical price data
-
-    run: Run the analysis on each day of the interval, recording the action
-        signals that are triggered.
-
-    trade: Simulates a trading portfolio based on the action signals stored
-        after Backtest.run.
-    """
-    days = IntField(default=365)
-    end = DateTimeField(default=arrow.now(Config.TZ).datetime)
-
-    # pylint: disable=unsubscriptable-object
-    def __repr__(self):
-        return f"Backtest: {self.name}"
-
-    @property
-    def start(self):
-        """The first date of the interval"""
-        return self.end - dt.timedelta(days=self.days)
-
-    def run(self, strategy, function=None):
-        """Backtest the model Study on the interval and record actions."""
-        model = self.parents['model']
-        prices = self.parents['price']
-        parent_data = {name: study.data for name, study in model.parents.items()}
-
-        # Run on each day in the interval
-        simulated = []
-        tempstudy = Study()
-        for view_date in model.data[self.start:self.end].index:
-            trunc_data = {name: data[:view_date] for name, data in parent_data.items()}
-            _, newalerts = function(**trunc_data, **model.params)
-            tempstudy.alertslog.record_alerts(newalerts, view_date)
-            actions = strategy.check_actions(tempstudy)
-            simulated.append((view_date, actions))
-
-        # Save the data
-        simdata = pd.DataFrame(simulated, columns=['date', 'signals']).set_index('date')
-        pricedata = prices.data
-        simdata['price'] = (pricedata['high'] + pricedata['low'])/2
-        self.data = simdata
-        self.timestamp = arrow.now(Config.TZ)
-        self.save()
-        Notification(['printhead'], study=self, alerts=[])
 
 class Process(Document):
     """Handles for choosing the appropriate data-processing functions.
