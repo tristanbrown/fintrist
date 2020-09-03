@@ -8,7 +8,7 @@ Unreleased
 
 Added
 -----
-* Strategy
+* Strategy, create_strategy, get_strategy.
 
 Fixed
 -----

@@ -1,7 +1,7 @@
 """Helper functions."""
 import logging
 from mongoengine.errors import SaveConditionError, DoesNotExist
-from .models import Study, BaseStudy, Process, Recipe, Stream
+from .models import Study, BaseStudy, Process, Recipe, Stream, Strategy
 
 logger = logging.getLogger(__name__)
 
@@ -126,3 +126,20 @@ def spawn_stream(stream_name, **kwargs):
         spawn_study(recipe, **kwargs) for recipe in stream_obj.recipes
     ]
     return newstudies
+
+def get_strategy(strategy_id):
+    """Get a certain Recipe by name."""
+    return get_object(strategy_id, Strategy)
+
+def create_strategy(name, **kwargs):
+    existstrat = get_strategy(name)
+    if existstrat:
+        newstrat = existstrat
+        if kwargs:
+            newstrat.update(**kwargs)
+            newstrat.reload()
+    else:
+        newstrat = Strategy(name=name, **kwargs)
+    logger.debug(newstrat.to_json())
+    newstrat.save()
+    return newstrat

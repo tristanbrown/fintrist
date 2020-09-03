@@ -22,7 +22,8 @@ from bson.dbref import DBRef
 from fintrist import util, Config
 from fintrist.notify import Notification
 
-__all__ = ('BaseStudy', 'Study', 'Backtest', 'Process', 'Trigger', 'Recipe', 'Stream')
+__all__ = ('BaseStudy', 'Study', 'Backtest', 'Process', 'Trigger', 'Recipe',
+    'Stream', 'Strategy')
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,7 @@ class AlertsLog(EmbeddedDocument):
 class Trigger(EmbeddedDocument):
     """A rule determining how an action is triggered."""
     alert_types = ('all', 'active', 'inactive')
-    action_choices = ('log', 'printhead', 'email', 'sms', 'buy', 'sell')
+    action_choices = ('buy', 'sell', 'positive', 'negative')
     on = StringField(default='active', choices=alert_types)
     # TODO: Change matchtext to populate choices based on the analysis
     matchtext = StringField(max_length=120)
@@ -258,6 +259,9 @@ class BaseStudy(Document):
         schedule, _ = util.market_schedule(timestamp, now)
         ## New alert only if a new market day has begun. Otherwise, overwrite.
         open_dt = pd.DataFrame([], index=schedule['market_open'])
+        logger.debug(open_dt)
+        logger.debug(timestamp)
+        logger.debug(now)
         return len(open_dt[timestamp.datetime:now.datetime]) == 0
     
     @property
@@ -443,11 +447,12 @@ class Strategy(Document):
         for trigger in self.triggers.values():
             trigger.check_fire(study)
 
-    def check_actions(self, alertslog):
+    def check_actions(self, study):
         """Check the triggered actions."""
         actions = set()
+        logger.debug(study.alerts)
         for trigger in self.triggers.values():
-            actions.update(trigger.get_actions(alertslog))
+            actions.update(trigger.get_actions(study.alertslog))
         return actions
 
     def get_trigger(self, trig_id):
@@ -497,7 +502,7 @@ class Backtest(BaseStudy):
         """The first date of the interval"""
         return self.end - dt.timedelta(days=self.days)
 
-    def run(self, function=None, depends=None):
+    def run(self, strategy, function=None):
         """Backtest the model Study on the interval and record actions."""
         model = self.parents['model']
         prices = self.parents['price']
@@ -505,12 +510,12 @@ class Backtest(BaseStudy):
 
         # Run on each day in the interval
         simulated = []
-        alertslog = AlertsLog()
+        tempstudy = Study()
         for view_date in model.data[self.start:self.end].index:
             trunc_data = {name: data[:view_date] for name, data in parent_data.items()}
             _, newalerts = function(**trunc_data, **model.params)
-            alertslog.record_alerts(newalerts, view_date)
-            actions = model.check_actions(alertslog)
+            tempstudy.alertslog.record_alerts(newalerts, view_date)
+            actions = strategy.check_actions(tempstudy)
             simulated.append((view_date, actions))
 
         # Save the data

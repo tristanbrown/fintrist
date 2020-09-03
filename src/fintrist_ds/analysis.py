@@ -24,7 +24,7 @@ def any_data(data):
 def moving_avg(data):
     """Calculate the moving average values from the closing price.
     ::parents:: data
-    ::alerts:: MVA: 5d over 30d, MVA: 5d under 30d
+    ::alerts:: 5d over 30d, 5d under 30d
     """
     data = data.data
     alerts = []
@@ -37,9 +37,9 @@ def moving_avg(data):
     today = outdf.tail(1)
     diff_5_30 = today['5-day avg'] - today['30-day avg']
     if diff_5_30[0] > 0:
-        alerts.append('MVA: 5d over 30d')
+        alerts.append('5d over 30d')
     else:
-        alerts.append('MVA: 5d under 30d')
+        alerts.append('5d under 30d')
     return (outdf, alerts)
 
 def sample_dates(data, N=100, window=365, backdate=0):
