@@ -22,6 +22,8 @@ REQUIREMENTS = [
     'tulipy',
     'ruamel.yaml',
     'pandas-datareader',
+    'arrow',
+    'pandas-market-calendars',
 ]
 
 setup(
