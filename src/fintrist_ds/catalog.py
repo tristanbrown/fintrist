@@ -9,6 +9,7 @@ from fintrist import Study
 from .settings import Config
 from .scrapers import base
 from . import analysis
+from . import util
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +30,11 @@ def backtest(model, strategy, period='1y', end=None):
     # Define the time period
     if not end:
         end = arrow.now(Config.TZ)
-    if period == '1y':
-        start = end.shift(years=-1)
-    elif period == '10d':
-        start = end.shift(days=-10)
+    quant, unit = util.split_alphanum(period)
+    if unit == 'y':
+        start = end.shift(years=-quant)
+    elif unit == 'd':
+        start = end.shift(days=-quant)
     else:
         start = end.shift(years=-100)
 
@@ -43,11 +45,16 @@ def backtest(model, strategy, period='1y', end=None):
     function = CATALOG[model.process.name]
 
     # At each date, run the model's function on the previous data
+    full_range = model.data.index
     for view_date in model.data[start.date():end.date()].index:
         print(f"Backtesting at {view_date}")
         logger.info(f"Log: Backtesting at {view_date}")
-        prev_date = arrow.get(view_date).to(Config.TZ).shift(days=-1)
-        trunc_data = {name: data[:prev_date.date()] for name, data in parent_data.items()}
+        curr_idx = full_range.get_loc(view_date)
+        try:
+            prev_date = full_range[curr_idx - 1]
+        except IndexError:
+            continue
+        trunc_data = {name: data[:prev_date] for name, data in parent_data.items()}
         _, newalerts = function(**trunc_data, **model.params)
         tempstudy.alertslog.record_alerts(newalerts, view_date)
         actions = strategy.check_actions(tempstudy)

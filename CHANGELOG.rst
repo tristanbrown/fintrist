@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Changed
+-------
+* Allow any number of years or days to be specified for backtest.
+
 ==================
 0.4.0 - 2020-09-06
 ==================
