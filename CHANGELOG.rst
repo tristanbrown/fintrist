@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+==================
+0.4.0 - 2020-09-06
+==================
+
 Added
 -----
 * `Strategy` object, `create_strategy`, `get_strategy`.
