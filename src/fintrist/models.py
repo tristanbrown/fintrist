@@ -16,6 +16,7 @@ from mongoengine.fields import (
     ListField, MapField, ReferenceField, StringField,
     BooleanField,
 )
+from pymongo.errors import InvalidDocument
 from mongoengine import signals
 from bson.dbref import DBRef
 
@@ -226,7 +227,7 @@ class BaseStudy(Document):
         # Check the age of the data
         if self.valid_type == 'market':
             current = self.market_valid(self.timestamp)
-        elif self.valid_age == 0:
+        elif self.valid_type == 'always' or self.valid_age == 0:
             current = True
         else:
             current = arrow.now(Config.TZ) - self.timestamp < dt.timedelta(days=self.valid_age)
@@ -285,7 +286,10 @@ class BaseStudy(Document):
 
     def add_parents(self, newparents):
         """Add all of the parents in the given dict of ids."""
-        parent_objects = {key: BaseStudy.objects(name=val).get() for key, val in newparents.items()}
+        try:
+            parent_objects = {key: BaseStudy.objects(name=val).get() for key, val in newparents.items()}
+        except InvalidDocument:
+            parent_objects = newparents
         self.parents.update(parent_objects)
         self.save()
 
@@ -386,7 +390,14 @@ class Study(BaseStudy):
 
     def run(self, function=None, force=False):
         """Run the Study process on the inputs and return any alerts."""
-        self.data, newalerts = function(**self.parents, **self.params)
+        try:
+            parent_data = {name: parent.data for name, parent in self.parents.items()}
+            self.data, newalerts = function(**parent_data, **self.params)
+        except AttributeError as ex:
+            if "object has no attribute 'parents'" in str(ex):
+                self.data, newalerts = function(**self.parents, **self.params)
+            else:
+                raise
         if self.alert_overwrite(self.timestamp):
             self.alertslog.remove_alert()
         self.timestamp = arrow.now(Config.TZ)
@@ -453,7 +464,7 @@ class Strategy(Document):
         logger.debug(study.alerts)
         for trigger in self.triggers.values():
             actions.update(trigger.get_actions(study.alertslog))
-        return actions
+        return tuple(actions)
 
     def get_trigger(self, trig_id):
         """Return the desired trigger."""

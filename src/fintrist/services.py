@@ -55,11 +55,15 @@ def get_process(process_id):
 
 def create_study(name, process, parents=None, params=None, **kwargs):
     """Use a local or library function to create a new Study."""
+    if isinstance(process, str):
+        procname = process
+    else:
+        procname = process.__name__
     existproc = get_process(process)
     if existproc:
         newproc = existproc
     else:
-        newproc = Process(name=process.__name__, local=True)
+        newproc = Process(name=procname, local=True)
         newproc.get_params(process)
         newproc.save()
     existstudy = get_study(name)
@@ -155,10 +159,13 @@ def create_strategy(name, **kwargs):
     newstrat.save()
     return newstrat
 
-def create_backtest(name, period='1y'):
+def create_backtest(study_name, strategy_name, period='1y'):
     """Create a Study that can be used to backtest."""
-    model = get_study(name)
+    model = get_study(study_name)
+    strategy = get_strategy(strategy_name)
     backtest = create_study(
-        f"{name} backtest", 'backtest',
-        parents={'model': model}, params={'period': period})
+        f"{study_name}, {strategy_name} backtest", 'backtest',
+        parents={'model': model},
+        params={'strategy': strategy, 'period': period},
+        valid_type='always')
     return backtest

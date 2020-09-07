@@ -1,8 +1,11 @@
 """Utility functions"""
 import re
+import logging
 import pandas_market_calendars as mcal
 
 from fintrist import Config
+
+logger = logging.getLogger(__name__)
 
 def not_implemented(function):
     """"""
@@ -29,6 +32,9 @@ def get_variables(astr):
 def market_schedule(start, end):
     nyse = mcal.get_calendar('NYSE')
     schedule = nyse.schedule(start_date=start.datetime, end_date=end.datetime)
-    for col in schedule.columns:
-        schedule[col] = schedule[col].dt.tz_convert(Config.TZ)
+    try:
+        for col in schedule.columns:
+            schedule[col] = schedule[col].dt.tz_convert(Config.TZ)
+    except AttributeError:
+        pass
     return schedule, nyse

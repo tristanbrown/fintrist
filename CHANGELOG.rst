@@ -12,17 +12,20 @@ Added
 * `fintrist.create_backtest`
 * `backtest`, in fintrist_ds CATALOG.
 * Migrations suite.
+* Dask `close_client`.
 
 Fixed
 -----
 * Timestamps weren't updating on runs.
+* `create_study` now accepts strings as process names.
+* `market_schedule` now tolerates empty schedules.
 
 Changed
 -------
 * Transfer Triggers into new Strategy object.
-* Pass parent Study to analysis functions, instead of just data.
+* Can pass parent Study to analysis functions, instead of just data.
 * Make Backtest an ordinary Study, instead of its own object.
-
+* Triggered actions return as tuple.
 
 ==================
 0.3.1 - 2020-08-25

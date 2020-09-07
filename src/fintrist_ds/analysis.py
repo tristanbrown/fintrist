@@ -5,12 +5,8 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import dateutil
-import arrow
 
-from fintrist import Study
-from .settings import Config
-
-__all__ = ['any_data', 'moving_avg', 'backtest', 'sample_dates', 'simulate',
+__all__ = ['any_data', 'moving_avg', 'sample_dates', 'simulate',
     'multisim']
 
 def any_data(data):
@@ -18,7 +14,6 @@ def any_data(data):
     ::parents:: data
     ::alerts:: data exists, data does not exist
     """
-    data = data.data
     alerts = []
     if isinstance(data, pd.DataFrame) and not data.empty:
         alerts.append('data exists')
@@ -31,7 +26,6 @@ def moving_avg(prices):
     ::parents:: prices
     ::alerts:: 5d over 30d, 5d under 30d
     """
-    prices = prices.data
     alerts = []
     centering = False
     outdf = prices[['close']]
@@ -47,48 +41,12 @@ def moving_avg(prices):
         alerts.append('5d under 30d')
     return (outdf, alerts)
 
-def backtest(model, strategy, period='1y', end=None):
-    """Run the model Study on previous dates over the period,
-    collecting the alerts.
-    ::parents:: model, strategy
-    ::params:: period, end
-    ::alerts:: complete
-    """
-    # Define the time period
-    if not end:
-        end = arrow.now(Config.TZ)
-    if period == '1y':
-        years = 1
-    else:
-        years = 100
-    start = end.shift(years=-years)
-
-    # Set up the fake study to run
-    simulated = []
-    tempstudy = Study()
-    parent_data = {name: study.data for name, study in model.parents.items()}
-    function = globals()[model.process]
-
-    # At each date, run the model's function on the previous data
-    for view_date in model.data[start.date:end.date].index:
-        prev_date = arrow.get(view_date).to(Config.TZ).shift(days=-1)
-        trunc_data = {name: data[:prev_date] for name, data in parent_data.items()}
-        _, newalerts = function(**trunc_data, **model.params)
-        tempstudy.alertslog.record_alerts(newalerts, view_date)
-        actions = strategy.check_actions(tempstudy)
-        simulated.append((view_date, actions))
-
-    # Save the data
-    simdata = pd.DataFrame(simulated, columns=['date', 'signals']).set_index('date')
-    return simdata, ['complete']
-
 def sample_dates(data, N=100, window=365, backdate=0):
     """Sample the available dates in the data.
     ::parents:: data
     ::params:: N, window, backdate
     ::alerts:: complete
     """
-    data = data.data
     try:
         backdt = data.index[-1] - dt.timedelta(days=int(backdate))
     except ValueError:

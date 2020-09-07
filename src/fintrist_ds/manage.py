@@ -10,7 +10,7 @@ from .catalog import CATALOG
 from .dask import client
 from fintrist.models import Process
 
-__all__ = ['register', 'clear', 'restart_workers']
+__all__ = ['register', 'clear', 'restart_workers', 'close_client']
 
 def register():
     """Register all of the processes in the database."""
@@ -34,6 +34,11 @@ def clear():
 def restart_workers():
     """Restart the Dask workers to refresh the package cache."""
     client.restart()
+    return
+
+def close_client():
+    """End the dask client."""
+    client.close()
     return
 
 def main():
