@@ -11,6 +11,7 @@ Added
 * `Strategy` object, `create_strategy`, `get_strategy`.
 * `fintrist.create_backtest`
 * `backtest`, in fintrist_ds CATALOG.
+* Migrations suite.
 
 Fixed
 -----

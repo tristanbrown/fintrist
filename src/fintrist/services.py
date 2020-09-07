@@ -1,9 +1,20 @@
 """Helper functions."""
 import logging
 from mongoengine.errors import SaveConditionError, DoesNotExist
+
+from . import migrations
 from .models import Study, BaseStudy, Process, Recipe, Stream, Strategy
 
+
 logger = logging.getLogger(__name__)
+
+def migrate():
+    """Run all migrations."""
+    migrations.upgrade()
+
+def downgrade():
+    """Run all downgrade migrations."""
+    migrations.downgrade()
 
 def store_data(data, name, overwrite=False):
     """Create a new BaseStudy or overwrite an existing one with the given data."""
