@@ -1,13 +1,18 @@
 """"""
-from fintrist import Study
+from fintrist import Study, Recipe
 
 def upgrade():
-    for study in Study.objects(process='moving_avg'):
+    full_query = (
+        list(Recipe.objects(process='moving_avg')) +
+        list(Study.objects(process='moving_avg')))
+    for study in full_query:
         parents = study.parents
-        if 'prices' in parents.keys():
-            continue
         try:
-            parents['prices'] = parents.pop('data')
+            if 'prices' in parents.keys():
+                del parents['data']
+            else:
+                parents['prices'] = parents.pop('data')
+            study.update(parents=parents)
         except KeyError:
             pass
-        study.update(parents=parents)
+        

@@ -6,6 +6,11 @@ CHANGELOG
 Unreleased
 ==========
 
+Fixed
+-----
+* Fixed sma migration.
+* Fixed create_study process input.
+
 Changed
 -------
 * Allow any number of years or days to be specified for backtest.

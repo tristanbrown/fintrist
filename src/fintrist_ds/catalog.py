@@ -45,6 +45,7 @@ def backtest(model, strategy, period='1y', end=None):
     function = CATALOG[model.process.name]
 
     # At each date, run the model's function on the previous data
+    # TODO: Date range should be based on the model's parents, not the model.
     full_range = model.data.index
     for view_date in model.data[start.date():end.date()].index:
         print(f"Backtesting at {view_date}")

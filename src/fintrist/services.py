@@ -55,10 +55,10 @@ def get_process(process_id):
 
 def create_study(name, process, parents=None, params=None, **kwargs):
     """Use a local or library function to create a new Study."""
-    if isinstance(process, str):
-        procname = process
-    else:
+    try:
         procname = process.__name__
+    except AttributeError:
+        procname = process
     existproc = get_process(process)
     if existproc:
         newproc = existproc
