@@ -172,7 +172,7 @@ class BaseStudy(Document):
     # Data Outputs
     file = FileField()
     newfile = FileField()
-    _timestamp = DateTimeField()
+    _timestamp = StringField()
     valid_age = IntField(default=0)  # Zero means always valid
     valid_type = StringField(max_length=120, default='market')
 
@@ -194,6 +194,12 @@ class BaseStudy(Document):
         for key, parent in self.parents.items():
             if isinstance(parent, DBRef):
                 del self.parents[key]
+        # Timestamp display
+        try:
+            self._timestamp = self.timestamp.format()
+        except AttributeError:
+            self._timestamp = None
+        # Subclassed cleaning
         self.subclean()
 
     def subclean(self):
@@ -212,15 +218,8 @@ class BaseStudy(Document):
     @property
     def timestamp(self):
         """Preprocess the timestamp to ensure consistency."""
-        if self._timestamp:
-            return arrow.get(self._timestamp).to(Config.TZ)
-
-    @timestamp.setter
-    def timestamp(self, newdt):
-        """Process the timestamp for entry."""
-        if isinstance(newdt, arrow.Arrow):
-            newdt = newdt.datetime
-        self._timestamp = newdt
+        if self.file:
+            return arrow.get(self.file.uploadDate).to(Config.TZ)
 
     @property
     def valid(self):
@@ -264,9 +263,6 @@ class BaseStudy(Document):
         schedule, _ = util.market_schedule(timestamp, now)
         ## New alert only if a new market day has begun. Otherwise, overwrite.
         open_dt = pd.DataFrame([], index=schedule['market_open'])
-        logger.debug(open_dt)
-        logger.debug(timestamp)
-        logger.debug(now)
         return len(open_dt[timestamp.datetime:now.datetime]) == 0
     
     @property
@@ -334,8 +330,6 @@ class BaseStudy(Document):
             else:
                 self.write_to(self.newfile, newdata)
                 self.transfer_file()
-        self.timestamp = arrow.now(Config.TZ)
-        self.save()
 
     def write_to(self, field, newdata):
         """Write data to a FileField."""
