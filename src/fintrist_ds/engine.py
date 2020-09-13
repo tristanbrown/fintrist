@@ -9,7 +9,8 @@ from fintrist import (get_study, get_process, Process, BaseStudy,
 from .catalog import CATALOG
 from .settings import Config
 
-__all__ = ['build_dag', 'schedule_study', 'store_result', 'get_function']
+__all__ = ['build_dag', 'schedule_study', 'store_result', 'get_function',
+    'run_study']
 
 def build_dag(root_study, force=False):
     """Get the directed acyclic graph for this Study."""
@@ -21,14 +22,14 @@ def build_dag(root_study, force=False):
         dag[key] = (run_study, key_tag, root_id, force, deps)
     return dag
 
-def run_study(key, root_id, force=False, depends=None):
+def run_study(key, root_id=None, force=False, depends=None):
     """Function to be scheduled:
     Query the Study and run it (if no longer valid).
     """
     key = key.split("_")[0]
     study_obj = BaseStudy.objects(id=key).get()
     proc_func = get_function(study_obj.process.name)
-    if force or key == root_id:
+    if force or key == root_id or root_id is None:
         study_obj.run(proc_func, force)
     else:
         study_obj.run_if(proc_func)
@@ -50,18 +51,3 @@ def store_result(name, process, parents=None, params=None, **kwargs):
     newstudy.run(function=process)
     newstudy.save()
     return newstudy
-
-# def backtest_study(name, days=365, end=arrow.now(Config.TZ)):
-    # """"""
-    ## Create Backtest object, with desired study as the parent.
-
-    ## Run Backtest object to generate history of alerts and buy/sell signals.
-    ### - Every row is a run of the parent Study.
-    ### - Each run generates alerts.
-    ### - Alerts trigger the Study's Triggers, giving buy/sell signals.
-
-    ## Run simulate to generate portfolio value over a section of the backtest.
-    ### - This is where we specify the size of buy/sell actions.
-
-    ## Or use multisim to generate multiple time-slice samples over which to evaluate
-    ## the portfolio.
