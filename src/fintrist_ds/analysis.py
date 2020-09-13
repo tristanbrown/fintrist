@@ -3,8 +3,8 @@ A library of analytical methods.
 """
 import numpy as np
 import pandas as pd
-import datetime as dt
-import dateutil
+import arrow
+from .settings import Config
 
 __all__ = ['any_data', 'moving_avg', 'sample_dates', 'simulate',
     'multisim']
@@ -79,10 +79,10 @@ def multisim(backtest, cash=10000, weightstep=0.1, confidence=2, days=50, N=10):
     alerts = ['complete']
     return data, alerts
 
-def simulate(backtest, cash=10000, weightstep=0.5, confidence=2, start_date=None, days=0):
+def simulate(prices, backtest, cash=10000, weightstep=0.5, confidence=2, start_date=None, days=0):
     """Calculate the portfolio value gains/losses over the backtest period.
 
-    ::parents:: backtest
+    ::parents:: prices, backtest
     ::params:: cash, weightstep, confidence, start_date, days
     ::alerts:: complete
     """
@@ -93,22 +93,35 @@ def simulate(backtest, cash=10000, weightstep=0.5, confidence=2, start_date=None
     # Set up sub-intervals
     if start_date and days:
         if isinstance(start_date, str):
-            start_date = dateutil.parser.parse(start_date)
-        end_date = start_date + dt.timedelta(days=days)
+            start_date = arrow.get(start_date).replace(tzinfo=Config.TZ)
+        end_date = start_date.shift(days=days)
+        prices = prices[start_date:end_date]
         backtest = backtest[start_date:end_date]
+
+    # Get random market prices
+    data = pd.merge(
+        how='inner',
+        left=prices,
+        right=backtest,
+        left_index=True,
+        right_index=True,
+    )
+    data['market'] = data['low'] + np.random.rand(len(data)) * (data['high'] - data['low'])
 
     # Run the portfolio
     history = []
     portfolio = Portfolio(cash, 0, 0)
 
-    for _, row in backtest.iterrows():
-        portfolio.price = row['price']
+    for _, row in data.iterrows():
+        portfolio.price = row['market']
+        portfolio.split(row['splitFactor'])
         net_action = _calc_net_action(row['signals'], confidence)
         portfolio.weight_trade(net_action * weightstep)
+        portfolio.dividend(row['divCash'])
         history.append(portfolio.as_dict.copy())
 
-    history_df = pd.DataFrame(history, backtest.index)
-    record = history_df[['cash', 'shares', 'value', 'market return', '% return', 'alpha']]
+    history_df = pd.DataFrame(history, data.index)
+    record = history_df[['cash', 'shares', 'value', '% return']]
     alerts = ['complete']
     return (record, alerts)
 
@@ -133,8 +146,6 @@ class Portfolio():
     price: Current price of the asset of interest.
     shares: Shares held of the asset.
 
-
-    mkt_ret: Total % change in the underlying asset.
     pct_ret: Total % change in the Portfolio value.
     """
     def __init__(self, cash, shares, price):
@@ -149,8 +160,6 @@ class Portfolio():
         adict = self.__dict__.copy()
         adict['value'] = self.value
         adict['% return'] = self.pct_ret
-        adict['market return'] = self.mkt_ret
-        adict['alpha'] = self.pct_ret - self.mkt_ret
         del adict['start_value']
         del adict['start_price']
         del adict['_price']
@@ -179,11 +188,6 @@ class Portfolio():
         """Total % change in the Portfolio value."""
         return (self.value / self.start_value - 1) * 100
 
-    @property
-    def mkt_ret(self):
-        """Total % change in the underlying asset."""
-        return (self.price / self.start_price - 1) * 100
-
     def trade(self, order):
         """Try to buy or sell asset shares.
 
@@ -209,3 +213,11 @@ class Portfolio():
         offer = weight * self.value
         order = offer // self.price
         self.trade(order)
+
+    def split(self, splitfactor):
+        """Implement a split"""
+        self.shares = splitfactor * self.shares
+
+    def dividend(self, divcash):
+        """Pay a dividend."""
+        self.cash += divcash * self.shares

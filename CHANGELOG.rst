@@ -6,11 +6,16 @@ CHANGELOG
 Unreleased
 ==========
 
+Added
+-----
+* `create_sim`
+
 Fixed
 -----
 * Fixed sma migration.
 * Fixed create_study process input.
 * Study.timestamp comes from data file metadata.
+* Update `simulate` for new backtest structure.
 
 Changed
 -------

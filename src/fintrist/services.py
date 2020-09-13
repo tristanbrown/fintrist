@@ -169,3 +169,13 @@ def create_backtest(study_name, strategy_name, period='1y'):
         params={'strategy': strategy, 'period': period},
         valid_type='always')
     return backtest
+
+def create_sim(symbol, backtest_name, **kwargs):
+    prices = get_study(f"{symbol} daily")
+    backtest = get_study(backtest_name)
+    sim = create_study(
+        f"{backtest_name.rstrip(' backtest')} Sim", 'simulate',
+        parents={'prices': prices, 'backtest': backtest},
+        params=kwargs,
+        valid_type='always')
+    return sim
