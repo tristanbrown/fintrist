@@ -21,6 +21,7 @@ Changed
 -------
 * Allow any number of years or days to be specified for backtest.
 * Switch SMA analysis to use adjusted prices.
+* Data from scrapers will be mocked when backtesting.
 
 ==================
 0.4.0 - 2020-09-06

@@ -79,7 +79,7 @@ def multisim(backtest, cash=10000, weightstep=0.1, confidence=2, days=50, N=10):
     alerts = ['complete']
     return data, alerts
 
-def simulate(prices, backtest, cash=10000, weightstep=0.5, confidence=2, start_date=None, days=0):
+def simulate(prices, backtest, cash=10000, weightstep=1.0, confidence=2, start_date=None, days=0):
     """Calculate the portfolio value gains/losses over the backtest period.
 
     ::parents:: prices, backtest
