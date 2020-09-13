@@ -10,6 +10,7 @@ Fixed
 -----
 * Fixed sma migration.
 * Fixed create_study process input.
+* Study.timestamp update should be tied to data-saving.
 
 Changed
 -------

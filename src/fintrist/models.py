@@ -172,7 +172,7 @@ class BaseStudy(Document):
     # Data Outputs
     file = FileField()
     newfile = FileField()
-    _timestamp = DateTimeField(default=arrow.now(Config.TZ).datetime)
+    _timestamp = DateTimeField()
     valid_age = IntField(default=0)  # Zero means always valid
     valid_type = StringField(max_length=120, default='market')
 
@@ -212,7 +212,8 @@ class BaseStudy(Document):
     @property
     def timestamp(self):
         """Preprocess the timestamp to ensure consistency."""
-        return arrow.get(self._timestamp).to(Config.TZ)
+        if self._timestamp:
+            return arrow.get(self._timestamp).to(Config.TZ)
 
     @timestamp.setter
     def timestamp(self, newdt):
@@ -225,7 +226,9 @@ class BaseStudy(Document):
     def valid(self):
         """Check if the Study data is still valid."""
         # Check the age of the data
-        if self.valid_type == 'market':
+        if not self.timestamp:
+            current = False
+        elif self.valid_type == 'market':
             current = self.market_valid(self.timestamp)
         elif self.valid_type == 'always' or self.valid_age == 0:
             current = True
@@ -254,9 +257,10 @@ class BaseStudy(Document):
             return True
 
     @staticmethod
-    def alert_overwrite(timestamp):
+    def alert_overwrite(timestamp, now):
         """Check if the previous alert should be overwritten."""
-        now = arrow.now(Config.TZ)
+        if timestamp is None:
+            return False
         schedule, _ = util.market_schedule(timestamp, now)
         ## New alert only if a new market day has begun. Otherwise, overwrite.
         open_dt = pd.DataFrame([], index=schedule['market_open'])
@@ -330,6 +334,8 @@ class BaseStudy(Document):
             else:
                 self.write_to(self.newfile, newdata)
                 self.transfer_file()
+        self.timestamp = arrow.now(Config.TZ)
+        self.save()
 
     def write_to(self, field, newdata):
         """Write data to a FileField."""
@@ -390,6 +396,7 @@ class Study(BaseStudy):
 
     def run(self, function=None, force=False):
         """Run the Study process on the inputs and return any alerts."""
+        prev_timestamp = self.timestamp
         try:
             parent_data = {name: parent.data for name, parent in self.parents.items()}
             self.data, newalerts = function(**parent_data, **self.params)
@@ -398,9 +405,8 @@ class Study(BaseStudy):
                 self.data, newalerts = function(**self.parents, **self.params)
             else:
                 raise
-        if self.alert_overwrite(self.timestamp):
+        if self.alert_overwrite(prev_timestamp, self.timestamp):
             self.alertslog.remove_alert()
-        self.timestamp = arrow.now(Config.TZ)
         self.alertslog.record_alerts(newalerts, self.timestamp)
         self.save()
 
