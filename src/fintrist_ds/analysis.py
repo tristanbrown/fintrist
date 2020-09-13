@@ -28,8 +28,8 @@ def moving_avg(prices):
     """
     alerts = []
     centering = False
-    outdf = prices[['close']]
-    outdf = outdf.rename(columns={'close': 'close_price'})
+    outdf = prices[['adjClose']]
+    outdf = outdf.rename(columns={'adjClose': 'close_price'})
     outdf['5-day avg'] = outdf.rolling(5, center=centering).mean()
     outdf['30-day avg'] = outdf['close_price'].rolling(30, center=centering).mean()
     outdf['100-day avg'] = outdf['close_price'].rolling(100, center=centering).mean()

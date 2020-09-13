@@ -14,6 +14,7 @@ Fixed
 Changed
 -------
 * Allow any number of years or days to be specified for backtest.
+* Switch SMA analysis to use adjusted prices.
 
 ==================
 0.4.0 - 2020-09-06
