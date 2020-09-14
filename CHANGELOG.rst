@@ -10,6 +10,8 @@ Added
 -----
 * `create_sim`
 * `compare_sims`
+* `backtest_and_sim`
+* `plot_benchmark`
 
 Fixed
 -----
