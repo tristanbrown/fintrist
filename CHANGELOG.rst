@@ -9,6 +9,7 @@ Unreleased
 Added
 -----
 * `create_sim`
+* `compare_sims`
 
 Fixed
 -----
