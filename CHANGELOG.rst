@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Added
+-----
+* ETL for stock pricing features.
+
 ==================
 0.4.1 - 2020-09-13
 ==================

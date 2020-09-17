@@ -9,6 +9,7 @@ from fintrist import Study
 from .settings import Config
 from .scrapers import base
 from . import analysis
+from . import etl
 from . import util
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # CATALOG = dict(ins.getmembers(sys.modules[__name__], ins.isfunction))
 SCRAPERS_CATALOG = dict(ins.getmembers(base, ins.isfunction))
+ETL_CATALOG = dict(ins.getmembers(etl, ins.isfunction))
 ANALYSIS_CATALOG = dict(ins.getmembers(analysis, ins.isfunction))
 CATALOG = {**SCRAPERS_CATALOG, **ANALYSIS_CATALOG}
 
