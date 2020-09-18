@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import os
 
 import __about__
 
@@ -24,6 +25,7 @@ REQUIREMENTS = [
     'pandas-datareader',
     'arrow',
     'pandas-market-calendars',
+    f"alpaca_management @ git+https://{os.environ['GITHUB_TOKEN']}:x-oauth-basic@github.com/tristanbrown/alpaca_management.git@v0.1.1#egg=alpaca_management"
 ]
 
 setup(

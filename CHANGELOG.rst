@@ -9,6 +9,7 @@ Unreleased
 Added
 -----
 * ETL for stock pricing features.
+* Alpaca API.
 
 ==================
 0.4.1 - 2020-09-13
