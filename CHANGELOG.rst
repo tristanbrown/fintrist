@@ -11,6 +11,7 @@ Added
 * ETL for stock pricing features.
 * Alpaca API.
 * `market_open`
+* `stock_intraday` to get stock history at 1min intervals.
 
 Changed
 -------

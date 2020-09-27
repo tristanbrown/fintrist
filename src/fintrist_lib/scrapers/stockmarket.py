@@ -5,9 +5,11 @@ import pandas as pd
 import arrow
 import pandas_datareader as pdr
 import pandas_market_calendars as mcal
+
+from alpaca_management.connect import trade_api
 from fintrist_lib.settings import Config
 
-__all__ = ['stock', 'market_day', 'market_schedule', 'market_open']
+__all__ = ['stock', 'stock_intraday', 'market_schedule', 'market_open']
 
 def stock(symbol, frequency='daily', source=None, mock=None):
     """Get a stock quote history.
@@ -43,6 +45,51 @@ def stock(symbol, frequency='daily', source=None, mock=None):
         alerts.append('reverse split')
     return (data, alerts)
 
+def stock_intraday(symbols, day=None, tz=None, source=None, mock=None):
+    """Get intraday stock data.
+
+    ::parents:: mock
+    ::params:: symbols, day, tz, source
+    ::alerts:: source: Alpaca, source: mock
+    """
+    ## Choose the source
+    if mock is not None:
+        source = 'mock'
+    elif not source:
+        source = 'Alpaca'
+
+    ## Pick the day
+    latest_day = latest_market_day(day)
+    open_time = latest_day[0].isoformat()
+    close_time = latest_day[1].isoformat()
+    if tz is None:
+        tz = Config.TZ
+
+    ## Get the data
+    if source == 'Alpaca':
+        data = trade_api.get_barset(
+            symbols, timeframe='minute', start=open_time, end=close_time, limit=1000)
+        dfs = {symbol: format_stockrecords(records, tz) for symbol, records in data.items()}
+    elif source == 'mock':
+        dfs = mock
+    
+    ## Create alerts
+    alerts = [f'source: {source}']
+
+    return (dfs, alerts)
+
+def format_stockrecords(records, tz):
+    """Reformat stock tick records as a dataframe."""
+    df = pd.DataFrame.from_records(records.__dict__['_raw'])
+    df = df.rename({
+        'o': 'open', 'c': 'close',
+        'l': 'low', 'h': 'high',
+        'v': 'volume', 't': 'timestamp'}, axis=1
+    )
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', utc=True).dt.tz_convert(tz)
+    df = df.set_index('timestamp')
+    return df
+
 def market_schedule(start, end, tz=None):
     if tz is None:
         tz = Config.TZ
@@ -56,18 +103,17 @@ def market_schedule(start, end, tz=None):
     return schedule, nyse
 
 def market_open(now=None):
+    """Is the market open?"""
     nyse = mcal.get_calendar('NYSE')
     if now is None:
         now = arrow.now('America/New_York')
     schedule = nyse.schedule(start_date=now.datetime, end_date=now.datetime)
     return nyse.open_at_time(schedule, now.datetime)  # Market currently open
 
-
-def market_day(symbol, source=None, mock=None):
-    """Get a stock quote.
-
-    ::parents:: mock
-    ::params:: symbol, source
-    ::alerts:: source: AV, source: Tiingo, ex-dividend, split, reverse split
-    """
-    print("Not implemented")
+def latest_market_day(now=None):
+    """Get the hours of the most recent time when the market was open."""
+    tz = 'America/New_York'
+    if now is None:
+        now = arrow.now(tz)
+    schedule, nyse = market_schedule(now.shift(days=-7), now, tz)
+    return schedule.iloc[-1,:]
