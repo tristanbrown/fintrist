@@ -22,6 +22,7 @@ from bson.dbref import DBRef
 
 from fintrist import util, Config
 from fintrist.notify import Notification
+from fintrist_lib import market_schedule
 
 __all__ = ('BaseStudy', 'Study', 'Process', 'Trigger', 'Recipe',
     'Stream', 'Strategy')
@@ -245,7 +246,7 @@ class BaseStudy(Document):
     def market_valid(timestamp):
         """Check if the market has or hasn't progressed since the last timestamp."""
         now = arrow.now(Config.TZ)
-        schedule, nyse = util.market_schedule(timestamp, now)
+        schedule, nyse = market_schedule(timestamp, now)
         is_open = nyse.open_at_time(schedule, now.datetime)  # Market currently open
         open_close_dt = pd.DataFrame([], index=schedule.values.flatten())  ## Market day boundaries
         if is_open:  ## If the market is open, the data should be refreshed
@@ -260,7 +261,7 @@ class BaseStudy(Document):
         """Check if the previous alert should be overwritten."""
         if timestamp is None:
             return False
-        schedule, _ = util.market_schedule(timestamp, now)
+        schedule, _ = market_schedule(timestamp, now)
         ## New alert only if a new market day has begun. Otherwise, overwrite.
         open_dt = pd.DataFrame([], index=schedule['market_open'])
         return len(open_dt[timestamp.datetime:now.datetime]) == 0

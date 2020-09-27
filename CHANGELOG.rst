@@ -10,6 +10,13 @@ Added
 -----
 * ETL for stock pricing features.
 * Alpaca API.
+* `market_open`
+
+Changed
+-------
+* Reorganized processes into `fintrist_lib`.
+* Improved .gitignore.
+* Removed legacy AlphaVantage functions.
 
 ==================
 0.4.1 - 2020-09-13
