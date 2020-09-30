@@ -1,12 +1,14 @@
 """ETL Processes"""
 
 import numpy as np
+from .scrapers.stockmarket import latest_market_day
 
 __all__ = ['prep_pricing_data']
 
-def prep_pricing_data(prices):
-    data = prices.copy().drop(['close', 'high', 'low', 'open', 'volume'], axis=1)
+def prep_pricing_data(daily_prices, today_prices):
+    data = daily_prices.copy().drop(['close', 'high', 'low', 'open', 'volume'], axis=1)
     data = append_simquote(data)
+    data = append_today(data, today_prices)
     data = append_divyield(data)
     data = build_lookbacks(data)
     data = build_lookahead(data)
@@ -16,8 +18,20 @@ def append_simquote(data):
     data['quote'] = data['adjLow'] + np.random.rand(len(data)) * (data['adjHigh'] - data['adjLow'])
     return data
 
+def append_today(data, today_prices, div=0, split=1):
+    ## Market hours: use quote
+    ## After market: use close
+    ## Pre market: use previous close
+    today = latest_market_day().name.date()
+    data.loc[today, 'adjOpen'] = today_prices.iloc[0]['open']
+    data.loc[today, 'quote'] = today_prices.iloc[-1]['close']
+    if data.loc[today, ['divCash', 'splitFactor']].isnull().all():
+        data.loc[today, ['divCash', 'splitFactor']] = [div, split]
+    return data
+
 def append_divyield(data):
     data['divyield'] = data['divCash'] / data['adjClose'].shift(1)
+    return data
 
 def append_cumulative(data, lookback):
     ref = data['adjClose'].shift(lookback)
