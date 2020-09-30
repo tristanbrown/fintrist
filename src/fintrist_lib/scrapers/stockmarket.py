@@ -116,4 +116,8 @@ def latest_market_day(now=None):
     if now is None:
         now = arrow.now(tz)
     schedule, nyse = market_schedule(now.shift(days=-7), now, tz)
-    return schedule.iloc[-1,:]
+    last_day = schedule.iloc[-1]
+    if now.datetime < last_day['market_open']:
+        return schedule.iloc[-2]
+    else:
+        return last_day
