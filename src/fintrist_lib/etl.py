@@ -22,7 +22,7 @@ def append_today(data, today_prices, div=0, split=1):
     ## Market hours: use quote
     ## After market: use close
     ## Pre market: use previous close
-    today = latest_market_day().name.date()
+    today = today_prices.index[-1].date()
     data.loc[today, 'adjOpen'] = today_prices.iloc[0]['open']
     data.loc[today, 'quote'] = today_prices.iloc[-1]['close']
     if data.loc[today, ['divCash', 'splitFactor']].isnull().all():
@@ -33,11 +33,6 @@ def append_divyield(data):
     data['divyield'] = data['divCash'] / data['adjClose'].shift(1)
     return data
 
-def append_cumulative(data, lookback):
-    ref = data['adjClose'].shift(lookback)
-    data[f'% cumul-{lookback}'] = (data['quote'] - ref)/ref
-    return data
-
 def append_pct_overnight(data, lookback):
     ref = data['adjClose'].shift(lookback + 1)
     data[f'% overnight-{lookback}'] = (data['adjOpen'].shift(lookback) - ref)/ref
@@ -45,7 +40,16 @@ def append_pct_overnight(data, lookback):
     
 def append_pct_day(data, lookback):
     ref = data['adjOpen'].shift(lookback)
-    data[f'% day-{lookback}'] = (data['adjClose'].shift(1) - ref)/ref
+    if np.isnan(data['adjClose'][-1 - lookback]):
+        day_end = data['quote']
+    else:
+        day_end = data['adjClose']
+    data[f'% day-{lookback}'] = (day_end.shift(lookback) - ref)/ref
+    return data
+
+def append_cumulative(data, lookback):
+    ref = data['adjClose'].shift(lookback)
+    data[f'% cumul-{lookback}'] = (data['quote'] - ref)/ref
     return data
 
 def append_cum_vol_chg(data, lookback):
@@ -55,7 +59,7 @@ def append_cum_vol_chg(data, lookback):
 
 def build_lookbacks(data):
     data = data.copy()
-    recent_lookbacks = [1, 2, 3, 4, 5]
+    recent_lookbacks = [0, 1, 2, 3, 4, 5]
     cum_lookbacks = [1, 2, 3, 4, 5, 10, 15, 30, 60]
     for lookback in recent_lookbacks:
         data = append_pct_overnight(data, lookback)
