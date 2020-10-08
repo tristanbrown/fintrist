@@ -3,7 +3,12 @@
 import numpy as np
 from .scrapers.stockmarket import latest_market_day
 
-__all__ = ['prep_pricing_data']
+__all__ = ['prep_pricing_data', 'prep_trendlength_data']
+
+def prep_trendlength_data(daily_prices, today_prices):
+    data = prep_pricing_data(daily_prices, today_prices)
+    data = build_daystogain(data)
+    return data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
 
 def prep_pricing_data(daily_prices, today_prices):
     data = daily_prices.copy().drop(['close', 'high', 'low', 'open', 'volume'], axis=1)
@@ -11,8 +16,7 @@ def prep_pricing_data(daily_prices, today_prices):
     data = append_today(data, today_prices)
     data = append_divyield(data)
     data = build_lookbacks(data)
-    data = build_lookahead(data)
-    return data.drop(['adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
+    return data
 
 def append_simquote(data):
     data['quote'] = data['adjLow'] + np.random.rand(len(data)) * (data['adjHigh'] - data['adjLow'])
@@ -83,10 +87,10 @@ def check_future_gain(data, lookahead):
     data[f'future gain'] = gain > 0
     return data
 
-def build_lookahead(data, lookahead=30):
+def build_daystogain(data, lookahead=2000):
     data = data.copy()
     data['days to gain'] = np.NaN
-    for i in range(1, lookahead+1): # 1 to 30
+    for i in range(1, lookahead+1):
         check_future_gain(data, i)
         positive_today = data.loc[data['future gain'], 'future gain']
         data['days to gain'] = data['days to gain'].fillna(positive_today * i)
