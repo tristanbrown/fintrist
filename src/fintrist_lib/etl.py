@@ -1,7 +1,6 @@
 """ETL Processes"""
 
 import numpy as np
-from .scrapers.stockmarket import latest_market_day
 
 __all__ = ['prep_pricing_data', 'prep_trendlength_data']
 
@@ -23,9 +22,6 @@ def append_simquote(data):
     return data
 
 def append_today(data, today_prices, div=0, split=1):
-    ## Market hours: use quote
-    ## After market: use close
-    ## Pre market: use previous close
     today = today_prices.index[-1].date()
     data.loc[today, 'adjOpen'] = today_prices.iloc[0]['open']
     data.loc[today, 'quote'] = today_prices.iloc[-1]['close']
