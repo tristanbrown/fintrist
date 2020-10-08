@@ -13,6 +13,10 @@ Added
 * `market_open`
 * `stock_intraday` to get stock history at 1min intervals.
 
+Fixed
+-----
+* Limit CATALOG to functions specified in `__all__`.
+
 Changed
 -------
 * Reorganized processes into `fintrist_lib`.

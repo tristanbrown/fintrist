@@ -16,11 +16,14 @@ logger = logging.getLogger(__name__)
 
 ## The process registry ##
 
-# CATALOG = dict(ins.getmembers(sys.modules[__name__], ins.isfunction))
-SCRAPERS_CATALOG = dict(ins.getmembers(stockmarket, ins.isfunction))
-ETL_CATALOG = dict(ins.getmembers(etl, ins.isfunction))
-ANALYSIS_CATALOG = dict(ins.getmembers(analysis, ins.isfunction))
-CATALOG = {**SCRAPERS_CATALOG, **ANALYSIS_CATALOG}
+def get_catalog(module):
+    functions = ins.getmembers(module, ins.isfunction)
+    return {name: func for name, func in functions if name in module.__all__}
+
+SCRAPERS_CATALOG = get_catalog(stockmarket)
+ETL_CATALOG = get_catalog(etl)
+ANALYSIS_CATALOG = get_catalog(analysis)
+CATALOG = {**SCRAPERS_CATALOG, **ANALYSIS_CATALOG, **ETL_CATALOG}
 
 def backtest(model, strategy, period='1y', end=None):
     """Run the model Study on previous dates over the period,
