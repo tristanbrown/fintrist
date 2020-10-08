@@ -5,17 +5,31 @@ import numpy as np
 __all__ = ['prep_pricing_data', 'prep_trendlength_data']
 
 def prep_trendlength_data(daily_prices, today_prices):
-    data = prep_pricing_data(daily_prices, today_prices)
+    """Prepare stock data for a trend length indicator.
+
+    ::parents:: daily_prices, today_prices
+    ::params::
+    ::alerts::
+    """
+    data, alerts = prep_pricing_data(daily_prices, today_prices)
     data = build_daystogain(data)
-    return data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
+    data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
+    return data, alerts
 
 def prep_pricing_data(daily_prices, today_prices):
+    """Prepare pricing data for a stock.
+
+    ::parents:: daily_prices, today_prices
+    ::params::
+    ::alerts::
+    """
     data = daily_prices.copy().drop(['close', 'high', 'low', 'open', 'volume'], axis=1)
     data = append_simquote(data)
     data = append_today(data, today_prices)
     data = append_divyield(data)
     data = build_lookbacks(data)
-    return data
+    alerts = []
+    return data, alerts
 
 def append_simquote(data):
     data['quote'] = data['adjLow'] + np.random.rand(len(data)) * (data['adjHigh'] - data['adjLow'])
