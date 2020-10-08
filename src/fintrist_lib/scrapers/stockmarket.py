@@ -73,6 +73,9 @@ def stock_intraday(symbols, day=None, tz=None, source=None, mock=None):
     elif source == 'mock':
         dfs = mock
     
+    if isinstance(symbols, str) or len(symbols) == 1:
+        dfs = dfs[symbols]
+
     ## Create alerts
     alerts = [f'source: {source}']
 
