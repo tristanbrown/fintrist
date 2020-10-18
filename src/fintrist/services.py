@@ -53,7 +53,7 @@ def get_data(name):
 #     """Get a certain Study name or BaseStudy by name."""
 #     return get_object(process_id, Process)
 
-def create_study(name, process, parents=None, params=None, **kwargs):
+def create_study(name, process, parents=None, **kwargs):
     """Use a local or library function to create a new Study."""
     try:
         procname = process.__name__
@@ -71,9 +71,7 @@ def create_study(name, process, parents=None, params=None, **kwargs):
     else:
         newstudy = Study(name=name, process=existproc, **kwargs)
     if parents:
-            newstudy.add_parents(parents)
-    if params:
-            newstudy.add_params(params)
+            newstudy.set_parents(parents)
     newstudy.save()
     return newstudy
 

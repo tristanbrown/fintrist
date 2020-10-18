@@ -12,7 +12,7 @@ Added
 
 Fixed
 -----
-* None
+* Allow `create_study` to overwrite previous parents and params.
 
 Changed
 -------

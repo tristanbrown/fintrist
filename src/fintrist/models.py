@@ -294,6 +294,11 @@ class BaseStudy(Document):
         self.parents.update(parent_objects)
         self.save()
 
+    def set_parents(self, newparents):
+        """Overwrite the existing parents with new ones."""
+        self.parents = {}
+        self.add_parents(newparents)
+
     def add_params(self, newparams):
         """Add all of the params in the given dict."""
         self.params.update(newparams)
