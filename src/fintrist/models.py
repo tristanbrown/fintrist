@@ -219,8 +219,11 @@ class BaseStudy(Document):
     @property
     def timestamp(self):
         """Preprocess the timestamp to ensure consistency."""
-        if self.file:
-            return arrow.get(self.file.uploadDate).to(Config.TZ)
+        try:
+            recent_file = self.file
+            return arrow.get(recent_file.uploadDate).to(Config.TZ)
+        except:
+            return
 
     @property
     def valid(self):
@@ -637,7 +640,6 @@ class Recipe(Document):
             *self.params.values(),
         ]
         new_metaparams = set()
-        logger.debug(searchables)
         for case in searchables:
             try:
                 new_metaparams.update(util.get_variables(case))
