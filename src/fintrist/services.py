@@ -65,9 +65,9 @@ def create_study(name, process, parents=None, **kwargs):
     existstudy = get_study(name)
     if existstudy:
         newstudy = existstudy
-        if kwargs:
-            newstudy.update(**kwargs)
-            newstudy.reload()
+        kwargs['process'] = existproc
+        newstudy.update(**kwargs)
+        newstudy.reload()
     else:
         newstudy = Study(name=name, process=existproc, **kwargs)
     if parents:
