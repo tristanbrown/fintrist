@@ -8,18 +8,16 @@ import sys
 from mongoengine.errors import NotUniqueError
 from .catalog import CATALOG
 from .dask import client
-from fintrist.models import Process
+from fintrist.models import Recipe
+from fintrist.services import register_recipe
 
 __all__ = ['register', 'clear', 'restart_workers', 'close_client']
 
 def register():
-    """Register all of the processes in the database."""
+    """Register all of the processes as recipes in the database."""
     for name, func in CATALOG.items():
         try:
-            new_proc = Process(name=name)
-            new_proc.get_params(func)
-            new_proc.save(force_insert=True)
-            print(f"Inserted '{name}'.")
+            register_recipe(name, func)
         except NotUniqueError:
             print(f"'{name}' skipped: Already registered.")
         except Exception as ex:
@@ -27,9 +25,9 @@ def register():
             print(ex)
 
 def clear():
-    """Delete all processes in the database."""
-    Process.drop_collection()
-    print("Cleared the processes database.")
+    """Delete all recipes in the database."""
+    Recipe.drop_collection()
+    print("Cleared the recipes database.")
 
 def restart_workers():
     """Restart the Dask workers to refresh the package cache."""

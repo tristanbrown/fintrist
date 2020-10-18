@@ -3,7 +3,7 @@ import logging
 from mongoengine.errors import SaveConditionError, DoesNotExist
 
 from . import migrations
-from .models import Study, BaseStudy, Process, Recipe, Stream, Strategy
+from .models import Study, BaseStudy, Recipe, Stream, Strategy
 
 
 logger = logging.getLogger(__name__)
@@ -49,9 +49,9 @@ def get_data(name):
     if obj:
         return obj.data
 
-def get_process(process_id):
-    """Get a certain Study name or BaseStudy by name."""
-    return get_object(process_id, Process)
+# def get_process(process_id):
+#     """Get a certain Study name or BaseStudy by name."""
+#     return get_object(process_id, Process)
 
 def create_study(name, process, parents=None, params=None, **kwargs):
     """Use a local or library function to create a new Study."""
@@ -59,13 +59,9 @@ def create_study(name, process, parents=None, params=None, **kwargs):
         procname = process.__name__
     except AttributeError:
         procname = process
-    existproc = get_process(process)
-    if existproc:
-        newproc = existproc
-    else:
-        newproc = Process(name=procname, local=True)
-        newproc.get_params(process)
-        newproc.save()
+    existproc = get_recipe(procname)
+    if not existproc:
+        existproc = register_recipe(procname, process)
     existstudy = get_study(name)
     if existstudy:
         newstudy = existstudy
@@ -73,7 +69,7 @@ def create_study(name, process, parents=None, params=None, **kwargs):
             newstudy.update(**kwargs)
             newstudy.reload()
     else:
-        newstudy = Study(name=name, process=newproc, **kwargs)
+        newstudy = Study(name=name, process=existproc, **kwargs)
     if parents:
             newstudy.add_parents(parents)
     if params:
@@ -82,12 +78,19 @@ def create_study(name, process, parents=None, params=None, **kwargs):
     return newstudy
 
 def see_proc_args(name):
-    proc = get_process(name)
-    print(f"Parents: {proc.parents}")
-    print(f"Params: {proc.params}")
+    proc = get_recipe(name)
+    print(f"Parents: {list(proc.parents.keys())}")
+    print(f"Params: {list(proc.params.keys())}")
 
-def create_recipe(name, studyname, process, **kwargs):
-    existproc = get_process(process)
+def register_recipe(name, func):
+    new_proc = Recipe(name=name, process=name)
+    new_proc.get_params(func)
+    new_proc.get_metaparams()
+    new_proc.save(force_insert=True)
+    print(f"Inserted '{name}'.")
+    return new_proc
+
+def create_recipe(name, process, **kwargs):
     existrecipe = get_recipe(name)
     if existrecipe:
         newrecipe = existrecipe
@@ -95,7 +98,7 @@ def create_recipe(name, studyname, process, **kwargs):
             newrecipe.update(**kwargs)
             newrecipe.reload()
     else:
-        newrecipe = Recipe(name=name, studyname=studyname, process=existproc, **kwargs)
+        newrecipe = Recipe(name=name, process=process, **kwargs)
     newrecipe.get_metaparams()
     logger.debug(newrecipe.to_json())
     newrecipe.save()
@@ -126,7 +129,7 @@ def spawn_study(rec_name, **kwargs):
     recipe = get_recipe(rec_name)
     newstudy = create_study(
         name=recipe.studyname.format(**kwargs),
-        process=recipe.process,
+        process=recipe,
         parents={key: val.format(**kwargs) for key, val in recipe.parents.items()},
         params={key: val.format(**kwargs) for key, val in recipe.params.items()},
         valid_age=recipe.valid_age,

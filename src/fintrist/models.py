@@ -24,7 +24,7 @@ from fintrist import util, Config
 from fintrist.notify import Notification
 from fintrist_lib import market_schedule
 
-__all__ = ('BaseStudy', 'Study', 'Process', 'Trigger', 'Recipe',
+__all__ = ('BaseStudy', 'Study', 'Trigger', 'Recipe',
     'Stream', 'Strategy')
 
 logger = logging.getLogger(__name__)
@@ -358,7 +358,7 @@ class BaseStudy(Document):
 class Study(BaseStudy):
     """Contains data process results."""
     # Defining the analysis that generated the data
-    process = ReferenceField('Process', required=True)
+    process = ReferenceField('Recipe', required=True)
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
@@ -379,7 +379,7 @@ class Study(BaseStudy):
 
     def set_process(self, name):
         """Set the Study's Process based on a name."""
-        self.process = Process.objects(name=name).get()
+        self.process = Recipe.objects(name=name).get()
         self.save()
 
     def update_valid_age(self, new_age):
@@ -485,47 +485,47 @@ class Strategy(Document):
         except KeyError:
             print(f"Trigger '{trig_id}' not found.")
 
-class Process(Document):
-    """Handles for choosing the appropriate data-processing functions.
-    Parent arguments and parameters are parsed from the function docstring.
-    """
-    # Identity
-    name = StringField(max_length=120, required=True, primary_key=True)
-    local = BooleanField(default=False)
+# class Process(Document):
+#     """Handles for choosing the appropriate data-processing functions.
+    
+#     """
+#     # Identity
+#     name = StringField(max_length=120, required=True, primary_key=True)
+#     local = BooleanField(default=False)
 
-    # Args
-    parents = ListField(StringField())
-    params = ListField(StringField())
-    alerts = ListField(StringField())
+#     # Args
+#     parents = ListField(StringField())
+#     params = ListField(StringField())
+#     alerts = ListField(StringField())
 
-    # Meta
-    schema_version = IntField(default=1)
-    meta = {
-        'strict': False,
-        }
+#     # Meta
+#     schema_version = IntField(default=1)
+#     meta = {
+#         'strict': False,
+#         }
 
-    def __repr__(self):
-        return f"Process: {self.name}"
+#     def __repr__(self):
+#         return f"Process: {self.name}"
 
-    def get_params(self, func):
-        """Store the names for the parent data and parameter arguments."""
-        parents = []
-        params = []
-        alerts = []
-        docstr = inspect.getdoc(func)
-        if docstr is None:
-            return
-        for line in docstr.splitlines():
-            words = line.split(":: ")[-1].split(', ')
-            if line.startswith('::parents::'):
-                parents.extend(words)
-            elif line.startswith('::params::'):
-                params.extend(words)
-            elif line.startswith('::alerts::'):
-                alerts.extend(words)
-        self.parents = parents
-        self.params = params
-        self.alerts = alerts
+#     def get_params(self, func):
+#         """Store the names for the parent data and parameter arguments."""
+#         parents = []
+#         params = []
+#         alerts = []
+#         docstr = inspect.getdoc(func)
+#         if docstr is None:
+#             return
+#         for line in docstr.splitlines():
+#             words = line.split(":: ")[-1].split(', ')
+#             if line.startswith('::parents::'):
+#                 parents.extend(words)
+#             elif line.startswith('::params::'):
+#                 params.extend(words)
+#             elif line.startswith('::alerts::'):
+#                 alerts.extend(words)
+#         self.parents = parents
+#         self.params = params
+#         self.alerts = alerts
 
 class Stream(Document):
     """A recipe for a series of sequential Study objects.
@@ -561,18 +561,21 @@ class Stream(Document):
 class Recipe(Document):
     """Recipe for a Study
 
+    Parent arguments and parameters are parsed from the function docstring.
     """
     # ID
     name = StringField(max_length=120, required=True, unique=True)
-    studyname = StringField(max_length=120, required=True)
+    _studyname = StringField(max_length=120)
+    # autocreated = BooleanField(default=False)
 
     # Data Inputs
-    parents = MapField(StringField())  # Names of precursor data used by the Analysis
+    parents = DictField()  # Names of precursor data used by the Analysis
     params = DictField()  # Processing parameters.
     metaparams = ListField(StringField())  # Modifiable portions of recipe
+    alerts = ListField(StringField())  # List of possible alerts
 
     # Running parameters
-    process = ReferenceField('Process', required=True)
+    process = StringField(max_length=120)
     valid_age = IntField(default=0)
     valid_type = StringField(max_length=120, default='market')
 
@@ -585,6 +588,42 @@ class Recipe(Document):
     def __repr__(self):
         return f"Recipe: {self.name}"
 
+    @property
+    def studyname(self):
+        if self._studyname:
+            return self._studyname
+        else:
+            metaparam_list = "{" + "}, {".join(self.metaparams) + "}"
+            return f"{self.process}: {metaparam_list}"
+
+    @studyname.setter
+    def studyname(self, value):
+        self._studyname = value
+
+    def get_params(self, func):
+        """Store the names for the parent data and parameter arguments."""
+        parents = []
+        params = []
+        alerts = []
+        docstr = inspect.getdoc(func)
+        if docstr is None:
+            return
+        for line in docstr.splitlines():
+            words = line.split(":: ")[-1].split(', ')
+            if line.startswith('::parents::'):
+                parents.extend(words)
+            elif line.startswith('::params::'):
+                params.extend(words)
+            elif line.startswith('::alerts::'):
+                alerts.extend(words)
+            elif line.startswith('::valid_age::'):
+                self.valid_age = int(words[0])
+            elif line.startswith('::valid_type::'):
+                self.valid_type = words[0]
+        self.parents = {parent: self.parents.get(parent) for parent in parents}
+        self.params = {param: self.params.get(param) for param in params}
+        self.alerts = alerts
+
     def get_metaparams(self):
         """Find all curly-bracked variables and store them."""
         searchables = [
@@ -593,6 +632,10 @@ class Recipe(Document):
             *self.params.values(),
         ]
         new_metaparams = set()
+        logger.debug(searchables)
         for case in searchables:
-            new_metaparams.update(util.get_variables(case))
+            try:
+                new_metaparams.update(util.get_variables(case))
+            except TypeError:
+                pass
         self.metaparams = list(new_metaparams)

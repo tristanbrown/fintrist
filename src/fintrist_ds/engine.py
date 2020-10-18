@@ -3,8 +3,7 @@ The engine that applies analyses to studies.
 """
 from .dask import client
 
-from fintrist import (get_study, get_process, Process, BaseStudy,
-    Study, create_study)
+from fintrist import (get_study, BaseStudy, Study, create_study)
 
 from .catalog import CATALOG
 from .settings import Config

@@ -6,6 +6,18 @@ CHANGELOG
 Unreleased
 ==========
 
+Added
+-----
+* None
+
+Fixed
+-----
+* None
+
+Changed
+-------
+* Merged `Process` into `Recipe`.
+
 ==================
 0.5.0 - 2020-10-17
 ==================
