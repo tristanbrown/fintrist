@@ -49,10 +49,6 @@ def get_data(name):
     if obj:
         return obj.data
 
-# def get_process(process_id):
-#     """Get a certain Study name or BaseStudy by name."""
-#     return get_object(process_id, Process)
-
 def create_study(name, process, parents=None, **kwargs):
     """Use a local or library function to create a new Study."""
     try:

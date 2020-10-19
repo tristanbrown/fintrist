@@ -48,5 +48,4 @@ def store_result(name, process, parents=None, params=None, **kwargs):
         process = get_function(process)
     newstudy = create_study(name, process, parents, params=params, **kwargs)
     newstudy.run(function=process)
-    newstudy.save()
     return newstudy

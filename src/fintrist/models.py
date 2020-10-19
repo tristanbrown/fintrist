@@ -24,8 +24,7 @@ from fintrist import util, Config
 from fintrist.notify import Notification
 from fintrist_lib import market_schedule
 
-__all__ = ('BaseStudy', 'Study', 'Trigger', 'Recipe',
-    'Stream', 'Strategy')
+__all__ = ('BaseStudy', 'Study', 'Trigger', 'Recipe', 'Stream', 'Strategy')
 
 logger = logging.getLogger(__name__)
 
@@ -492,48 +491,6 @@ class Strategy(Document):
             self.save()
         except KeyError:
             print(f"Trigger '{trig_id}' not found.")
-
-# class Process(Document):
-#     """Handles for choosing the appropriate data-processing functions.
-    
-#     """
-#     # Identity
-#     name = StringField(max_length=120, required=True, primary_key=True)
-#     local = BooleanField(default=False)
-
-#     # Args
-#     parents = ListField(StringField())
-#     params = ListField(StringField())
-#     alerts = ListField(StringField())
-
-#     # Meta
-#     schema_version = IntField(default=1)
-#     meta = {
-#         'strict': False,
-#         }
-
-#     def __repr__(self):
-#         return f"Process: {self.name}"
-
-#     def get_params(self, func):
-#         """Store the names for the parent data and parameter arguments."""
-#         parents = []
-#         params = []
-#         alerts = []
-#         docstr = inspect.getdoc(func)
-#         if docstr is None:
-#             return
-#         for line in docstr.splitlines():
-#             words = line.split(":: ")[-1].split(', ')
-#             if line.startswith('::parents::'):
-#                 parents.extend(words)
-#             elif line.startswith('::params::'):
-#                 params.extend(words)
-#             elif line.startswith('::alerts::'):
-#                 alerts.extend(words)
-#         self.parents = parents
-#         self.params = params
-#         self.alerts = alerts
 
 class Stream(Document):
     """A recipe for a series of sequential Study objects.

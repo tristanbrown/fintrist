@@ -13,11 +13,11 @@ Added
 Fixed
 -----
 * Allow `create_study` to overwrite previous process, parents, and params.
-* Eliminated all `Document.reload` to avoid bug that breaks FileField.
+* Eliminate all `Document.reload` to avoid bug that breaks FileField.
 
 Changed
 -------
-* Merged `Process` into `Recipe`.
+* Merge `Process` into `Recipe`.
 
 ==================
 0.5.0 - 2020-10-17
