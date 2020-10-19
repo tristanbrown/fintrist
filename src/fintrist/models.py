@@ -572,7 +572,7 @@ class Recipe(Document):
     Parent arguments and parameters are parsed from the function docstring.
     """
     # ID
-    name = StringField(max_length=120, required=True, unique=True)
+    name = StringField(max_length=120, primary_key=True)
     _studyname = StringField(max_length=120)
     # autocreated = BooleanField(default=False)
 
