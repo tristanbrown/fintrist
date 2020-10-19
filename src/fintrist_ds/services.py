@@ -27,5 +27,5 @@ def backtest_and_sim(symbol, model, strategy, period='5y'):
     backtest = create_backtest(model, strategy, period)
     sim = create_sim(symbol, backtest.name)
     schedule_study(sim, force=True)
-    sim.reload()
+    sim = get_study(sim.name)
     return sim

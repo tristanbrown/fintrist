@@ -67,7 +67,6 @@ def create_study(name, process, parents=None, **kwargs):
         newstudy = existstudy
         kwargs['process'] = existproc
         newstudy.update(**kwargs)
-        newstudy.reload()
     else:
         newstudy = Study(name=name, process=existproc, **kwargs)
     if parents:
@@ -94,7 +93,6 @@ def create_recipe(name, process, **kwargs):
         newrecipe = existrecipe
         if kwargs:
             newrecipe.update(**kwargs)
-            newrecipe.reload()
     else:
         newrecipe = Recipe(name=name, process=process, **kwargs)
     newrecipe.get_metaparams()
@@ -153,7 +151,6 @@ def create_strategy(name, **kwargs):
         newstrat = existstrat
         if kwargs:
             newstrat.update(**kwargs)
-            newstrat.reload()
     else:
         newstrat = Strategy(name=name, **kwargs)
     logger.debug(newstrat.to_json())
