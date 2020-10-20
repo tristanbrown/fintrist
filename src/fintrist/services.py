@@ -83,7 +83,7 @@ def register_recipe(name, func):
     print(f"Inserted '{name}'.")
     return new_proc
 
-def create_recipe(name, process, **kwargs):
+def create_recipe(name, process, studyname=None, **kwargs):
     existrecipe = get_recipe(name)
     if existrecipe:
         newrecipe = existrecipe
@@ -91,6 +91,8 @@ def create_recipe(name, process, **kwargs):
             newrecipe.update(**kwargs)
     else:
         newrecipe = Recipe(name=name, process=process, **kwargs)
+    if studyname:
+        newrecipe.studyname = studyname
     newrecipe.get_metaparams()
     logger.debug(newrecipe.to_json())
     newrecipe.save()
