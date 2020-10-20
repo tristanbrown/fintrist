@@ -48,9 +48,9 @@ def backtest(model, strategy, period='1y', end=None):
     tempstudy = Study()
     parent_data = {name: study.data for name, study in model.parents.items()}
     try:
-        function = ANALYSIS_CATALOG[model.process.name]
+        function = ANALYSIS_CATALOG[model.recipe.process]
     except KeyError:
-        function = SCRAPERS_CATALOG[model.process.name]
+        function = SCRAPERS_CATALOG[model.recipe.process]
         parent_data['mock'] = model.data
 
     # At each date, run the model's function on the previous data

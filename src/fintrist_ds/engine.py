@@ -27,7 +27,7 @@ def run_study(key, root_id=None, force=False, depends=None):
     """
     key = key.split("_")[0]
     study_obj = BaseStudy.objects(id=key).get()
-    proc_func = get_function(study_obj.process.name)
+    proc_func = get_function(study_obj.recipe.process)
     if force or key == root_id or root_id is None:
         study_obj.run(proc_func, force)
     else:

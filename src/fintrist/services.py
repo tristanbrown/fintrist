@@ -61,10 +61,10 @@ def create_study(name, process, parents=None, **kwargs):
     existstudy = get_study(name)
     if existstudy:
         newstudy = existstudy
-        kwargs['process'] = existproc
+        kwargs['recipe'] = existproc
         newstudy.update(**kwargs)
     else:
-        newstudy = Study(name=name, process=existproc, **kwargs)
+        newstudy = Study(name=name, recipe=existproc, **kwargs)
     if parents:
             newstudy.set_parents(parents)
     newstudy.save()

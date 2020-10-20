@@ -365,7 +365,7 @@ class BaseStudy(Document):
 class Study(BaseStudy):
     """Contains data process results."""
     # Defining the analysis that generated the data
-    process = ReferenceField('Recipe', required=True)
+    recipe = ReferenceField('Recipe', required=True)
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
@@ -384,9 +384,9 @@ class Study(BaseStudy):
 
     ## Methods defining the Study ##
 
-    def set_process(self, name):
-        """Set the Study's Process based on a name."""
-        self.process = Recipe.objects(name=name).get()
+    def set_recipe(self, name):
+        """Set the Study's Recipe based on a name."""
+        self.recipe = Recipe.objects(name=name).get()
         self.save()
 
     def update_valid_age(self, new_age):
@@ -417,12 +417,12 @@ class Study(BaseStudy):
     @property
     def all_parents(self):
         """Full dict of parent kwargs, even if not set yet."""
-        return {key: self.parents.get(key) for key in self.process.parents}
+        return {key: self.parents.get(key) for key in self.recipe.parents}
 
     @property
     def all_params(self):
         """Full dict of param kwargs, even if not set yet."""
-        return {key: self.params.get(key) for key in self.process.params}
+        return {key: self.params.get(key) for key in self.recipe.params}
 
     ## Methods for handling alerts ##
 
