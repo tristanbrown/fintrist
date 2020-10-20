@@ -9,13 +9,13 @@ import pandas_market_calendars as mcal
 from alpaca_management.connect import trade_api
 from fintrist_lib.settings import Config
 
-__all__ = ['stock', 'stock_intraday', 'market_schedule', 'market_open']
+__all__ = ['stock_daily', 'stock_intraday', 'market_schedule', 'market_open']
 
-def stock(symbol, frequency='daily', source=None, mock=None):
+def stock_daily(symbol, source=None, mock=None):
     """Get a stock quote history.
 
     ::parents:: mock
-    ::params:: symbol, frequency, source
+    ::params:: symbol, source
     ::alerts:: source: AV, source: Tiingo, ex-dividend, split, reverse split
     """
     ## Get the data from whichever source

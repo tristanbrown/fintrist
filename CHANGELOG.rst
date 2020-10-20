@@ -18,6 +18,7 @@ Fixed
 Changed
 -------
 * Merge `Process` into `Recipe`.
+* Rename `stock` process to `stock_daily`.
 
 ==================
 0.5.0 - 2020-10-17
