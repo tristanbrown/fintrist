@@ -12,7 +12,7 @@ Added
 
 Fixed
 -----
-* Allow `create_study` to overwrite previous process, parents, and params.
+* Allow `create_study` and `create_recipe` to overwrite previous process, parents, and params.
 * Eliminate all `Document.reload` to avoid bug that breaks FileField.
 
 Changed

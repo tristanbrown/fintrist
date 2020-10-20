@@ -87,8 +87,8 @@ def create_recipe(name, process, studyname=None, **kwargs):
     existrecipe = get_recipe(name)
     if existrecipe:
         newrecipe = existrecipe
-        if kwargs:
-            newrecipe.update(**kwargs)
+        kwargs['process'] = process
+        newrecipe.update(**kwargs)
     else:
         newrecipe = Recipe(name=name, process=process, **kwargs)
     if studyname:
