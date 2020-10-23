@@ -8,42 +8,52 @@ import pandas_market_calendars as mcal
 
 from alpaca_management.connect import trade_api
 from fintrist_lib.settings import Config
+from fintrist_lib.base import Recipe
 
 __all__ = ['stock_daily', 'stock_intraday', 'market_schedule', 'market_open']
 
-def stock_daily(symbol, source=None, mock=None):
-    """Get a stock quote history.
+class StockDaily(Recipe):
 
-    ::parents:: mock
-    ::params:: symbol, source
-    ::alerts:: source: AV, source: Tiingo, ex-dividend, split, reverse split
-    """
-    ## Get the data from whichever source
-    if mock is not None:
-        source = 'mock'
-    elif not source:
-        source = 'Tiingo'
-    if source == 'AV':
-        data = pdr.get_data_alphavantage(symbol, api_key=Config.APIKEY_AV, start='1900')
-        data.index = pd.to_datetime(data.index)
-    elif source == 'Tiingo':
-        data = pdr.get_data_tiingo(symbol, api_key=Config.APIKEY_TIINGO, start='1900')
-        data = data.droplevel('symbol')  # Multiple stock symbols are possible
-        data.index = data.index.date
-    elif source == 'mock':
-        data = mock
+    parents = {'mock': None}
+    parent_params = None
+    valid_type = 'market'
 
-    ## Create alerts
-    alerts = [f'source: {source}']
-    div = data.loc[data.index.max(), 'divCash']
-    if div > 0:
-        alerts.append('ex-dividend')
-    splitf = data.loc[data.index.max(), 'splitFactor']
-    if splitf > 1:
-        alerts.append('split')
-    elif splitf < 1:
-        alerts.append('reverse split')
-    return (data, alerts)
+    def __init__(self, symbol='SPY'):
+        self.studyname = f"{symbol} Stock Daily"
+
+    def process(self, symbol='SPY', source=None, mock=None):
+        """Get a stock quote history.
+
+        ::parents:: mock
+        ::params:: symbol, source
+        ::alerts:: source: AV, source: Tiingo, ex-dividend, split, reverse split
+        """
+        ## Get the data from whichever source
+        if mock is not None:
+            source = 'mock'
+        elif not source:
+            source = 'Tiingo'
+        if source == 'AV':
+            data = pdr.get_data_alphavantage(symbol, api_key=Config.APIKEY_AV, start='1900')
+            data.index = pd.to_datetime(data.index)
+        elif source == 'Tiingo':
+            data = pdr.get_data_tiingo(symbol, api_key=Config.APIKEY_TIINGO, start='1900')
+            data = data.droplevel('symbol')  # Multiple stock symbols are possible
+            data.index = data.index.date
+        elif source == 'mock':
+            data = mock
+
+        ## Create alerts
+        alerts = [f'source: {source}']
+        div = data.loc[data.index.max(), 'divCash']
+        if div > 0:
+            alerts.append('ex-dividend')
+        splitf = data.loc[data.index.max(), 'splitFactor']
+        if splitf > 1:
+            alerts.append('split')
+        elif splitf < 1:
+            alerts.append('reverse split')
+        return (data, alerts)
 
 def stock_intraday(symbols, day=None, tz=None, source=None, mock=None):
     """Get intraday stock data.

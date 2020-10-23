@@ -100,7 +100,7 @@ def create_recipe(name, process, studyname=None, **kwargs):
 
 def get_recipe(recipe_id):
     """Get a certain Recipe by name."""
-    return get_object(recipe_id, Recipe)
+    return get_object(recipe_id, Recipe).process
 
 def create_stream(name, recipe_list):
     recipes = [get_recipe(recipe) for recipe in recipe_list]
@@ -120,17 +120,24 @@ def get_stream(stream_id):
 
 def spawn_study(rec_name, **kwargs):
     """Spawn a study from a recipe."""
-    recipe = get_recipe(rec_name)
+    template = get_recipe(rec_name)
+    recipe = template(**kwargs)
     newstudy = create_study(
-        name=recipe.studyname.format(**kwargs),
+        name=recipe.studyname,
         process=recipe,
-        parents={key: val.format(**kwargs) for key, val in recipe.parents.items()},
-        params={key: val.format(**kwargs) for key, val in recipe.params.items()},
-        valid_age=recipe.valid_age,
+        parents=spawn_parents(recipe),
+        params=kwargs,
         valid_type=recipe.valid_type,
     )
     newstudy.save()
     return newstudy
+
+def spawn_parents(recipe):
+    """Spawn the parent studies required for a recipe."""
+    parents = {
+        parent_key: spawn_study(parent_name, **recipe.parent_params[parent_key])
+        for parent_key, parent_name in recipe.parents.items()}
+    return parents
 
 def spawn_stream(stream_name, **kwargs):
     stream_obj = get_stream(stream_name)

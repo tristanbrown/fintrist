@@ -8,7 +8,7 @@ Unreleased
 
 Added
 -----
-* None
+* Recipes can spawn parent studies.
 
 Fixed
 -----
@@ -17,7 +17,7 @@ Fixed
 
 Changed
 -------
-* Merge `Process` into `Recipe`.
+* Merge `Process` and `Recipe` in fintrist_lib.
 * Rename `stock` process to `stock_daily`.
 
 ==================
