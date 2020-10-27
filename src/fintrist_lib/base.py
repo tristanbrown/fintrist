@@ -1,11 +1,15 @@
 """Base classes for analytical processes."""
 
-class Recipe():
+class RecipeBase():
 
     studyname = None
     parents = None
     parent_params = None
     valid_type = None
 
-def process(self):
-    pass
+    def __repr__(self):
+        return self.studyname
+
+    @staticmethod
+    def process(*args, **kwargs):
+        pass

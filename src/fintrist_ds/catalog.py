@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 ## The process registry ##
 
 def get_catalog(module):
-    functions = ins.getmembers(module, ins.isfunction)
-    return {name: func for name, func in functions if name in module.__all__}
+    recipes = ins.getmembers(module)
+    return {name: recipe for name, recipe in recipes if name in module.__all__}
 
 SCRAPERS_CATALOG = get_catalog(stockmarket)
 ETL_CATALOG = get_catalog(etl)

@@ -524,25 +524,10 @@ class Stream(Document):
         self.metaparams[key] = value
 
 class Recipe(Document):
-    """Recipe for a Study
-
-    Parent arguments and parameters are parsed from the function docstring.
+    """Handles for choosing the appropriate Study template.
     """
     # ID
     name = StringField(max_length=120, primary_key=True)
-    _studyname = StringField(max_length=120)
-    # autocreated = BooleanField(default=False)
-
-    # Data Inputs
-    parents = DictField()  # Names of precursor data used by the Analysis
-    params = DictField()  # Processing parameters.
-    metaparams = ListField(StringField())  # Modifiable portions of recipe
-    alerts = ListField(StringField())  # List of possible alerts
-
-    # Running parameters
-    process = StringField(max_length=120)
-    valid_age = IntField(default=0)
-    valid_type = StringField(max_length=120, default='market')
 
     # Meta
     schema_version = IntField(default=1)
@@ -553,53 +538,5 @@ class Recipe(Document):
     def __repr__(self):
         return f"Recipe: {self.name}"
 
-    @property
-    def studyname(self):
-        if self._studyname:
-            return self._studyname
-        else:
-            metaparam_list = "{" + "}, {".join(self.metaparams) + "}"
-            return f"{self.process}: {metaparam_list}"
-
-    @studyname.setter
-    def studyname(self, value):
-        self._studyname = value
-
-    def get_params(self, func):
-        """Store the names for the parent data and parameter arguments."""
-        parents = []
-        params = []
-        alerts = []
-        docstr = inspect.getdoc(func)
-        if docstr is None:
-            return
-        for line in docstr.splitlines():
-            words = line.split(":: ")[-1].split(', ')
-            if line.startswith('::parents::'):
-                parents.extend(words)
-            elif line.startswith('::params::'):
-                params.extend(words)
-            elif line.startswith('::alerts::'):
-                alerts.extend(words)
-            elif line.startswith('::valid_age::'):
-                self.valid_age = int(words[0])
-            elif line.startswith('::valid_type::'):
-                self.valid_type = words[0]
-        self.parents = {parent: self.parents.get(parent) for parent in parents}
-        self.params = {param: self.params.get(param) for param in params}
-        self.alerts = alerts
-
-    def get_metaparams(self):
-        """Find all curly-bracked variables and store them."""
-        searchables = [
-            self.studyname,
-            *self.parents.values(),
-            *self.params.values(),
-        ]
-        new_metaparams = set()
-        for case in searchables:
-            try:
-                new_metaparams.update(util.get_variables(case))
-            except TypeError:
-                pass
-        self.metaparams = list(new_metaparams)
+    def __str__(self):
+        return self.name

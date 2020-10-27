@@ -8,11 +8,11 @@ import pandas_market_calendars as mcal
 
 from alpaca_management.connect import trade_api
 from fintrist_lib.settings import Config
-from fintrist_lib.base import Recipe
+from fintrist_lib.base import RecipeBase
 
-__all__ = ['stock_daily', 'stock_intraday', 'market_schedule', 'market_open']
+__all__ = ['StockDaily', 'stock_intraday', 'market_schedule', 'market_open']
 
-class StockDaily(Recipe):
+class StockDaily(RecipeBase):
 
     parents = {'mock': None}
     parent_params = None
@@ -21,7 +21,8 @@ class StockDaily(Recipe):
     def __init__(self, symbol='SPY'):
         self.studyname = f"{symbol} Stock Daily"
 
-    def process(self, symbol='SPY', source=None, mock=None):
+    @staticmethod
+    def process(symbol='SPY', source=None, mock=None, **kwargs):
         """Get a stock quote history.
 
         ::parents:: mock

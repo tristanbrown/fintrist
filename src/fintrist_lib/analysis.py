@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import arrow
 from .settings import Config
-from .base import Recipe
+from .base import RecipeBase
 
-__all__ = ['any_data', 'moving_avg', 'sample_dates', 'simulate',
+__all__ = ['any_data', 'MovingAvg', 'sample_dates', 'simulate',
     'multisim']
 
 def any_data(data):
@@ -22,7 +22,7 @@ def any_data(data):
         alerts.append('data does not exist')
     return (None, alerts)
 
-class MovingAvg(Recipe):
+class MovingAvg(RecipeBase):
 
     parents = {'prices': 'StockDaily'}
     valid_type = 'market'
@@ -31,7 +31,8 @@ class MovingAvg(Recipe):
         self.studyname = f"{symbol} moving avg"
         self.parent_params = {'prices': {'symbol': symbol}}
 
-    def function(self, prices):
+    @staticmethod
+    def process(prices, **kwargs):
         alerts = []
         centering = False
         outdf = prices[['adjClose']]
