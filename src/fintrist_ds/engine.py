@@ -4,8 +4,9 @@ The engine that applies analyses to studies.
 from .dask import client
 
 from fintrist import (get_study, BaseStudy, Study, create_study)
+from fintrist_lib import CATALOG
 
-from .catalog import CATALOG
+from .backtest import backtest
 from .settings import Config
 
 __all__ = ['build_dag', 'schedule_study', 'store_result', 'get_function',
@@ -34,6 +35,8 @@ def run_study(key, root_id=None, force=False, depends=None):
         study_obj.run_if(proc_func)
 
 def get_function(name):
+    if name == 'backtest':
+        return backtest
     return CATALOG[name]
 
 def schedule_study(a_study, force=False):

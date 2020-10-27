@@ -1,29 +1,15 @@
 import sys
-import inspect as ins
 import logging
 
 import arrow
 import pandas as pd
 
 from fintrist import Study
+from fintrist_lib import ANALYSIS_CATALOG, SCRAPERS_CATALOG
 from .settings import Config
-from fintrist_lib.scrapers import stockmarket
-from fintrist_lib import analysis
-from fintrist_lib import etl
 from . import util
 
 logger = logging.getLogger(__name__)
-
-## The process registry ##
-
-def get_catalog(module):
-    recipes = ins.getmembers(module)
-    return {name: recipe for name, recipe in recipes if name in module.__all__}
-
-SCRAPERS_CATALOG = get_catalog(stockmarket)
-ETL_CATALOG = get_catalog(etl)
-ANALYSIS_CATALOG = get_catalog(analysis)
-CATALOG = {**SCRAPERS_CATALOG, **ANALYSIS_CATALOG, **ETL_CATALOG}
 
 def backtest(model, strategy, period='1y', end=None):
     """Run the model Study on previous dates over the period,
@@ -72,5 +58,3 @@ def backtest(model, strategy, period='1y', end=None):
     # Save the data
     simdata = pd.DataFrame(simulated, columns=['date', 'signals']).set_index('date')
     return simdata, ['complete']
-
-CATALOG['backtest'] = backtest
