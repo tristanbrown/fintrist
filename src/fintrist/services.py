@@ -4,7 +4,7 @@ from mongoengine.errors import SaveConditionError, DoesNotExist
 
 from . import migrations
 from .models import Study, BaseStudy, Recipe, Stream, Strategy
-
+from fintrist_lib import CATALOG
 
 logger = logging.getLogger(__name__)
 
@@ -49,19 +49,16 @@ def get_data(name):
     if obj:
         return obj.data
 
-def create_study(name, process, parents=None, **kwargs):
+def create_study(name, recipe, parents=None, **kwargs):
     """Use a local or library function to create a new Study."""
     try:
-        procname = process.__name__
+        procname = recipe.__name__
     except AttributeError:
-        procname = process
-    existproc = get_recipe(procname)
-    if not existproc:
-        existproc = register_recipe(procname, process)
+        procname = recipe
     existstudy = get_study(name)
     if existstudy:
         newstudy = existstudy
-        kwargs['recipe'] = existproc
+        kwargs['recipe'] = procname
         newstudy.update(**kwargs)
     else:
         newstudy = Study(name=name, recipe=existproc, **kwargs)
@@ -75,41 +72,16 @@ def see_proc_args(name):
     print(f"Parents: {list(proc.parents.keys())}")
     print(f"Params: {list(proc.params.keys())}")
 
-def register_recipe(name, func):
-    new_proc = Recipe(name=name, process=name)
-    new_proc.get_params(func)
-    new_proc.get_metaparams()
-    new_proc.save(force_insert=True)
-    print(f"Inserted '{name}'.")
-    return new_proc
-
-def create_recipe(name, process, studyname=None, **kwargs):
-    existrecipe = get_recipe(name)
-    if existrecipe:
-        newrecipe = existrecipe
-        kwargs['process'] = process
-        newrecipe.update(**kwargs)
-    else:
-        newrecipe = Recipe(name=name, process=process, **kwargs)
-    if studyname:
-        newrecipe.studyname = studyname
-    newrecipe.get_metaparams()
-    logger.debug(newrecipe.to_json())
-    newrecipe.save()
-    return newrecipe
-
-def get_recipe(recipe_id):
-    """Get a certain Recipe by name."""
-    return get_object(recipe_id, Recipe).process
+def get_recipe(name):
+    return CATALOG[name]
 
 def create_stream(name, recipe_list):
-    recipes = [get_recipe(recipe) for recipe in recipe_list]
     existstream = get_stream(name)
     if existstream:
         newstream = existstream
-        existstream.recipes = recipes
+        existstream.recipes = recipe_list
     else:
-        newstream = Stream(name=name, recipes=recipes)
+        newstream = Stream(name=name, recipes=recipe_list)
     newstream.get_metaparams()
     newstream.save()
     return newstream
@@ -124,7 +96,7 @@ def spawn_study(rec_name, **kwargs):
     recipe = template(**kwargs)
     newstudy = create_study(
         name=recipe.studyname,
-        process=recipe,
+        recipe=recipe,
         parents=spawn_parents(recipe),
         params=kwargs,
         valid_type=recipe.valid_type,

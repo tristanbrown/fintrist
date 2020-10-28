@@ -365,7 +365,7 @@ class BaseStudy(Document):
 class Study(BaseStudy):
     """Contains data process results."""
     # Defining the analysis that generated the data
-    recipe = ReferenceField('Recipe', required=True)
+    recipe = StringField(max_length=120, required=True)
 
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
@@ -499,7 +499,7 @@ class Stream(Document):
     name = StringField(max_length=120, required=True, unique=True)
 
     # Args
-    recipes = ListField(ReferenceField('Recipe'))
+    recipes = ListField(StringField(max_length=120))
     metaparams = DictField()  # All Recipe's metaparams. Can be None or filled in.
 
     # Meta
@@ -522,21 +522,3 @@ class Stream(Document):
 
     def fill_metaparam(self, key, value):
         self.metaparams[key] = value
-
-class Recipe(Document):
-    """Handles for choosing the appropriate Study template.
-    """
-    # ID
-    name = StringField(max_length=120, primary_key=True)
-
-    # Meta
-    schema_version = IntField(default=1)
-    meta = {
-        'strict': False,
-        }
-
-    def __repr__(self):
-        return f"Recipe: {self.name}"
-
-    def __str__(self):
-        return self.name
