@@ -67,11 +67,6 @@ def create_study(name, recipe, parents=None, **kwargs):
     newstudy.save()
     return newstudy
 
-def see_proc_args(name):
-    proc = get_recipe(name)
-    print(f"Parents: {list(proc.parents.keys())}")
-    print(f"Params: {list(proc.params.keys())}")
-
 def get_recipe(name):
     return CATALOG[name]
 
