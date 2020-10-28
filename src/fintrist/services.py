@@ -3,7 +3,7 @@ import logging
 from mongoengine.errors import SaveConditionError, DoesNotExist
 
 from . import migrations
-from .models import Study, BaseStudy, Recipe, Stream, Strategy
+from .models import Study, BaseStudy, Stream, Strategy
 from fintrist_lib import CATALOG
 
 logger = logging.getLogger(__name__)

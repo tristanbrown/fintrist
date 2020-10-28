@@ -6,28 +6,14 @@ usage: ./manage.py [function]
 import sys
 
 from mongoengine.errors import NotUniqueError
-from .catalog import CATALOG
 from .dask import client
-from fintrist.models import Recipe
-from fintrist.services import register_recipe
 
-__all__ = ['register', 'clear', 'restart_workers', 'close_client']
+__all__ = ['clear', 'restart_workers', 'close_client']
 
-def register():
-    """Register all of the processes as recipes in the database."""
-    for name, func in CATALOG.items():
-        try:
-            register_recipe(name, func)
-        except NotUniqueError:
-            print(f"'{name}' skipped: Already registered.")
-        except Exception as ex:
-            print(f"'{name}' skipped: ")
-            print(ex)
-
-def clear():
-    """Delete all recipes in the database."""
-    Recipe.drop_collection()
-    print("Cleared the recipes database.")
+def clear(doc):
+    """Delete all documents in the database collection."""
+    doc.drop_collection()
+    print(f"Cleared the {doc.__name__} database.")
 
 def restart_workers():
     """Restart the Dask workers to refresh the package cache."""

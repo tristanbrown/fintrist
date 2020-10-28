@@ -19,6 +19,8 @@ Changed
 -------
 * Merge `Process` and `Recipe` in fintrist_lib.
 * Rename `stock` process to `stock_daily`.
+* Removed manage.register.
+* Generalized manage.clear.
 
 ==================
 0.5.0 - 2020-10-17

@@ -22,9 +22,9 @@ from bson.dbref import DBRef
 
 from fintrist import util, Config
 from fintrist.notify import Notification
-from fintrist_lib import market_schedule
+from fintrist_lib.scrapers.stockmarket import market_schedule
 
-__all__ = ('BaseStudy', 'Study', 'Trigger', 'Recipe', 'Stream', 'Strategy')
+__all__ = ('BaseStudy', 'Study', 'Trigger', 'Stream', 'Strategy')
 
 logger = logging.getLogger(__name__)
 
