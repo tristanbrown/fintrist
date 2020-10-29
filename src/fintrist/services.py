@@ -50,7 +50,10 @@ def get_data(name):
         return obj.data
 
 def create_study(name, recipe, parents=None, **kwargs):
-    """Use a local or library function to create a new Study."""
+    """Use a local or library function to create a new Study.
+
+    recipe: str, function, Recipe
+    """
     try:
         procname = recipe.__name__
     except AttributeError:
@@ -61,7 +64,7 @@ def create_study(name, recipe, parents=None, **kwargs):
         kwargs['recipe'] = procname
         newstudy.update(**kwargs)
     else:
-        newstudy = Study(name=name, recipe=existproc, **kwargs)
+        newstudy = Study(name=name, recipe=procname, **kwargs)
     if parents:
             newstudy.set_parents(parents)
     newstudy.save()

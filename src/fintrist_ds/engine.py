@@ -47,7 +47,10 @@ def schedule_study(a_study, force=False):
 def store_result(name, process, parents=None, params=None, **kwargs):
     """Use a local or library function to create and run a new Study."""
     if isinstance(process, str):
-        process = get_recipe(process).process
+        process = get_recipe(process)
+        function = process.process
+    else:
+        function = process
     newstudy = create_study(name, process, parents, params=params, **kwargs)
-    newstudy.run(function=process)
+    newstudy.run(function=function)
     return newstudy
