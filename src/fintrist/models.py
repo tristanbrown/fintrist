@@ -22,6 +22,7 @@ from bson.dbref import DBRef
 
 from fintrist import util, Config
 from fintrist.notify import Notification
+from fintrist_lib import get_recipe
 from fintrist_lib.scrapers.stockmarket import market_schedule
 
 __all__ = ('BaseStudy', 'Study', 'Trigger', 'Stream', 'Strategy')
@@ -384,10 +385,13 @@ class Study(BaseStudy):
 
     ## Methods defining the Study ##
 
-    def set_recipe(self, name):
-        """Set the Study's Recipe based on a name."""
-        self.recipe = Recipe.objects(name=name).get()
-        self.save()
+    def get_recipe(self):
+        """Get the Study's Recipe based on a name."""
+        return get_recipe(self.recipe)
+
+    def get_process(self):
+        """Get the Study's process."""
+        return self.get_recipe().process
 
     def update_valid_age(self, new_age):
         """Update the valid age for the data."""
@@ -399,6 +403,8 @@ class Study(BaseStudy):
     def run(self, function=None, force=False):
         """Run the Study process on the inputs and return any alerts."""
         prev_timestamp = self.timestamp
+        if function is None:
+            function = self.get_process()
         try:
             parent_data = {name: parent.data for name, parent in self.parents.items()}
             self.data, newalerts = function(**parent_data, **self.params)

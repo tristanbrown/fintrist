@@ -9,10 +9,11 @@ Unreleased
 Added
 -----
 * Recipes can spawn parent studies.
+* Study objects can find their own Recipes.
 
 Fixed
 -----
-* Allow `create_study` and `create_recipe` to overwrite previous process, parents, and params.
+* Allow `create_study` to overwrite previous process, parents, and params.
 * Eliminate all `Document.reload` to avoid bug that breaks FileField.
 
 Changed
@@ -22,6 +23,7 @@ Changed
 * Removed manage.register.
 * Generalized manage.clear.
 * Move `get_recipe` to fintrist_lib.
+* Allow `get_recipe` to deliver Recipe objects from Recipes or functions.
 
 ==================
 0.5.0 - 2020-10-17
