@@ -13,3 +13,6 @@ SCRAPERS_CATALOG = get_catalog(stockmarket)
 ETL_CATALOG = get_catalog(etl)
 ANALYSIS_CATALOG = get_catalog(analysis)
 CATALOG = {**SCRAPERS_CATALOG, **ANALYSIS_CATALOG, **ETL_CATALOG}
+
+def get_recipe(name):
+    return CATALOG[name]

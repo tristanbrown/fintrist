@@ -5,6 +5,7 @@ import mongoengine
 from .settings import Config
 from .services import *
 from .models import *
+from fintrist_lib import get_recipe
 
 __all__ = ('Study','BaseStudy', 'get_study', 'Strategy', 'migrate')
 

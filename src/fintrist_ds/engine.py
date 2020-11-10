@@ -3,14 +3,13 @@ The engine that applies analyses to studies.
 """
 from .dask import client
 
-from fintrist import (get_study, BaseStudy, Study, create_study, get_recipe)
-from fintrist_lib import CATALOG
+from fintrist import (get_study, BaseStudy, Study, create_study)
+from fintrist_lib import get_recipe
 
 from .backtest import backtest
 from .settings import Config
 
-__all__ = ['build_dag', 'schedule_study', 'store_result', 'get_recipe',
-    'run_study']
+__all__ = ['build_dag', 'schedule_study', 'store_result', 'run_study']
 
 def build_dag(root_study, force=False):
     """Get the directed acyclic graph for this Study."""

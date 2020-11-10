@@ -4,7 +4,7 @@ from mongoengine.errors import SaveConditionError, DoesNotExist
 
 from . import migrations
 from .models import Study, BaseStudy, Stream, Strategy
-from fintrist_lib import CATALOG
+from fintrist_lib import get_recipe
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +69,6 @@ def create_study(name, recipe, parents=None, **kwargs):
             newstudy.set_parents(parents)
     newstudy.save()
     return newstudy
-
-def get_recipe(name):
-    return CATALOG[name]
 
 def create_stream(name, recipe_list):
     existstream = get_stream(name)
