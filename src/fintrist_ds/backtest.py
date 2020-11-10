@@ -34,12 +34,12 @@ def backtest(model, strategy, period='1y', end=None):
     tempstudy = Study()
     parent_data = {name: study.data for name, study in model.parents.items()}
     try:
-        function = ANALYSIS_CATALOG[model.recipe.process]
+        recipe = ANALYSIS_CATALOG[model.recipe]
     except KeyError:
-        function = SCRAPERS_CATALOG[model.recipe.process]
+        recipe = SCRAPERS_CATALOG[model.recipe]
         parent_data['mock'] = model.data
 
-    # At each date, run the model's function on the previous data
+    # At each date, run the model's process on the previous data
     # TODO: Date range should be based on the model's parents, not the model.
     full_range = model.data.index
     for view_date in model.data[start.date():end.date()].index:
@@ -50,7 +50,7 @@ def backtest(model, strategy, period='1y', end=None):
         except IndexError:
             continue
         trunc_data = {name: data[:prev_date] for name, data in parent_data.items()}
-        _, newalerts = function(**trunc_data, **model.params)
+        _, newalerts = recipe.process(**trunc_data, **model.params)
         tempstudy.alertslog.record_alerts(newalerts, view_date)
         actions = strategy.check_actions(tempstudy)
         simulated.append((view_date, actions))
