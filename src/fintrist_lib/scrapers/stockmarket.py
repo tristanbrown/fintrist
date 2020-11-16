@@ -19,6 +19,7 @@ class StockDaily(RecipeBase):
 
     def __init__(self, symbol='SPY'):
         self.studyname = f"{symbol} Stock Daily"
+        self.params = {'symbol': symbol}
 
     @staticmethod
     def process(symbol='SPY', source=None, mock=None, **kwargs):

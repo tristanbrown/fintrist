@@ -93,7 +93,7 @@ def spawn_study(rec_name, **kwargs):
         name=recipe.studyname,
         recipe=recipe.__name__,
         parents=spawn_parents(recipe),
-        params=kwargs,
+        params=recipe.params,
         valid_type=recipe.valid_type,
     )
     newstudy.save()

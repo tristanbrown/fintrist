@@ -5,6 +5,7 @@ class RecipeBase():
 
     studyname = None
     parents = {}
+    params = {}
     parent_params = {}
     valid_type = None
 
@@ -18,9 +19,6 @@ class RecipeBase():
     @staticmethod
     def process(*args, **kwargs):
         pass
-
-    sig = ins.signature(process.__func__)
-    params = sig.parameters.keys()
 
     @classmethod
     def get_params(cls):
