@@ -6,6 +6,7 @@ import pandas as pd
 import arrow
 from .settings import Config
 from .base import RecipeBase
+from .scrapers import stockmarket
 
 __all__ = ['any_data', 'MovingAvg', 'sample_dates', 'simulate',
     'multisim']
@@ -24,12 +25,12 @@ def any_data(data):
 
 class MovingAvg(RecipeBase):
 
-    parents = {'prices': 'StockDaily'}
+    # parents = {'prices': 'StockDaily'}
     valid_type = 'market'
 
     def __init__(self, symbol='SPY'):
         self.studyname = f"{symbol} Moving Avg"
-        self.parent_params = {'prices': {'symbol': symbol}}
+        self.parents = {'prices': stockmarket.StockDaily(symbol)}
 
     @staticmethod
     def process(prices, **kwargs):

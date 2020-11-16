@@ -6,7 +6,6 @@ class RecipeBase():
     studyname = None
     parents = {}
     params = {}
-    parent_params = {}
     valid_type = None
 
     def __repr__(self):
