@@ -91,7 +91,7 @@ def spawn_study(rec_name, **kwargs):
     recipe = template(**kwargs)
     newstudy = create_study(
         name=recipe.studyname,
-        recipe=recipe,
+        recipe=recipe.__name__,
         parents=spawn_parents(recipe),
         params=kwargs,
         valid_type=recipe.valid_type,
@@ -102,8 +102,8 @@ def spawn_study(rec_name, **kwargs):
 def spawn_parents(recipe):
     """Spawn the parent studies required for a recipe."""
     parents = {
-        parent_key: spawn_study(parent_name, **recipe.parent_params[parent_key])
-        for parent_key, parent_name in recipe.parents.items()}
+        parent_key: spawn_study(parent_name, **recipe.parent_params.get(parent_key))
+        for parent_key, parent_name in recipe.parents.items() if recipe.parent_params.get(parent_key)}
     return parents
 
 def spawn_stream(stream_name, **kwargs):

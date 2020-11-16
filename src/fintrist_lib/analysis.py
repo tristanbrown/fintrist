@@ -28,7 +28,7 @@ class MovingAvg(RecipeBase):
     valid_type = 'market'
 
     def __init__(self, symbol='SPY'):
-        self.studyname = f"{symbol} moving avg"
+        self.studyname = f"{symbol} Moving Avg"
         self.parent_params = {'prices': {'symbol': symbol}}
 
     @staticmethod

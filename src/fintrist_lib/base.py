@@ -4,12 +4,16 @@ import inspect as ins
 class RecipeBase():
 
     studyname = None
-    parents = None
-    parent_params = None
+    parents = {}
+    parent_params = {}
     valid_type = None
 
     def __repr__(self):
         return self.studyname
+
+    @property
+    def __name__(self):
+        return self.__class__.__name__
 
     @staticmethod
     def process(*args, **kwargs):

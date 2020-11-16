@@ -15,7 +15,6 @@ __all__ = ['StockDaily', 'stock_intraday', 'market_schedule', 'market_open']
 class StockDaily(RecipeBase):
 
     parents = {'mock': None}
-    parent_params = None
     valid_type = 'market'
 
     def __init__(self, symbol='SPY'):
