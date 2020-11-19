@@ -19,7 +19,6 @@ class StockDaily(RecipeBase):
 
     def __init__(self, symbol='SPY'):
         self.studyname = f"{symbol} Stock Daily"
-        self.params = {'symbol': symbol}
 
     @staticmethod
     def process(symbol='SPY', source=None, mock=None, **kwargs):
@@ -56,41 +55,51 @@ class StockDaily(RecipeBase):
             alerts.append('reverse split')
         return (data, alerts)
 
-def stock_intraday(symbols, day=None, tz=None, source=None, mock=None):
-    """Get intraday stock data.
+class StockIntraday(RecipeBase):
 
-    ::parents:: mock
-    ::params:: symbols, day, tz, source
-    ::alerts:: source: Alpaca, source: mock
-    """
-    ## Choose the source
-    if mock is not None:
-        source = 'mock'
-    elif not source:
-        source = 'Alpaca'
+    parents = {'mock': None}
+    valid_type = 'market'
 
-    ## Pick the day
-    latest_day = latest_market_day(day)
-    open_time = latest_day[0].isoformat()
-    close_time = latest_day[1].isoformat()
-    if tz is None:
-        tz = Config.TZ
+    def __init__(self, symbols=None, day=None, tz=None, source=None):
+        super().__init__()
+        self.studyname = f"{symbol} Stock Intraday"
 
-    ## Get the data
-    if source == 'Alpaca':
-        data = trade_api.get_barset(
-            symbols, timeframe='minute', start=open_time, end=close_time, limit=1000)
-        dfs = {symbol: format_stockrecords(records, tz) for symbol, records in data.items()}
-    elif source == 'mock':
-        dfs = mock
-    
-    if isinstance(symbols, str) or len(symbols) == 1:
-        dfs = dfs[symbols]
+    @staticmethod
+    def process(symbols, day=None, tz=None, source=None, mock=None):
+        """Get intraday stock data.
 
-    ## Create alerts
-    alerts = [f'source: {source}']
+        ::parents:: mock
+        ::params:: symbols, day, tz, source
+        ::alerts:: source: Alpaca, source: mock
+        """
+        ## Choose the source
+        if mock is not None:
+            source = 'mock'
+        elif not source:
+            source = 'Alpaca'
 
-    return (dfs, alerts)
+        ## Pick the day
+        latest_day = latest_market_day(day)
+        open_time = latest_day[0].isoformat()
+        close_time = latest_day[1].isoformat()
+        if tz is None:
+            tz = Config.TZ
+
+        ## Get the data
+        if source == 'Alpaca':
+            data = trade_api.get_barset(
+                symbols, timeframe='minute', start=open_time, end=close_time, limit=1000)
+            dfs = {symbol: format_stockrecords(records, tz) for symbol, records in data.items()}
+        elif source == 'mock':
+            dfs = mock
+        
+        if isinstance(symbols, str) or len(symbols) == 1:
+            dfs = dfs[symbols]
+
+        ## Create alerts
+        alerts = [f'source: {source}']
+
+        return (dfs, alerts)
 
 def format_stockrecords(records, tz):
     """Reformat stock tick records as a dataframe."""
