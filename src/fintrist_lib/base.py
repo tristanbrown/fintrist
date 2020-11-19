@@ -8,6 +8,11 @@ class RecipeBase():
     params = {}
     valid_type = None
 
+    def __init__(self):
+        localargs = locals().copy()
+        del localargs['self']
+        self.params = localargs
+
     def __repr__(self):
         return self.studyname
 
