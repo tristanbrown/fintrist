@@ -29,6 +29,7 @@ class MovingAvg(RecipeBase):
     valid_type = 'market'
 
     def __init__(self, symbol='SPY'):
+        super().__init__()
         self.studyname = f"{symbol} Moving Avg"
         self.parents = {'prices': stockmarket.StockDaily(symbol)}
 

@@ -19,6 +19,7 @@ class StockDaily(RecipeBase):
 
     def __init__(self, symbol='SPY'):
         self.studyname = f"{symbol} Stock Daily"
+        self.params = {'symbol': symbol}
 
     @staticmethod
     def process(symbol='SPY', source=None, mock=None, **kwargs):
@@ -60,9 +61,10 @@ class StockIntraday(RecipeBase):
     parents = {'mock': None}
     valid_type = 'market'
 
-    def __init__(self, symbols=None, day=None, tz=None, source=None):
-        super().__init__()
-        self.studyname = f"{symbol} Stock Intraday"
+    def __init__(self, symbols, **kwargs):
+        self.studyname = f"{symbols} Stock Intraday"
+        self.params = kwargs
+        self.params['symbols'] = symbols
 
     @staticmethod
     def process(symbols, day=None, tz=None, source=None, mock=None):
