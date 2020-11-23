@@ -1,20 +1,34 @@
 """ETL Processes"""
 
 import numpy as np
+from .base import RecipeBase
+from .scrapers import stockmarket
 
-__all__ = ['prep_pricing_data', 'prep_trendlength_data']
+__all__ = ['prep_pricing_data', 'TrendLengthData']
 
-def prep_trendlength_data(daily_prices, today_prices):
-    """Prepare stock data for a trend length indicator.
+class TrendLengthData(RecipeBase):
 
-    ::parents:: daily_prices, today_prices
-    ::params::
-    ::alerts::
-    """
-    data, alerts = prep_pricing_data(daily_prices, today_prices)
-    data = build_daystogain(data)
-    data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
-    return data, alerts
+    valid_type = 'market'
+
+    def __init__(self, symbol='SPY'):
+        self.studyname = f"{symbol} Trend Length Data"
+        self.parents = {
+            'daily_prices': stockmarket.StockDaily(symbol),
+            'today_prices': stockmarket.StockIntraday(symbol)
+            }
+
+    @staticmethod
+    def process(daily_prices, today_prices):
+        """Prepare stock data for a trend length indicator.
+
+        ::parents:: daily_prices, today_prices
+        ::params::
+        ::alerts::
+        """
+        data, alerts = prep_pricing_data(daily_prices, today_prices)
+        data = build_daystogain(data)
+        data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
+        return data, alerts
 
 def prep_pricing_data(daily_prices, today_prices):
     """Prepare pricing data for a stock.

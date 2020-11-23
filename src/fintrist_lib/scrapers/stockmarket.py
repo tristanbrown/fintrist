@@ -10,7 +10,7 @@ from alpaca_management.connect import trade_api
 from fintrist_lib.settings import Config
 from fintrist_lib.base import RecipeBase
 
-__all__ = ['StockDaily', 'stock_intraday', 'market_schedule', 'market_open']
+__all__ = ['StockDaily', 'StockIntraday', 'market_schedule', 'market_open']
 
 class StockDaily(RecipeBase):
 
