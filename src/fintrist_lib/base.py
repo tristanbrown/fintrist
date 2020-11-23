@@ -8,7 +8,6 @@ class RecipeBase():
     params = {}
     valid_type = None
 
-
     def __repr__(self):
         return self.studyname
 
