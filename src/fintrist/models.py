@@ -368,6 +368,9 @@ class Study(BaseStudy):
     # Defining the analysis that generated the data
     recipe = StringField(max_length=120, required=True)
 
+    # Run Status
+    status = StringField(choices=['Idle', 'Running'], default='Idle')
+
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
 
@@ -405,6 +408,7 @@ class Study(BaseStudy):
         prev_timestamp = self.timestamp
         if function is None:
             function = self.get_process()
+        self.status = 'Running'
         try:
             parent_data = {name: parent.data for name, parent in self.parents.items()}
             self.data, newalerts = function(**parent_data, **self.params)
@@ -413,6 +417,8 @@ class Study(BaseStudy):
                 self.data, newalerts = function(**self.parents, **self.params)
             else:
                 raise
+        finally:
+            self.status = 'Idle'
         if self.alert_overwrite(prev_timestamp, self.timestamp):
             self.alertslog.remove_alert()
         self.alertslog.record_alerts(newalerts, self.timestamp)

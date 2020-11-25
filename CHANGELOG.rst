@@ -10,6 +10,7 @@ Added
 -----
 * Recipes can spawn parent studies.
 * Study objects can find their own Recipes.
+* `generate` function to spawn studies and immediately schedule them.
 
 Fixed
 -----

@@ -1,15 +1,16 @@
 """
 The engine that applies analyses to studies.
 """
+import time
 from .dask import client
 
-from fintrist import (get_study, BaseStudy, Study, create_study)
+from fintrist import (get_study, BaseStudy, Study, create_study, spawn_study)
 from fintrist_lib import get_recipe
 
 from .backtest import backtest
 from .settings import Config
 
-__all__ = ['build_dag', 'schedule_study', 'store_result', 'run_study']
+__all__ = ['build_dag', 'schedule_study', 'store_result', 'run_study', 'generate']
 
 def build_dag(root_study, force=False):
     """Get the directed acyclic graph for this Study."""
@@ -52,4 +53,15 @@ def store_result(name, process, parents=None, params=None, **kwargs):
         function = process
     newstudy = create_study(name, process, parents, params=params, **kwargs)
     newstudy.run(function=function)
+    return newstudy
+
+def generate(recipe, wait=True, **kwargs):
+    """Spawn and schedule a study."""
+    newstudy = spawn_study(recipe, **kwargs)
+    schedule_study(newstudy)
+    newstudy = get_study(newstudy.name)
+    if wait:
+        while newstudy.status == 'Running':
+            time.sleep(1)
+            newstudy = get_study(newstudy.name)
     return newstudy
