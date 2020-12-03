@@ -42,7 +42,7 @@ def schedule_study(a_study, force=False):
     """Schedule the Study to run when all of its inputs are valid."""
     a_study = get_study(a_study)
     dag = build_dag(a_study, force)
-    client.get(dag, str(a_study.id), num_workers=Config.NUM_WORKERS)
+    client.get(dag, str(a_study.id), num_workers=Config.NUM_WORKERS, pure=False)
 
 def store_result(name, process, parents=None, params=None, **kwargs):
     """Use a local or library function to create and run a new Study."""

@@ -16,6 +16,7 @@ Fixed
 -----
 * Allow `create_study` to overwrite previous process, parents, and params.
 * Eliminate all `Document.reload` to avoid bug that breaks FileField.
+* Set dask scheduler to treat processes as not "pure". 
 
 Changed
 -------
