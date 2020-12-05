@@ -6,6 +6,11 @@ CHANGELOG
 Unreleased
 ==========
 
+
+==================
+1.0.0 - 2020-12-05
+==================
+
 Added
 -----
 * Recipes can spawn parent studies.
