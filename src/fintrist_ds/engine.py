@@ -10,7 +10,8 @@ from fintrist_lib import get_recipe
 from .backtest import backtest
 from .settings import Config
 
-__all__ = ['build_dag', 'schedule_study', 'store_result', 'run_study', 'generate']
+__all__ = ['build_dag', 'schedule_study', 'store_result', 'run_study', 'generate',
+    'generate_all']
 
 def build_dag(root_study, force=False):
     """Get the directed acyclic graph for this Study."""
@@ -65,3 +66,11 @@ def generate(recipe, wait=True, **kwargs):
             time.sleep(1)
             newstudy = get_study(newstudy.name)
     return newstudy
+
+def generate_all(recipe, symbols, **kwargs):
+    """Generate studies for multiple symbols in parallel."""
+    all_futures = client.map(
+        lambda symbol: generate(recipe, symbol=symbol, **kwargs),
+        symbols
+        )
+    return all_futures
