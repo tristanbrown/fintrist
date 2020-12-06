@@ -9,7 +9,7 @@ from fintrist_lib import get_recipe
 
 __all__ = ('Study','BaseStudy', 'get_study', 'Strategy', 'migrate')
 
-mongoengine.connect(
+mongoclient = mongoengine.connect(
     Config.DATABASE_NAME,
     host=Config.DB_HOST,
     port=Config.DB_PORT,
