@@ -7,8 +7,9 @@ import sys
 
 from mongoengine.errors import NotUniqueError
 from .dask import client
+from fintrist import test_db
 
-__all__ = ['clear', 'restart_workers', 'close_client']
+__all__ = ['clear', 'restart_workers', 'close_client', 'test_engine']
 
 def clear(doc):
     """Delete all documents in the database collection."""
@@ -24,6 +25,11 @@ def close_client():
     """End the dask client."""
     client.close()
     return
+
+def test_engine(test=True):
+    """Toggle the test DB."""
+    test_db(test)
+    restart_workers()
 
 def main():
     """Run the manage.py functions from the command line."""

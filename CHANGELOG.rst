@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Added
+-----
+* Can toggle into a Test database.
+
 Changed
 -------
 * Expose fintrist.mongoclient.
