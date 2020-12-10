@@ -1,7 +1,7 @@
 """
 Start Fintrist, connect to the DB, and expose public methods.
 """
-from .connect import connect_db, test_db
+from .connect import connect_db, test_db, drop_test
 from .settings import Config
 from .services import *
 from .models import *

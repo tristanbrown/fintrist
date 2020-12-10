@@ -28,8 +28,9 @@ def close_client():
 
 def test_engine(test=True):
     """Toggle the test DB."""
-    test_db(test)
+    mongoclient = test_db(test)
     restart_workers()
+    return mongoclient
 
 def main():
     """Run the manage.py functions from the command line."""

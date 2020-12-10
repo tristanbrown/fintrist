@@ -3,14 +3,14 @@ MongoDB connection
 """
 import os
 import mongoengine
+from mongoengine.connection import _get_db
 from .settings import Config
+
+TESTNAME = 'Fintrist_Test'
 
 def connect_db():
     mongoengine.disconnect()
-    if os.environ.get('test') == 'True':
-        db_name = 'Fintrist_Test'
-    else:
-        db_name = Config.DATABASE_NAME
+    db_name = os.environ.get('ALT_DB') or Config.DATABASE_NAME
     mongoclient = mongoengine.connect(
         db_name,
         host=Config.DB_HOST,
@@ -22,6 +22,17 @@ def connect_db():
     return mongoclient
 
 def test_db(test=True):
-    os.environ['test'] = str(test)
-    connect_db()
+    """Toggle the test DB."""
+    if test:
+        os.environ['ALT_DB'] = TESTNAME
+    else:
+        os.environ.pop('ALT_DB', None)
+    mongoclient = connect_db()
     print(f"Test DB: {test}")
+    return mongoclient
+
+def drop_test():
+    """Drop the test DB."""
+    mongoclient = _get_db().client
+    mongoclient.drop_database(TESTNAME)
+    print(f"{TESTNAME} dropped.")
