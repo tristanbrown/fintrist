@@ -39,8 +39,11 @@ def get_object(obj_id, obj_cls):
         except DoesNotExist:
             logger.debug(f"{obj_cls.__name__} '{obj_id}' does not exist.")
 
-def get_study(study_id):
+def get_study(study_id=None, recipe=None, **kwargs):
     """Get a certain Study name or BaseStudy by name."""
+    if recipe:
+        recipe_obj = get_recipe(recipe)
+        study_id = recipe_obj(**kwargs).studyname
     return get_object(study_id, BaseStudy)
 
 def get_data(name):

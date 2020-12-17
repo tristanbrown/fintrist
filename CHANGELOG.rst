@@ -13,6 +13,7 @@ Added
 Changed
 -------
 * Expose fintrist.mongoclient.
+* Enable get_study to find studies by recipe/param combos.
 
 ==================
 1.0.0 - 2020-12-05
