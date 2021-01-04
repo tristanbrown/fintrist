@@ -89,7 +89,9 @@ def get_stream(stream_id):
     return get_object(stream_id, Stream)
 
 def spawn_study(recipe, **kwargs):
-    """Spawn a study from a recipe."""
+    """Spawn a study from a recipe.
+    Automatically generates parents.
+    """
     if isinstance(recipe, str):
         template = get_recipe(recipe)
         recipe = template(**kwargs)
@@ -100,7 +102,6 @@ def spawn_study(recipe, **kwargs):
         params=recipe.params,
         valid_type=recipe.valid_type,
     )
-    newstudy.save()
     return newstudy
 
 def spawn_parents(recipe):
@@ -137,7 +138,8 @@ def create_backtest(study_name, strategy_name, period='1y'):
     model = get_study(study_name)
     strategy = get_strategy(strategy_name)
     backtest = create_study(
-        f"{study_name}, {strategy_name} backtest", 'backtest',
+        f"{study_name}, {strategy_name} backtest",
+        'backtest',
         parents={'model': model},
         params={'strategy': strategy, 'period': period},
         valid_type='always')
@@ -147,8 +149,20 @@ def create_sim(symbol, backtest_name, **kwargs):
     prices = get_study(f"{symbol} daily")
     backtest = get_study(backtest_name)
     sim = create_study(
-        f"{backtest_name.rstrip(' backtest')} Sim", 'simulate',
+        f"{backtest_name.rstrip(' backtest')} Sim",
+        'simulate',
         parents={'prices': prices, 'backtest': backtest},
         params=kwargs,
         valid_type='always')
     return sim
+
+def create_nn(nn_name, dataset, **kwargs):
+    nn = create_study(
+        nn_name,
+        'NNModel',
+        parents={'dataset': dataset},
+        params=kwargs,
+        valid_type='always',
+    )
+    nn.add_parents({'self': nn})
+    return nn

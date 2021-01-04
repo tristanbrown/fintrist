@@ -19,10 +19,13 @@ from mongoengine.fields import (
 from pymongo.errors import InvalidDocument
 from mongoengine import signals
 from bson.dbref import DBRef
+import torch
+from torch import nn
+from torch.utils.data import DataLoader
 
 from fintrist import util, Config
 from fintrist.notify import Notification
-from fintrist_lib import get_recipe
+from fintrist_lib import get_recipe, learn
 from fintrist_lib.scrapers.stockmarket import market_schedule
 
 __all__ = ('BaseStudy', 'Study', 'Trigger', 'Stream', 'Strategy')
@@ -175,7 +178,10 @@ class BaseStudy(Document):
     newfile = FileField()
     _timestamp = StringField()
     valid_age = IntField(default=0)  # Zero means always valid
-    valid_type = StringField(max_length=120, default='market')
+    valid_type = StringField(choices=['market', 'always'], default='market')
+
+    # Run Status
+    status = StringField(choices=['Idle', 'Running'], default='Idle')
 
     # Meta
     schema_version = IntField(default=1)
@@ -368,9 +374,6 @@ class Study(BaseStudy):
     # Defining the analysis that generated the data
     recipe = StringField(max_length=120, required=True)
 
-    # Run Status
-    status = StringField(choices=['Idle', 'Running'], default='Idle')
-
     # Alerts
     alertslog = EmbeddedDocumentField('AlertsLog', default=AlertsLog())
 
@@ -451,6 +454,72 @@ class Study(BaseStudy):
         """Remove log entries."""
         self.alertslog.clear()
         self.save()
+
+@clean_files.apply
+class NNModel(BaseStudy):
+    """Contains neural network parameters."""
+    valid_type = 'always'
+    output_type = StringField(choices=['bounded', 'linear'], default='bounded')
+
+    def __repr__(self):
+        return f"NN: {self.name}"
+
+    def build_net(self, df):
+        inputs = len(df.columns)
+        net = learn.Net()
+        print(net)
+        return net
+
+    def get_net(self):
+        return
+
+    def save_state(self):
+        return
+
+    def prep_data(self):
+        df = self.parents['traindata'].data
+        target = self.params['target_col']
+        return learn.DfData(df, target)
+
+    def get_x(self, df):
+        return self.prep_data().x_df
+
+    def get_y(self, df):
+        return self.prep_data().y_df
+
+    def train(self, epochs=10, lr=0.03):
+        traindata = DataLoader(self.prep_data, batch_size=1, shuffle=True)
+        criterion = nn.SmoothL1Loss()
+        net = self.get_net()
+        # Optimizers require the parameters to optimize and a learning rate
+        optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+        for e in range(epochs):
+            running_loss = 0
+            for x_data, labels in traindata:
+                # Training pass
+                optimizer.zero_grad()
+
+                output = net(x_data[0].float())
+                loss = criterion(output, labels.float())
+                loss.backward()
+                optimizer.step()
+
+                running_loss += loss.item()
+            else:
+                print(f"Training loss: {running_loss/len(traindata)}")
+                self.save_state()
+        return
+
+    def predict(self, inputs):
+        pass
+
+    def run(self, **kwargs):
+        self.status = 'Running'
+        try:
+            self.data = self.train(**kwargs)
+        finally:
+            self.status = 'Idle'
+            self.save()
 
 class Strategy(Document):
     """A set of triggers for market actions.
