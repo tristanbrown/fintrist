@@ -1,5 +1,5 @@
 """Construct Neural Networks using Pytorch"""
-
+import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
@@ -9,11 +9,11 @@ from .base import RecipeBase
 __all__ = ['Net', 'DfData', 'Trainer']
         
 class Net(nn.Module):
-    def __init__(self, inputs, depth=4, width=None, outputs=1, bounded=True):
+    def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded'):
         super().__init__()
         if width is None:
             width = inputs * 2
-        if bounded:
+        if output_type == 'bounded':
             self.final_act = torch.sigmoid
         else:
             self.final_act = torch.relu
@@ -54,11 +54,13 @@ class DfData(Dataset):
         return x_data, y_data
 
 class Trainer():
-    def __init__(self, data, target_col, net=None, **kwargs):
+    def __init__(self, data, target_col, net=None, state=None, **kwargs):
         self.data_df = DfData(data, target_col)
-        self._net = net or self.build_net()
-        self.state = {}
-        self.init_training(**kwargs)
+        if state is None:
+            self._net = net or self.build_net()
+            self.init_training(**kwargs)
+        else:
+            self.load_state(state)
 
     @property
     def x_df(self):
@@ -75,13 +77,25 @@ class Trainer():
         print(net)
         return net
 
-    def init_training(self, lr=0.1):
+    def init_training(self, lr=0.01, lr_decay='cyclic'):
         self.traindata = DataLoader(self.data_df, batch_size=1, shuffle=True)
         self.criterion = nn.SmoothL1Loss()
         self.optimizer = torch.optim.SGD(self.net.parameters(), lr=lr)
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='max', factor=0.5, patience=epochs // 5, verbose=True)
+        if lr_decay == 'cyclic':
+            self.scheduler = scheduler = torch.optim.lr_scheduler.CyclicLR(
+                optimizer, base_lr=0.0001, max_lr=lr, step_size_up=5,
+                mode="exp_range", gamma=0.99)
+        elif lr_decay == 'plateau':
+            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode='max', factor=0.5, patience=5, verbose=True)
+
         self.epoch = 0
+        self.performance = self.empty_performance
+        self.save_state()
+
+    @property
+    def empty_performance(self):
+        return pd.DataFrame([], columns=['epoch', 'loss', 'lr'])
 
     def save_state(self):
         self.state = {
@@ -91,6 +105,7 @@ class Trainer():
             'criterion': self.criterion.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'scheduler': self.scheduler.state_dict(),
+            'performance': self.performance
         }
 
     def load_state(self, state):
@@ -100,6 +115,7 @@ class Trainer():
         self.optimizer.load_state_dict(state.get('optimizer'))
         self.scheduler.load_state_dict(state.get('scheduler'))
         self.epoch = state.get('epoch', 0)
+        self.performance = state.get('performance', self.empty_performance)
         self.save_state()
 
     def train(self, epochs=10):
@@ -118,8 +134,15 @@ class Trainer():
 
                 running_loss += loss.item()
             else:
-                print(f"Training loss: {running_loss/len(self.traindata)}")
-            self.scheduler.step(running_loss/len(self.traindata))
+                loss_metric = running_loss/len(self.traindata)
+                print(f"Training loss: {loss_metric}")
+                self.performance.append({
+                    'epoch': epoch,
+                    'loss': loss_metric,
+                    'lr': optimizer.param_groups[0]['lr'],
+                })
+                self.scheduler.step()
+                # self.scheduler.step(running_loss/len(self.traindata))
         ## Store training state
         self.save_state()
 

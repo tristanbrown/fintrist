@@ -469,13 +469,24 @@ class NNModel(BaseStudy):
     def target_col(self):
         return self.params['target_col']
 
-    def train(self, epochs=10):
-        pass
+    def train(self, epochs=10, save_interval=5, restart=False):
+        if restart:
+            self.reset()
+        trainer = learn.Trainer(
+            self.traindata, self.target_col, state=self.data,
+            output_type=self.output_type)
+        self.data = trainer.state
+        while trainer.epoch < epochs:
+            trainer.train(save_interval)
+            self.data = trainer.state
+
+    def reset(self):
+        self.data = None
 
     def run(self, **kwargs):
         self.status = 'Running'
         try:
-            self.data = self.train(**kwargs)
+            self.train(**kwargs)
         finally:
             self.status = 'Idle'
             self.save()
