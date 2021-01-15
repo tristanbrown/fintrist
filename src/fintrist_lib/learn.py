@@ -21,7 +21,7 @@ class Net(nn.Module):
         self.layers = self.build_layers(inputs, depth, width, outputs)
         self.architecture = {
             'inputs': inputs, 'depth': depth, 'width': width, 'outputs': outputs,
-            'bounded': bounded}
+            'bounded': output_type}
 
     def build_layers(self, inputs, depth, width, outputs):
         layers = []

@@ -3,7 +3,7 @@ import logging
 from mongoengine.errors import SaveConditionError, DoesNotExist
 
 from . import migrations
-from .models import Study, BaseStudy, Stream, Strategy
+from .models import Study, BaseStudy, Stream, Strategy, NNModel
 from fintrist_lib import get_recipe
 
 logger = logging.getLogger(__name__)
@@ -156,13 +156,14 @@ def create_sim(symbol, backtest_name, **kwargs):
         valid_type='always')
     return sim
 
-def create_nn(nn_name, dataset, **kwargs):
-    nn = create_study(
-        nn_name,
-        'NNModel',
-        parents={'dataset': dataset},
-        params=kwargs,
-        valid_type='always',
-    )
-    nn.add_parents({'self': nn})
-    return nn
+def create_nn(name, dataset, target_col, **kwargs):
+    existstudy = get_study(name)
+    if existstudy:
+        newstudy = existstudy
+        kwargs['target_col'] = target_col
+        newstudy.update(**kwargs)
+    else:
+        newstudy = NNModel(name=name, target_col=target_col, **kwargs)
+    newstudy.set_parents({'traindata': dataset})
+    newstudy.save()
+    return newstudy

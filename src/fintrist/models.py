@@ -457,6 +457,7 @@ class NNModel(BaseStudy):
     """Contains neural network parameters."""
     valid_type = 'always'
     output_type = StringField(choices=['bounded', 'linear'], default='bounded')
+    target_col = StringField(max_length=120)
 
     def __repr__(self):
         return f"NN: {self.name}"
@@ -464,10 +465,6 @@ class NNModel(BaseStudy):
     @property
     def traindata(self):
         return self.parents['traindata'].data
-
-    @property
-    def target_col(self):
-        return self.params['target_col']
 
     def train(self, epochs=10, save_interval=5, restart=False):
         if restart:
