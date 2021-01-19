@@ -54,13 +54,10 @@ class DfData(Dataset):
         return x_data, y_data
 
 class Trainer():
-    def __init__(self, data, target_col, net=None, state=None, **kwargs):
+    def __init__(self, data, target_col, state=None):
         self.data_df = DfData(data, target_col)
-        if state is None:
-            self._net = net or self.build_net()
-            self.init_training(**kwargs)
-        else:
-            self.load_state(state)
+        self.load_state(state)
+        self.init_state()
 
     @property
     def x_df(self):
@@ -73,25 +70,46 @@ class Trainer():
     def build_net(self, **kwargs):
         if kwargs.get('inputs') is None:
             kwargs['inputs'] = len(self.x_df.columns)
-        net = Net(**kwargs)
+        net_architecture = self.state.get('architecture', {})
+        net_architecture.update(kwargs)
+        net = Net(**net_architecture)
+        net.load_state_dict(self.state.get('model'))
         print(net)
         return net
 
-    def init_training(self, lr=0.01, lr_decay='cyclic'):
-        self.traindata = DataLoader(self.data_df, batch_size=1, shuffle=True)
-        self.criterion = nn.SmoothL1Loss()
-        self.optimizer = torch.optim.SGD(self.net.parameters(), lr=lr)
-        if lr_decay == 'cyclic':
-            self.scheduler = scheduler = torch.optim.lr_scheduler.CyclicLR(
-                optimizer, base_lr=0.0001, max_lr=lr, step_size_up=5,
-                mode="exp_range", gamma=0.99)
-        elif lr_decay == 'plateau':
-            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, mode='max', factor=0.5, patience=5, verbose=True)
+    def choose_criterion(self):
+        criterion = nn.SmoothL1Loss()
+        criterion.load_state_dict(self.state.get('criterion'))
+        return criterion
 
-        self.epoch = 0
-        self.performance = self.empty_performance
-        self.save_state()
+    def choose_optimizer(self):
+        optimizer = torch.optim.SGD(self.net.parameters(), lr=0.01)
+        optimizer.load_state_dict(self.state.get('optimizer'))
+        return optimizer
+
+    def choose_scheduler(self):
+        sched_type = self.state.get('scheduler_type', 'CyclicLR')
+        if sched_type == 'CyclicLR':
+            defaults = {
+                'base_lr': 0.0001,
+                'max_lr': 0.01,
+                'step_size_up'= 5,
+                'mode': 'exp_range',
+                'gamma': 0.99,
+            }
+            scheduler = torch.optim.lr_scheduler.CyclicLR(
+                self.optimizer, **defaults)
+        elif sched_type == 'ReduceLROnPlateau':
+            defaults = {
+                'mode': 'max',
+                'factor': 0.5,
+                'patience': 5,
+                'verbose': True,
+            }
+        SchedulerCls = getattr(torch.optim.lr_scheduler, sched_type)
+        scheduler = SchedulerCls(self.optimizer, **defaults)
+        scheduler.load_state_dict(self.state.get('scheduler'))
+        return scheduler
 
     @property
     def empty_performance(self):
@@ -105,15 +123,21 @@ class Trainer():
             'criterion': self.criterion.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'scheduler': self.scheduler.state_dict(),
+            'scheduler_type': self.scheduler.__class__.__name__,
             'performance': self.performance
         }
 
     def load_state(self, state):
-        self.net = self.build_net(**state.get('architecture'))
-        self.net.load_state_dict(state.get('model'))
-        self.criterion.load_state_dict(state.get('criterion'))
-        self.optimizer.load_state_dict(state.get('optimizer'))
-        self.scheduler.load_state_dict(state.get('scheduler'))
+        if state == None:
+            state = {}
+        self.state = state
+
+    def init_state(self):
+        self.traindata = DataLoader(self.data_df, batch_size=1, shuffle=True)
+        self.net = self.build_net()
+        self.criterion = self.choose_criterion()
+        self.optimizer = self.choose_optimizer()
+        self.scheduler = self.choose_scheduler()
         self.epoch = state.get('epoch', 0)
         self.performance = state.get('performance', self.empty_performance)
         self.save_state()
