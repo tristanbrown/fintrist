@@ -67,24 +67,28 @@ class Trainer():
     def y_df(self):
         return self.data_df.y_df
 
+    def apply_state_dict(self, obj, state_name):
+        if old_state := self.state.get(state_name):
+            obj.load_state_dict(old_state)
+
     def build_net(self, **kwargs):
         if kwargs.get('inputs') is None:
             kwargs['inputs'] = len(self.x_df.columns)
         net_architecture = self.state.get('architecture', {})
         net_architecture.update(kwargs)
         net = Net(**net_architecture)
-        net.load_state_dict(self.state.get('model'))
+        self.apply_state_dict(net, 'model')
         print(net)
         return net
 
     def choose_criterion(self):
         criterion = nn.SmoothL1Loss()
-        criterion.load_state_dict(self.state.get('criterion'))
+        self.apply_state_dict(criterion, 'criterion')
         return criterion
 
     def choose_optimizer(self):
         optimizer = torch.optim.SGD(self.net.parameters(), lr=0.01)
-        optimizer.load_state_dict(self.state.get('optimizer'))
+        self.apply_state_dict(optimizer, 'optimizer')
         return optimizer
 
     def choose_scheduler(self):
@@ -93,7 +97,7 @@ class Trainer():
             defaults = {
                 'base_lr': 0.0001,
                 'max_lr': 0.01,
-                'step_size_up'= 5,
+                'step_size_up': 5,
                 'mode': 'exp_range',
                 'gamma': 0.99,
             }
@@ -108,7 +112,7 @@ class Trainer():
             }
         SchedulerCls = getattr(torch.optim.lr_scheduler, sched_type)
         scheduler = SchedulerCls(self.optimizer, **defaults)
-        scheduler.load_state_dict(self.state.get('scheduler'))
+        self.apply_state_dict(scheduler, 'scheduler')
         return scheduler
 
     @property
@@ -138,8 +142,8 @@ class Trainer():
         self.criterion = self.choose_criterion()
         self.optimizer = self.choose_optimizer()
         self.scheduler = self.choose_scheduler()
-        self.epoch = state.get('epoch', 0)
-        self.performance = state.get('performance', self.empty_performance)
+        self.epoch = self.state.get('epoch', 0)
+        self.performance = self.state.get('performance', self.empty_performance)
         self.save_state()
 
     def train(self, epochs=10):

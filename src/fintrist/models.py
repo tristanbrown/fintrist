@@ -472,7 +472,6 @@ class NNModel(BaseStudy):
         trainer = learn.Trainer(
             self.traindata, self.target_col, state=self.data)
         trainer.build_net(output_type=output_type)
-        trainer.init_training()
         self.data = trainer.state
         while trainer.epoch < epochs:
             trainer.train(save_interval)
