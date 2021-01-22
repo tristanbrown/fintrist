@@ -456,7 +456,6 @@ class Study(BaseStudy):
 class NNModel(BaseStudy):
     """Contains neural network parameters."""
     valid_type = 'always'
-    output_type = StringField(choices=['bounded', 'linear'], default='bounded')
     target_col = StringField(max_length=120)
 
     def __repr__(self):
@@ -466,14 +465,22 @@ class NNModel(BaseStudy):
     def traindata(self):
         return self.parents['traindata'].data
 
+    @property
+    def new_trainer(self):
+        return learn.Trainer(self.traindata, self.target_col, state=self.data)
+
+    def switch_net(self, depth, width, outputs, output_type):
+        trainer = self.new_trainer
+        trainer.switch_net(depth, width, outputs, output_type)
+        self.data = trainer.state
+
     def train(self, epochs=10, save_interval=5, restart=False):
         if restart:
             self.reset()
-        trainer = learn.Trainer(
-            self.traindata, self.target_col, state=self.data)
-        trainer.build_net(output_type=output_type)
+        trainer = self.new_trainer
         self.data = trainer.state
-        while trainer.epoch < epochs:
+        total_epochs = trainer.epoch + epochs
+        while trainer.epoch < total_epochs:
             trainer.train(save_interval)
             self.data = trainer.state
 

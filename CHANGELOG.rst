@@ -9,9 +9,9 @@ Unreleased
 Added
 -----
 * Can toggle into a Test database.
-* NNModel study type.
-* create_nn for creating NN Study objects.
-* learn.py to fintrist_lib, with NN manipulation functions.
+* Add NNModel study type.
+* Add create_nn for creating NN Study objects.
+* Add learn.py to fintrist_lib, with NN creation and manipulation functions.
 
 Changed
 -------

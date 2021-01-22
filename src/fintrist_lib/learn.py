@@ -21,7 +21,7 @@ class Net(nn.Module):
         self.layers = self.build_layers(inputs, depth, width, outputs)
         self.architecture = {
             'inputs': inputs, 'depth': depth, 'width': width, 'outputs': outputs,
-            'bounded': output_type}
+            'output_type': output_type}
 
     def build_layers(self, inputs, depth, width, outputs):
         layers = []
@@ -80,6 +80,11 @@ class Trainer():
         self.apply_state_dict(net, 'model')
         print(net)
         return net
+
+    def switch_net(self, depth, width, outputs, output_type):
+        self.net = self.build_net(depth, width, outputs, output_type)
+        self.save_state()
+        self.init_state()
 
     def choose_criterion(self):
         criterion = nn.SmoothL1Loss()
@@ -165,10 +170,10 @@ class Trainer():
                 loss_metric = running_loss/len(self.traindata)
                 print(f"Training loss: {loss_metric}")
                 self.performance.append({
-                    'epoch': epoch,
+                    'epoch': self.epoch,
                     'loss': loss_metric,
-                    'lr': optimizer.param_groups[0]['lr'],
-                })
+                    'lr': self.optimizer.param_groups[0]['lr'],
+                }, ignore_index=True)
                 self.scheduler.step()
                 # self.scheduler.step(running_loss/len(self.traindata))
         ## Store training state
