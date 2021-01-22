@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Changed
+-------
+* Improve NN metrics printing.
+
 ==================
 1.1.0 - 2021-01-21
 ==================

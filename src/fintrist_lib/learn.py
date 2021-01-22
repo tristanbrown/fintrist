@@ -168,12 +168,14 @@ class Trainer():
                 running_loss += loss.item()
             else:
                 loss_metric = running_loss/len(self.traindata)
-                print(f"Training loss: {loss_metric}")
-                self.performance.append({
+                current_lr = self.optimizer.param_groups[0]['lr']
+                metrics = {
                     'epoch': self.epoch,
                     'loss': loss_metric,
-                    'lr': self.optimizer.param_groups[0]['lr'],
-                }, ignore_index=True)
+                    'lr': current_lr,
+                }
+                self.performance.append(metrics, ignore_index=True)
+                print("Epoch: {epoch}, Training loss: {loss}, LR: {lr}".format(**metrics))
                 self.scheduler.step()
                 # self.scheduler.step(running_loss/len(self.traindata))
         ## Store training state
