@@ -28,6 +28,10 @@ class TrendLengthData(RecipeBase):
         data, alerts = prep_pricing_data(daily_prices, today_prices)
         data = build_daystogain(data)
         data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
+        data = data[['% overnight-0', '% day-0', '% cumul-1', '% cumul-10', '% cumul-30',
+                      '% vol cumul-1', '% vol cumul-10', '% vol cumul-30', 'days to gain']]
+        data['up tomorrow'] = (data['days to gain'] == 1).astype(int)
+        data = data.drop('days to gain', axis=1)
         return data, alerts
 
 def prep_pricing_data(daily_prices, today_prices):

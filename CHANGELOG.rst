@@ -9,6 +9,7 @@ Unreleased
 Changed
 -------
 * Improve NN metrics printing.
+* Feature reduction in TrendLengthData.
 
 ==================
 1.1.0 - 2021-01-21
