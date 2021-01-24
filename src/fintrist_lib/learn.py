@@ -122,7 +122,7 @@ class Trainer():
 
     @property
     def empty_performance(self):
-        return pd.DataFrame([], columns=['epoch', 'loss', 'lr'])
+        return pd.DataFrame([], columns=['epoch', 'lr', 'loss'])
 
     def save_state(self):
         self.state = {
@@ -171,10 +171,10 @@ class Trainer():
             current_lr = self.optimizer.param_groups[0]['lr']
             metrics = {
                 'epoch': self.epoch,
-                'loss': loss_metric,
                 'lr': current_lr,
+                'loss': loss_metric,
             }
-            self.performance.append(metrics, ignore_index=True)
+            self.performance = self.performance.append(metrics, ignore_index=True)
             print("Epoch: {epoch}, Training loss: {loss}, LR: {lr}".format(**metrics))
             self.scheduler.step()
             # self.scheduler.step(running_loss/len(self.traindata))

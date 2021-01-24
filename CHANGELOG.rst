@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Fixed
+-----
+* Fix populating NN performance df. 
+
 Changed
 -------
 * Improve NN metrics printing.
