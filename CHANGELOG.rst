@@ -8,7 +8,7 @@ Unreleased
 
 Added
 -----
-* Add train/test split function to DfData in learn.py.
+* In learn.py, DFData does train/test split.
 
 Fixed
 -----

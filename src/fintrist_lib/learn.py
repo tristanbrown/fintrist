@@ -39,25 +39,53 @@ class Net(nn.Module):
 
 
 class DfData(Dataset):
-    def __init__(self, df, target_col):
-        self.df = df.copy().dropna(how='any')
-        self.x_df = self.df.drop(target_col, axis=1)
-        self.y_df = self.df[target_col]
+    def __init__(self, df, target_col, train=True, testsize=0.2, seed=None):
+        """
+        df (DataFrame): input dataset
+        target_col (str): df column containing the data labels/targets/outputs
+        train (bool): give the training set or the test set
+        testsize (float): proportion of the data to reserve for the test set
+        seed (int): the random seed for the train/test split
+        """
+        if seed is None:
+            seed = torch.Generator().seed()
+        self.seed = seed
+        self.train = train  # Set to False to get test data
+        self.fulldata = df.copy().dropna(how='any')
+        self.target_col = target_col
+        self.trainidx, self.testidx = self.traintest_split(self.fulldata, testsize, seed)
+        self.traindata, self.testdata = (
+            self.fulldata.iloc[idx] for idx in (self.trainidx, self.testidx))
+
+    @property
+    def data(self):
+        if self.train:
+            return self.traindata
+        else:
+            return self.testdata
+    
+    @property
+    def x_data(self):
+        return self.data.drop(self.target_col, axis=1)
+
+    @property
+    def y_data(self):
+        return self.data[self.target_col]
 
     def __len__(self):
-        return len(self.df)
+        return len(self.data)
 
     def __getitem__(self, index):
-        x_data = self.x_df.iloc[index].values
-        y_data = self.y_df.iloc[index]
+        x_item = self.x_data.iloc[index].values
+        y_item = self.y_data.iloc[index]
 
-        return x_data, y_data
+        return x_item, y_item
 
-    def traintest_split(self, data, testsize=0.2, seed=None):
+    def traintest_split(self, data, testsize, seed):
         testlen = int(round(len(data)*testsize))
         trainlen = len(data) - testlen
         trainset, testset = torch.utils.data.random_split(
-            inputdata, [trainlen, testlen], generator=torch.Generator().manual_seed(seed))
+            data, [trainlen, testlen], generator=torch.Generator().manual_seed(seed))
         return trainset.indices, testset.indices
 
 class Trainer():
@@ -68,11 +96,11 @@ class Trainer():
 
     @property
     def x_df(self):
-        return self.data_df.x_df
+        return self.data_df.x_data
 
     @property
     def y_df(self):
-        return self.data_df.y_df
+        return self.data_df.y_data
 
     def apply_state_dict(self, obj, state_name):
         if old_state := self.state.get(state_name):
