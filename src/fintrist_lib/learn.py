@@ -53,6 +53,13 @@ class DfData(Dataset):
 
         return x_data, y_data
 
+    def traintest_split(self, data, testsize=0.2, seed=None):
+        testlen = int(round(len(data)*testsize))
+        trainlen = len(data) - testlen
+        trainset, testset = torch.utils.data.random_split(
+            inputdata, [trainlen, testlen], generator=torch.Generator().manual_seed(seed))
+        return trainset.indices, testset.indices
+
 class Trainer():
     def __init__(self, data, target_col, state=None):
         self.data_df = DfData(data, target_col)

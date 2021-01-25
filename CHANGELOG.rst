@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Added
+-----
+* Add train/test split function to DfData in learn.py.
+
 Fixed
 -----
 * Fix populating NN performance df. 
