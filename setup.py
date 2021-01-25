@@ -17,15 +17,15 @@ REQUIREMENTS = [
     'bokeh>=0.13.0',
     'jupyter-server-proxy',
     'cloudpickle',
-    'alpha_vantage>=2.0.0',
     'pymc3',
     'finta',
     'tulipy',
     'ruamel.yaml',
     'pandas-datareader',
     'arrow',
+    'torch>=1.6.*',
     'pandas-market-calendars',
-    f"alpaca_management @ git+https://{os.environ['GITHUB_TOKEN']}:x-oauth-basic@github.com/tristanbrown/alpaca_management.git@v0.1.1#egg=alpaca_management"
+    f"alpaca_management @ git+https://{os.environ['GITHUB_TOKEN']}:x-oauth-basic@github.com/tristanbrown/alpaca_management.git@v0.1.2#egg=alpaca_management"
 ]
 
 setup(
