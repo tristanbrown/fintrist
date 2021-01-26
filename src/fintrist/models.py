@@ -466,18 +466,18 @@ class NNModel(BaseStudy):
         return self.parents['traindata'].data
 
     @property
-    def new_trainer(self):
+    def trainer(self):
         return learn.Trainer(self.traindata, self.target_col, state=self.data)
 
     def switch_net(self, depth, width, outputs, output_type):
-        trainer = self.new_trainer
+        trainer = self.trainer
         trainer.switch_net(depth, width, outputs, output_type)
         self.data = trainer.state
 
     def train(self, epochs=10, save_interval=5, restart=False):
         if restart:
             self.reset()
-        trainer = self.new_trainer
+        trainer = self.trainer
         self.data = trainer.state
         total_epochs = trainer.epoch + epochs
         while trainer.epoch < total_epochs:
