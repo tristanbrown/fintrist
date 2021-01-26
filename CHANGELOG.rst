@@ -9,6 +9,7 @@ Unreleased
 Added
 -----
 * In learn.py, DFData does train/test split.
+* NN Trainer does validation on holdout test data set.
 
 Fixed
 -----

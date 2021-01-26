@@ -90,17 +90,19 @@ class DfData(Dataset):
 
 class Trainer():
     def __init__(self, data, target_col, state=None):
-        self.data_df = DfData(data, target_col)
         self.load_state(state)
+        seed = self.state.get('seed')
+        self.traindata = DfData(data, target_col, train=True, seed=seed)
+        self.testdata = DfData(data, target_col, train=False, seed=seed)
         self.init_state()
 
     @property
     def x_df(self):
-        return self.data_df.x_data
+        return self.traindata.x_data
 
     @property
     def y_df(self):
-        return self.data_df.y_data
+        return self.traindata.y_data
 
     def apply_state_dict(self, obj, state_name):
         if old_state := self.state.get(state_name):
@@ -155,13 +157,10 @@ class Trainer():
         self.apply_state_dict(scheduler, 'scheduler')
         return scheduler
 
-    @property
-    def empty_performance(self):
-        return pd.DataFrame([], columns=['epoch', 'lr', 'loss'])
-
     def save_state(self):
         self.state = {
             'epoch': self.epoch,
+            'seed': self.traindata.seed,
             'architecture': self.net.architecture,
             'model': self.net.state_dict(),
             'criterion': self.criterion.state_dict(),
@@ -177,7 +176,8 @@ class Trainer():
         self.state = state
 
     def init_state(self):
-        self.traindata = DataLoader(self.data_df, batch_size=1, shuffle=True)
+        self.trainloader = DataLoader(self.traindata, batch_size=1, shuffle=True)
+        self.testloader = DataLoader(self.testdata, batch_size=1, shuffle=True)
         self.net = self.build_net()
         self.criterion = self.choose_criterion()
         self.optimizer = self.choose_optimizer()
@@ -186,33 +186,59 @@ class Trainer():
         self.performance = self.state.get('performance', self.empty_performance)
         self.save_state()
 
+    def train_step(self):
+        self.net.train()
+        running_loss = 0
+        for x_data, target in self.trainloader:
+            # Training pass
+            self.optimizer.zero_grad()
+            output = self.net(x_data[0].float())
+            loss = self.criterion(output, target.float())
+            loss.backward()
+            self.optimizer.step()
+            running_loss += loss.item()
+        # Tally metrics
+        running_loss /= len(self.trainloader)
+        current_lr = self.optimizer.param_groups[0]['lr']
+        return running_loss, current_lr
+
+    def test_step(self):
+        self.net.eval()
+        test_loss = 0
+        correct = 0
+        with torch.no_grad():
+            for x_data, target in self.testloader:
+                # Test pass
+                output = self.net(x_data[0].float())
+                test_loss += self.criterion(output, target.float())
+                if round(output.item()) == target.item():
+                    correct += 1
+        # Tally metrics
+        test_loss /= len(self.testloader)
+        accuracy = 100 * correct / len(self.testloader)
+        return test_loss, accuracy
+
+    @property
+    def empty_performance(self):
+        return pd.DataFrame([], columns=['lr', 'trainloss', 'testloss', 'accuracy'])
+
     def train(self, epochs=10):
         ## Train
         for e in range(epochs):
-            running_loss = 0
             self.epoch += 1
-            for x_data, labels in self.traindata:
-                # Training pass
-                self.optimizer.zero_grad()
+            trainloss, current_lr = self.train_step()
+            testloss, accuracy = self.test_step()
 
-                output = self.net(x_data[0].float())
-                loss = self.criterion(output, labels.float())
-                loss.backward()
-                self.optimizer.step()
-
-                running_loss += loss.item()
-
-            loss_metric = running_loss/len(self.traindata)
-            current_lr = self.optimizer.param_groups[0]['lr']
             metrics = {
-                'epoch': self.epoch,
                 'lr': current_lr,
-                'loss': loss_metric,
+                'trainloss': trainloss,
+                'testloss': testloss,
+                'accuracy': accuracy,
             }
             self.performance = self.performance.append(metrics, ignore_index=True)
-            print("Epoch: {epoch}, Training loss: {loss}, LR: {lr}".format(**metrics))
+            print(f"({self.epoch}) " + "Acc.: {accuracy:.1f}%, Test loss: {testloss:.4f}, Train loss: {trainloss:.4f}, LR: {lr:.4f}".format(**metrics))
             self.scheduler.step()
-            # self.scheduler.step(running_loss/len(self.traindata))
+            # self.scheduler.step(running_loss/len(self.trainloader))
         ## Store training state
         self.save_state()
 
