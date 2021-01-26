@@ -205,38 +205,51 @@ class Trainer():
     def test_step(self):
         self.net.eval()
         test_loss = 0
-        correct = 0
+        correct = correct0 = correct1 = 0
         with torch.no_grad():
             for x_data, target in self.testloader:
                 # Test pass
                 output = self.net(x_data[0].float())
-                test_loss += self.criterion(output, target.float())
+                test_loss += self.criterion(output, target.float()).item()
                 if round(output.item()) == target.item():
                     correct += 1
+                    if target.item() == 0:
+                        correct0 += 1
+                    elif target.item() == 1:
+                        correct1 += 1
+
         # Tally metrics
+        y_data = self.testdata.y_data
         test_loss /= len(self.testloader)
         accuracy = 100 * correct / len(self.testloader)
-        return test_loss, accuracy
+        acc_zero = 100 * correct0 / len(y_data[y_data == 0])
+        acc_ones = 100 * correct1 / len(y_data[y_data == 1])
+        return test_loss, accuracy, acc_zero, acc_ones
 
     @property
     def empty_performance(self):
-        return pd.DataFrame([], columns=['lr', 'trainloss', 'testloss', 'accuracy'])
+        return pd.DataFrame([],
+            columns=['lr', 'trainloss', 'testloss', 'accuracy', 'accuracy_0', 'accuracy_1'])
 
     def train(self, epochs=10):
         ## Train
         for e in range(epochs):
             self.epoch += 1
             trainloss, current_lr = self.train_step()
-            testloss, accuracy = self.test_step()
+            testloss, accuracy, acc_zero, acc_ones = self.test_step()
 
             metrics = {
                 'lr': current_lr,
                 'trainloss': trainloss,
                 'testloss': testloss,
                 'accuracy': accuracy,
+                'accuracy_0': acc_zero,
+                'accuracy_1': acc_ones,
             }
             self.performance = self.performance.append(metrics, ignore_index=True)
-            print(f"({self.epoch}) " + "Acc.: {accuracy:.1f}%, Test loss: {testloss:.4f}, Train loss: {trainloss:.4f}, LR: {lr:.4f}".format(**metrics))
+            print(f"({self.epoch}) " + "Acc: {accuracy:.1f}%, Acc0: {accuracy_0:.1f}%, ".format(**metrics) +\
+                "Acc1: {accuracy_1:.1f}%, Test loss: {testloss:.4f}, ".format(**metrics) +\
+                "Train loss: {trainloss:.4f}, LR: {lr:.4f}".format(**metrics))
             self.scheduler.step()
             # self.scheduler.step(running_loss/len(self.trainloader))
         ## Store training state
