@@ -14,7 +14,7 @@ from mongoengine.fields import (
     DateTimeField, DictField, EmbeddedDocumentField,
     EmbeddedDocumentListField, IntField, FileField,
     ListField, MapField, ReferenceField, StringField,
-    BooleanField,
+    BooleanField, BinaryField
 )
 from pymongo.errors import InvalidDocument
 from mongoengine import signals
@@ -452,14 +452,98 @@ class Study(BaseStudy):
         self.alertslog.clear()
         self.save()
 
+class NNState(EmbeddedDocument):
+    """"""
+    _timestamp = DateTimeField(default=arrow.now(Config.TZ).datetime)
+    epoch = IntField(default=0)
+    seed = IntField()
+    architecture = DictField()
+    _model = BinaryField()
+    _criterion = BinaryField()
+    _optimizer = BinaryField()
+    _scheduler = BinaryField()
+    scheduler_type = StringField()
+    _performance = BinaryField()
+
+    def __dict__(self):
+        attrs = [
+            'epoch', 'seed', 'architecture', 'model', 'criterion',
+            'optimizer', 'scheduler', 'scheduler_type', 'performance',
+        ]
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def set_dict(self, values):
+        for k, v in values.items():
+            setattr(self, k, v)
+
+    def serialize(self, value):
+        return pickle.dumps(value)
+
+    def deserialize(self, field):
+        try:
+            return pickle.loads(field)
+        except:
+            return None
+    @property
+    def model(self):
+        return self.deserialize(self._model)
+
+    @model.setter
+    def model(self, value):
+        self._model = self.serialize(value)
+
+    @property
+    def criterion(self):
+        return self.deserialize(self._criterion)
+
+    @criterion.setter
+    def criterion(self, value):
+        self._criterion = self.serialize(value)
+
+    @property
+    def optimizer(self):
+        return self.deserialize(self._optimizer)
+
+    @optimizer.setter
+    def optimizer(self, value):
+        self._optimizer = self.serialize(value)
+
+    @property
+    def scheduler(self):
+        return self.deserialize(self._scheduler)
+
+    @scheduler.setter
+    def scheduler(self, value):
+        self._scheduler = self.serialize(value)
+
+    @property
+    def performance(self):
+        return self.deserialize(self._performance)
+
+    @performance.setter
+    def performance(self, value):
+        self._performance = self.serialize(value)
+
 @clean_files.apply
 class NNModel(BaseStudy):
     """Contains neural network parameters."""
     valid_type = 'always'
     target_col = StringField(max_length=120)
+    _state = EmbeddedDocumentField('NNState')
+    saved_states = MapField(EmbeddedDocumentField('NNState'))
 
     def __repr__(self):
         return f"NN: {self.name}"
+
+    @property
+    def state(self):
+        return self._state.__dict__()
+
+    @state.setter
+    def state(self, adict):
+        newstate = NNState()
+        newstate.set_dict(adict)
+        self._state = newstate
 
     @property
     def traindata(self):
@@ -467,25 +551,25 @@ class NNModel(BaseStudy):
 
     @property
     def trainer(self):
-        return learn.Trainer(self.traindata, self.target_col, state=self.data)
+        return learn.Trainer(self.traindata, self.target_col, state=self.state)
 
     def switch_net(self, depth, width, outputs, output_type):
         trainer = self.trainer
         trainer.switch_net(depth, width, outputs, output_type)
-        self.data = trainer.state
+        self.state = trainer.state
 
     def train(self, epochs=10, save_interval=5, restart=False):
         if restart:
             self.reset()
         trainer = self.trainer
-        self.data = trainer.state
+        self.state = trainer.state
         total_epochs = trainer.epoch + epochs
         while trainer.epoch < total_epochs:
             trainer.train(save_interval)
-            self.data = trainer.state
+            self.state = trainer.state
 
     def reset(self):
-        self.data = None
+        self.state = None
 
     def run(self, **kwargs):
         self.status = 'Running'
