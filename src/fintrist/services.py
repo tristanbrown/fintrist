@@ -1,6 +1,8 @@
 """Helper functions."""
 import logging
 from mongoengine.errors import SaveConditionError, DoesNotExist
+from mongoengine.connection import _get_db
+import gridfs
 
 from . import migrations
 from .models import Study, BaseStudy, Stream, Strategy, NNModel
@@ -167,3 +169,28 @@ def create_nn(name, dataset, target_col, **kwargs):
     newstudy.set_parents({'traindata': dataset})
     newstudy.save()
     return newstudy
+
+def get_all_fileids():
+    """Searches for all FileField entries on BaseStudy docs.
+    Checks the following fields on all BaseStudy objects:
+    - file
+    - newfile
+    - archive
+    """
+    id_list = []
+    for doc in BaseStudy.objects():
+        allfiles = list(doc.archive.values()) + [doc.file, doc.newfile]
+        id_list.extend([filefield._id for filefield in allfiles if filefield])
+    return id_list
+
+def get_gridfs():
+    db = _get_db()
+    fs = gridfs.GridFS(db)
+    return fs
+    
+def drop_gridfs_orphans():
+    fs = get_gridfs()
+    orphans = [entry._id for entry in fs.find() if entry._id not in get_all_fileids()]
+    for orphan in orphans:
+        print(f"Deleting gridfs file {orphan}")
+        fs.delete(orphan)
