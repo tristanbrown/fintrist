@@ -10,4 +10,4 @@ from fintrist_lib import get_recipe
 __all__ = ('Study','BaseStudy', 'get_study', 'Strategy', 'migrate',
     'connect_db', 'mongoclient', 'test_db')
 
-mongoclient = connect_db()
+mongoclient, db = connect_db()

@@ -19,7 +19,7 @@ def connect_db():
         password=Config.PASSWORD,
         authentication_source='admin',
     )
-    return mongoclient
+    return mongoclient, mongoclient[db_name]
 
 def test_db(test=True):
     """Toggle the test DB."""

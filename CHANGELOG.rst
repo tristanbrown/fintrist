@@ -22,6 +22,7 @@ Changed
 * Improve NN metrics printing.
 * Feature reduction in TrendLengthData.
 * Generalize Study file transfer method.
+* Expose db pointer in fintrist.
 
 ==================
 1.1.0 - 2021-01-21
