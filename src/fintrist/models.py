@@ -322,7 +322,7 @@ class BaseStudy(Document):
     @property
     def data(self):
         """Preprocess the data field to return the data in a usable format."""
-        self.transfer_file()
+        self.transfer_file(self.newfile, self.file)
         file_obj = self.file.get()
         try:
             result = file_obj.read()
@@ -341,7 +341,7 @@ class BaseStudy(Document):
                 self.write_to(self.file, newdata)
             else:
                 self.write_to(self.newfile, newdata)
-                self.transfer_file()
+                self.transfer_file(self.newfile, self.file)
 
     def write_to(self, field, newdata):
         """Write data to a FileField."""
@@ -350,13 +350,13 @@ class BaseStudy(Document):
         field.close()
         self.save()
 
-    def transfer_file(self):
+    def transfer_file(self, filesrc, filedest):
         """Transfer the data from newfile to file."""
-        if self.newfile:
-            newfile = self.newfile.read()
-            self.file.replace(newfile)
+        if filesrc:
+            newfile = filesrc.read()
+            filedest.replace(newfile)
             self.save()
-            self.newfile.delete()
+            filesrc.delete()
             self.save()
 
     def remove_files(self):

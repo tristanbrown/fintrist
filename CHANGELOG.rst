@@ -20,6 +20,7 @@ Changed
 -------
 * Improve NN metrics printing.
 * Feature reduction in TrendLengthData.
+* Generalize Study file transfer method.
 
 ==================
 1.1.0 - 2021-01-21
