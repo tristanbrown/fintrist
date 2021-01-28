@@ -14,7 +14,7 @@ from mongoengine.fields import (
     DateTimeField, DictField, EmbeddedDocumentField,
     EmbeddedDocumentListField, IntField, FileField,
     ListField, MapField, ReferenceField, StringField,
-    BooleanField, BinaryField
+    BooleanField, BinaryField, GridFSProxy,
 )
 from pymongo.errors import InvalidDocument
 from mongoengine import signals
@@ -173,6 +173,7 @@ class BaseStudy(Document):
     # Data Outputs
     file = FileField()
     newfile = FileField()
+    archive = MapField(FileField())
     _timestamp = StringField()
     valid_age = IntField(default=0)  # Zero means always valid
     valid_type = StringField(choices=['market', 'always'], default='market')
@@ -359,6 +360,17 @@ class BaseStudy(Document):
             filesrc.delete()
             self.save()
 
+    def archive_data(self, savename):
+        """Transfer the data to the archive."""
+        filedest = self.archive.get(savename, GridFSProxy())
+        self.archive[savename] = filedest
+        self.transfer_file(self.file, filedest)
+
+    def restore_data(self, savename):
+        """Restore data from the archive."""
+        filesrc = self.archive.pop(savename, None)
+        self.transfer_file(filesrc, self.file)
+
     def remove_files(self):
         """Remove the data."""
         self.file.delete()
@@ -457,7 +469,6 @@ class NNModel(BaseStudy):
     """Contains neural network parameters."""
     valid_type = 'always'
     target_col = StringField(max_length=120)
-    saved_states = MapField(FileField())
 
     def __repr__(self):
         return f"NN: {self.name}"
