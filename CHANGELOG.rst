@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+==================
+1.2.0 - 2021-01-31
+==================
+
 Added
 -----
 * In learn.py, DFData does train/test split.
