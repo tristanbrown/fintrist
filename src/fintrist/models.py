@@ -507,6 +507,12 @@ class NNModel(BaseStudy):
             self.status = 'Idle'
             self.save()
 
+    def predict(self, count=None):
+        inputs = self.traindata.drop(self.target_col, axis=1)
+        if count:
+            inputs = inputs.tail(count)
+        return self.trainer.predict(inputs)
+
 class Strategy(Document):
     """A set of triggers for market actions.
 

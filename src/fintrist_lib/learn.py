@@ -256,12 +256,8 @@ class Trainer():
         self.save_state()
 
     def predict(self, inputs):
-        pass
-
-## Inspect results
-# result = net(torch.tensor(dataset.df.drop(['days to gain', dataset.target], axis=1).values).float())
-# labels = dataset.df['days to gain'].values
-
-# result_np = result.detach().numpy()
-# df = inputdata.dropna(how='any')
-# df['up prediction'] = result_np.T[0]
+        result = self.net(torch.tensor(inputs.values).float())
+        try:
+            return result.item()
+        except ValueError:
+            return result.detach().numpy().T[0]
