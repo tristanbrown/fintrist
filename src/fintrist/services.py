@@ -166,7 +166,7 @@ def create_nn(name, dataset, target_col, **kwargs):
         newstudy.update(**kwargs)
     else:
         newstudy = NNModel(name=name, target_col=target_col, **kwargs)
-    newstudy.set_parents({'traindata': dataset})
+    newstudy.set_parents({'dataset': dataset})
     newstudy.save()
     return newstudy
 

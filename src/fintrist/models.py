@@ -474,12 +474,12 @@ class NNModel(BaseStudy):
         return f"NN: {self.name}"
 
     @property
-    def traindata(self):
-        return self.parents['traindata'].data
+    def dataset(self):
+        return self.parents['dataset'].data
 
     @property
     def trainer(self):
-        return learn.Trainer(self.traindata, self.target_col, state=self.data)
+        return learn.Trainer(self.dataset, self.target_col, state=self.data)
 
     def switch_net(self, depth, width, outputs, output_type):
         trainer = self.trainer
@@ -508,7 +508,7 @@ class NNModel(BaseStudy):
             self.save()
 
     def predict(self, count=None):
-        inputs = self.traindata.drop(self.target_col, axis=1)
+        inputs = self.dataset.drop(self.target_col, axis=1)
         if count:
             inputs = inputs.tail(count)
         return self.trainer.predict(inputs)

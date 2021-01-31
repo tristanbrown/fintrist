@@ -39,9 +39,9 @@ class Net(nn.Module):
 
 
 class DfData(Dataset):
-    def __init__(self, df, target_col, train=True, testsize=0.2, seed=None):
+    def __init__(self, dataset, target_col, train=True, testsize=0.2, seed=None):
         """
-        df (DataFrame): input dataset
+        dataset (DataFrame): input dataset
         target_col (str): df column containing the data labels/targets/outputs
         train (bool): give the training set or the test set
         testsize (float): proportion of the data to reserve for the test set
@@ -51,7 +51,7 @@ class DfData(Dataset):
             seed = torch.Generator().seed()
         self.seed = seed
         self.train = train  # Set to False to get test data
-        self.fulldata = df.copy().dropna(how='any')
+        self.fulldata = dataset.copy().dropna(how='any')
         self.target_col = target_col
         self.trainidx, self.testidx = self.traintest_split(self.fulldata, testsize, seed)
         self.traindata, self.testdata = (

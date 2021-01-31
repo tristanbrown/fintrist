@@ -26,6 +26,7 @@ Changed
 * Feature reduction in TrendLengthData.
 * Generalize Study file transfer method.
 * Expose db pointer in fintrist.
+* Clarify dataset variable names.
 
 ==================
 1.1.0 - 2021-01-21
