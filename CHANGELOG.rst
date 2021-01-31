@@ -17,6 +17,7 @@ Fixed
 -----
 * Fix populating NN performance df.
 * Update Pytorch dependency to >=1.6 to fix random_split seeding.
+* Preserve null values in TrendLengthData.
 
 Changed
 -------

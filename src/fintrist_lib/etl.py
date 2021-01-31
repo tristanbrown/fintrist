@@ -30,7 +30,9 @@ class TrendLengthData(RecipeBase):
         data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
         data = data[['% overnight-0', '% day-0', '% cumul-1', '% cumul-10', '% cumul-30',
                       '% vol cumul-1', '% vol cumul-10', '% vol cumul-30', 'days to gain']]
+        null_days = data['days to gain'].isna()
         data['up tomorrow'] = (data['days to gain'] == 1).astype(int)
+        data.loc[null_days, 'up tomorrow'] = np.nan
         data = data.drop('days to gain', axis=1)
         return data, alerts
 
