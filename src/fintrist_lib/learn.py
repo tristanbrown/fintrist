@@ -138,7 +138,7 @@ class Trainer():
         if sched_type == 'CyclicLR':
             defaults = {
                 'base_lr': 0.0001,
-                'max_lr': 0.01,
+                'max_lr': 0.1,
                 'step_size_up': 5,
                 'mode': 'exp_range',
                 'gamma': 0.99,
@@ -176,7 +176,7 @@ class Trainer():
         self.state = state
 
     def init_state(self):
-        self.trainloader = DataLoader(self.traindata, batch_size=1, shuffle=True)
+        self.trainloader = DataLoader(self.traindata, batch_size=4, shuffle=True)
         self.testloader = DataLoader(self.testdata, batch_size=1, shuffle=True)
         self.net = self.build_net()
         self.criterion = self.choose_criterion()
@@ -192,7 +192,11 @@ class Trainer():
         for x_data, target in self.trainloader:
             # Training pass
             self.optimizer.zero_grad()
-            output = self.net(x_data[0].float())
+            # print(x_data[0].float())
+            # print(x_data.float())
+            output = self.net(x_data.float()).T[0]
+            # print(output)
+            # print(target.float())
             loss = self.criterion(output, target.float())
             loss.backward()
             self.optimizer.step()

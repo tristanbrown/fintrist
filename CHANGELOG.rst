@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Fixed
+-----
+* Enable NN training batch sizes larger than 1.
+
 ==================
 1.2.0 - 2021-01-31
 ==================
