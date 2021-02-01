@@ -105,8 +105,15 @@ class Trainer():
         return self.traindata.y_data
 
     def apply_state_dict(self, obj, state_name):
+        """Take the saved state and apply it to the object."""
         if old_state := self.state.get(state_name):
             obj.load_state_dict(old_state)
+
+    def update_state_dict(self, obj, state_name, params):
+        """Update parameters in the state and apply them to the object."""
+        old_state = self.state.get(state_name)
+        old_state.update(params)
+        self.apply_state_dict(obj, state_name)
 
     def build_net(self, **kwargs):
         if kwargs.get('inputs') is None:
@@ -138,10 +145,10 @@ class Trainer():
         if sched_type == 'CyclicLR':
             defaults = {
                 'base_lr': 0.0001,
-                'max_lr': 0.1,
+                'max_lr': 0.05,
                 'step_size_up': 5,
                 'mode': 'exp_range',
-                'gamma': 0.99,
+                'gamma': 0.995,
             }
             scheduler = torch.optim.lr_scheduler.CyclicLR(
                 self.optimizer, **defaults)
@@ -156,6 +163,24 @@ class Trainer():
         scheduler = SchedulerCls(self.optimizer, **defaults)
         self.apply_state_dict(scheduler, 'scheduler')
         return scheduler
+
+    def update_scheduler(self, params):
+        _params = {}
+        lr = params.get('max_lr') or params.get('lr')
+        if lr:
+            _params['max_lrs'] = [lr]
+        min_lr = params.get('min_lr') or params.get('base_lr'):
+        if min_lr:
+            _params['base_lrs'] = [min_lr]
+        gamma = params.get('gamma') or params.get('lr_gamma')
+        if gamma:
+            _params['gamma'] = gamma
+        step_size = params.get('step_size') or params.get('step_size_up')
+        if step_size:
+            _params['total_size'] = step_size * 2
+        self.update_state_dict(self.scheduler, 'scheduler', _params)
+        self.save_state()
+        self.init_state()
 
     def save_state(self):
         self.state = {
@@ -175,6 +200,12 @@ class Trainer():
             state = {}
         self.state = state
 
+    def update_state(self, new_state):
+        if nn_params := new_state.get('architecture'):
+            self.switch_net(**nn_params)
+        if sched_params := new_state.get('scheduler'):
+            self.update_scheduler(**sched_params)
+
     def init_state(self):
         self.trainloader = DataLoader(self.traindata, batch_size=4, shuffle=True)
         self.testloader = DataLoader(self.testdata, batch_size=1, shuffle=True)
@@ -192,11 +223,7 @@ class Trainer():
         for x_data, target in self.trainloader:
             # Training pass
             self.optimizer.zero_grad()
-            # print(x_data[0].float())
-            # print(x_data.float())
             output = self.net(x_data.float()).T[0]
-            # print(output)
-            # print(target.float())
             loss = self.criterion(output, target.float())
             loss.backward()
             self.optimizer.step()

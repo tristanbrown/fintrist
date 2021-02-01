@@ -6,6 +6,10 @@ CHANGELOG
 Unreleased
 ==========
 
+Added
+-----
+* Make training scheduler configurable.
+
 Fixed
 -----
 * Enable NN training batch sizes larger than 1.
