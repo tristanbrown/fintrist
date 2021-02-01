@@ -479,16 +479,22 @@ class NNModel(BaseStudy):
 
     @property
     def trainer(self):
-        return learn.Trainer(self.dataset, self.target_col, state=self.data)
+        return learn.Trainer(self.dataset, self.target_col, **self.data)
 
     def switch_net(self, depth, width, outputs, output_type):
         trainer = self.trainer
         trainer.switch_net(depth, width, outputs, output_type)
         self.data = trainer.state
 
-    def train(self, epochs=10, save_interval=5, restart=False):
+    def update_state(self, stateargs):
+        state = self.data.copy()
+        state.update(stateargs)
+        self.data = state
+
+    def train(self, epochs=10, save_interval=5, restart=False, **stateargs):
         if restart:
             self.reset()
+        self.update_state(stateargs)
         trainer = self.trainer
         self.data = trainer.state
         total_epochs = trainer.epoch + epochs
@@ -497,7 +503,7 @@ class NNModel(BaseStudy):
             self.data = trainer.state
 
     def reset(self):
-        self.data = None
+        self.data = {}
 
     def run(self, **kwargs):
         self.status = 'Running'

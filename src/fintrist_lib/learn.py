@@ -89,7 +89,7 @@ class DfData(Dataset):
         return trainset.indices, testset.indices
 
 class Trainer():
-    def __init__(self, data, target_col, state=None):
+    def __init__(self, data, target_col, **state):
         self.load_state(state)
         seed = self.state.get('seed')
         self.traindata = DfData(data, target_col, train=True, seed=seed)
@@ -169,7 +169,7 @@ class Trainer():
         lr = params.get('max_lr') or params.get('lr')
         if lr:
             _params['max_lrs'] = [lr]
-        min_lr = params.get('min_lr') or params.get('base_lr'):
+        min_lr = params.get('min_lr') or params.get('base_lr')
         if min_lr:
             _params['base_lrs'] = [min_lr]
         gamma = params.get('gamma') or params.get('lr_gamma')
@@ -186,6 +186,7 @@ class Trainer():
         self.state = {
             'epoch': self.epoch,
             'seed': self.traindata.seed,
+            'batch_size': self.batch_size,
             'architecture': self.net.architecture,
             'model': self.net.state_dict(),
             'criterion': self.criterion.state_dict(),
@@ -207,7 +208,9 @@ class Trainer():
             self.update_scheduler(**sched_params)
 
     def init_state(self):
-        self.trainloader = DataLoader(self.traindata, batch_size=4, shuffle=True)
+        self.batch_size = self.state.get('batch_size', 1)
+        self.trainloader = DataLoader(
+            self.traindata, batch_size=self.batch_size, shuffle=True)
         self.testloader = DataLoader(self.testdata, batch_size=1, shuffle=True)
         self.net = self.build_net()
         self.criterion = self.choose_criterion()

@@ -8,7 +8,7 @@ Unreleased
 
 Added
 -----
-* Make training scheduler configurable.
+* Make training scheduler and batch_size configurable.
 
 Fixed
 -----
