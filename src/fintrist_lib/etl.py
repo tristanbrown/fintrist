@@ -42,6 +42,14 @@ def prep_pricing_data(daily_prices, today_prices):
     ::parents:: daily_prices, today_prices
     ::params::
     ::alerts::
+
+    Column Definitions
+    quote: A price selected in the middle of the day.
+            (historical is randomly chosen between the day's high and low).
+    % day-0: % change between opening and quote.
+    % day-N: % change between opening and closing, N-days ago.
+    % overnight-N: % change, N-days ago, between previous closing and current open.
+    % cumul-N: % change between closing N-days ago and quote today.
     """
     data = daily_prices.copy().drop(['close', 'high', 'low', 'open', 'volume'], axis=1)
     data = append_simquote(data)

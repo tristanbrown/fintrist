@@ -290,6 +290,7 @@ class Trainer():
         self.save_state()
 
     def predict(self, inputs):
+        print("Prediction: ", inputs)
         result = self.net(torch.tensor(inputs.values).float())
         try:
             return result.item()
