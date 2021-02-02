@@ -179,8 +179,10 @@ def get_all_fileids():
     """
     id_list = []
     for doc in BaseStudy.objects():
-        allfiles = list(doc.archive.values()) + [doc.file, doc.newfile]
-        id_list.extend([filefield._id for filefield in allfiles if filefield])
+        allfiles = [doc.file]
+        for filemap in [doc.archive, doc.newfile, doc.fileversions]:
+            allfiles += list(filemap.values())
+        id_list += [filefield._id for filefield in allfiles if filefield]
     return id_list
 
 def get_gridfs():

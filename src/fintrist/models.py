@@ -172,7 +172,8 @@ class BaseStudy(Document):
 
     # Data Outputs
     file = FileField()
-    newfile = FileField()
+    newfile = MapField(FileField())
+    fileversions = MapField(FileField())
     archive = MapField(FileField())
     _timestamp = StringField()
     valid_age = IntField(default=0)  # Zero means always valid
@@ -223,8 +224,11 @@ class BaseStudy(Document):
     @property
     def timestamp(self):
         """Preprocess the timestamp to ensure consistency."""
+        return self.get_timestamp('default')
+
+    def get_timestamp(self, version):
         try:
-            recent_file = self.file
+            recent_file = self.fileversions.get(version)
             return arrow.get(recent_file.uploadDate).to(Config.TZ)
         except:
             return
@@ -322,9 +326,13 @@ class BaseStudy(Document):
 
     @property
     def data(self):
+        return self.get_data('default')
+
+    def get_data(self, version):
         """Preprocess the data field to return the data in a usable format."""
-        self.transfer_file(self.newfile, self.file)
-        file_obj = self.file.get()
+        if self.newfile.get(version):
+            self.transfer_file(self.newfile, self.fileversions, version)
+        file_obj = self.fileversions.get(version).get()
         try:
             result = file_obj.read()
             file_obj.seek(0)
@@ -334,15 +342,15 @@ class BaseStudy(Document):
 
     @data.setter
     def data(self, newdata):
+        self.save_data('default', newdata)
+
+    def save_data(self, version, newdata):
         """Process the data for storage."""
         if newdata is None:
-            self.remove_files()
+            self.remove_files(version)
         else:
-            if not self.file:
-                self.write_to(self.file, newdata)
-            else:
-                self.write_to(self.newfile, newdata)
-                self.transfer_file(self.newfile, self.file)
+            self.write_version(self.newfile, version, newdata)
+            self.transfer_file(self.newfile, self.fileversions, version)
 
     def write_to(self, field, newdata):
         """Write data to a FileField."""
@@ -351,31 +359,56 @@ class BaseStudy(Document):
         field.close()
         self.save()
 
-    def transfer_file(self, filesrc, filedest):
-        """Transfer the data from newfile to file."""
-        if filesrc:
-            newfile = filesrc.read()
-            filedest.replace(newfile)
-            self.save()
-            filesrc.delete()
-            self.save()
+    def write_version(self, field, version, newdata):
+        """Write data into a mapped FileField."""
+        fileslot = self.get_fileslot(field, version)
+        self.write_to(fileslot, newdata)
+
+    def get_fileslot(self, field, version):
+        """Get an existing fileslot in a mapfield, or create it."""
+        fileslot = field.get(version, GridFSProxy())
+        field[version] = fileslot
+        return fileslot
+
+    def copy_file(self, filesrc, filedest):
+        """Copy the data from filesrc to filedest."""
+        newfile = filesrc.read()
+        filedest.replace(newfile)
+        self.save()
+
+    def transfer_file(self, filesrc, filedest, version=None):
+        """Transfer a file between FileFields, possibly within a MapField."""
+        try:
+            filesrc = filesrc.pop(version, None)
+        except AttributeError:
+            pass
+        if isinstance(filedest, dict):
+            filedest = self.get_fileslot(filedest, version)
+        self.copy_file(filesrc, filedest)
+        filesrc.delete()
+        self.save()
 
     def archive_data(self, savename):
         """Transfer the data to the archive."""
-        filedest = self.archive.get(savename, GridFSProxy())
-        self.archive[savename] = filedest
-        self.transfer_file(self.file, filedest)
+        self.transfer_file(self.file, self.archive, savename)
 
     def restore_data(self, savename):
         """Restore data from the archive."""
-        filesrc = self.archive.pop(savename, None)
-        self.transfer_file(filesrc, self.file)
+        self.transfer_file(self.archive, self.file, savename)
 
-    def remove_files(self):
+    def remove_file(self, field, version):
+        """Remove a file version from a MapField."""
+        field[version].delete()
+        del field[version]
+        self.save()
+
+    def remove_files(self, version):
         """Remove the data."""
-        self.file.delete()
-        self.newfile.delete()
-        self.save(validate=False)
+        for field in (self.fileversions, self.newfile):
+            try:
+                self.remove_file(field, version)
+            except KeyError:
+                pass
 
 @clean_files.apply
 class Study(BaseStudy):

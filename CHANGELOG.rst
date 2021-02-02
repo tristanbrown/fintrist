@@ -9,6 +9,7 @@ Unreleased
 Added
 -----
 * Make training scheduler and batch_size configurable.
+* Enable multiple active data versions on Study objects.
 
 Fixed
 -----
