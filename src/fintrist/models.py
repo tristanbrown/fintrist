@@ -171,10 +171,8 @@ class BaseStudy(Document):
     params = DictField()  # Processing parameters.
 
     # Data Outputs
-    file = FileField()
     newfile = MapField(FileField())
     fileversions = MapField(FileField())
-    archive = MapField(FileField())
     _timestamp = StringField()
     valid_age = IntField(default=0)  # Zero means always valid
     valid_type = StringField(choices=['market', 'always'], default='market')
@@ -502,6 +500,7 @@ class NNModel(BaseStudy):
     """Contains neural network parameters."""
     valid_type = 'always'
     target_col = StringField(max_length=120)
+    active_data = StringField(default='default')
 
     def __repr__(self):
         return f"NN: {self.name}"
@@ -512,7 +511,7 @@ class NNModel(BaseStudy):
 
     @property
     def trainer(self):
-        return learn.Trainer(self.dataset, self.target_col, **self.data)
+        return learn.Trainer(self.dataset, self.target_col, **self.get_data(self.active_data))
 
     def switch_net(self, depth, width, outputs, output_type):
         trainer = self.trainer

@@ -173,14 +173,13 @@ def create_nn(name, dataset, target_col, **kwargs):
 def get_all_fileids():
     """Searches for all FileField entries on BaseStudy docs.
     Checks the following fields on all BaseStudy objects:
-    - file
     - newfile
-    - archive
+    - fileversions
     """
     id_list = []
     for doc in BaseStudy.objects():
-        allfiles = [doc.file]
-        for filemap in [doc.archive, doc.newfile, doc.fileversions]:
+        allfiles = []
+        for filemap in [doc.newfile, doc.fileversions]:
             allfiles += list(filemap.values())
         id_list += [filefield._id for filefield in allfiles if filefield]
     return id_list
