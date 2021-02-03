@@ -323,15 +323,24 @@ class BaseStudy(Document):
     ## Methods for handling the saved data ##
 
     @property
-    def data(self):
-        return self.get_data('default')
+    def version(self):
+        return getattr(self, '_version', 'default')
 
-    def get_data(self, version):
+    @version.setter
+    def version(self, label):
+        self._version = label
+
+    @property
+    def all_versions(self):
+        return list(self.fileversions.keys())
+
+    @property
+    def data(self):
         """Preprocess the data field to return the data in a usable format."""
-        if self.newfile.get(version):
-            self.transfer_file(self.newfile, self.fileversions, version)
-        file_obj = self.fileversions.get(version).get()
+        if self.newfile.get(self.version):
+            self.transfer_file(self.newfile, self.fileversions)
         try:
+            file_obj = self.fileversions.get(self.version).get()
             result = file_obj.read()
             file_obj.seek(0)
             return pickle.loads(result)
@@ -340,15 +349,12 @@ class BaseStudy(Document):
 
     @data.setter
     def data(self, newdata):
-        self.save_data('default', newdata)
-
-    def save_data(self, version, newdata):
         """Process the data for storage."""
         if newdata is None:
-            self.remove_files(version)
+            self.remove_files()
         else:
-            self.write_version(self.newfile, version, newdata)
-            self.transfer_file(self.newfile, self.fileversions, version)
+            self.write_version(self.newfile, newdata)
+            self.transfer_file(self.newfile, self.fileversions)
 
     def write_to(self, field, newdata):
         """Write data to a FileField."""
@@ -357,15 +363,15 @@ class BaseStudy(Document):
         field.close()
         self.save()
 
-    def write_version(self, field, version, newdata):
+    def write_version(self, field, newdata):
         """Write data into a mapped FileField."""
-        fileslot = self.get_fileslot(field, version)
+        fileslot = self.get_fileslot(field)
         self.write_to(fileslot, newdata)
 
-    def get_fileslot(self, field, version):
+    def get_fileslot(self, field):
         """Get an existing fileslot in a mapfield, or create it."""
-        fileslot = field.get(version, GridFSProxy())
-        field[version] = fileslot
+        fileslot = field.get(self.version, GridFSProxy())
+        field[self.version] = fileslot
         return fileslot
 
     def copy_file(self, filesrc, filedest):
@@ -374,37 +380,29 @@ class BaseStudy(Document):
         filedest.replace(newfile)
         self.save()
 
-    def transfer_file(self, filesrc, filedest, version=None):
+    def transfer_file(self, filesrc, filedest):
         """Transfer a file between FileFields, possibly within a MapField."""
         try:
-            filesrc = filesrc.pop(version, None)
+            filesrc = filesrc.pop(self.version, None)
         except AttributeError:
             pass
         if isinstance(filedest, dict):
-            filedest = self.get_fileslot(filedest, version)
+            filedest = self.get_fileslot(filedest)
         self.copy_file(filesrc, filedest)
         filesrc.delete()
         self.save()
 
-    def archive_data(self, savename):
-        """Transfer the data to the archive."""
-        self.transfer_file(self.file, self.archive, savename)
-
-    def restore_data(self, savename):
-        """Restore data from the archive."""
-        self.transfer_file(self.archive, self.file, savename)
-
-    def remove_file(self, field, version):
+    def remove_file(self, field):
         """Remove a file version from a MapField."""
-        field[version].delete()
-        del field[version]
+        field[self.version].delete()
+        del field[self.version]
         self.save()
 
-    def remove_files(self, version):
+    def remove_files(self):
         """Remove the data."""
         for field in (self.fileversions, self.newfile):
             try:
-                self.remove_file(field, version)
+                self.remove_file(field)
             except KeyError:
                 pass
 
@@ -500,7 +498,6 @@ class NNModel(BaseStudy):
     """Contains neural network parameters."""
     valid_type = 'always'
     target_col = StringField(max_length=120)
-    active_data = StringField(default='default')
 
     def __repr__(self):
         return f"NN: {self.name}"
@@ -511,7 +508,7 @@ class NNModel(BaseStudy):
 
     @property
     def trainer(self):
-        return learn.Trainer(self.dataset, self.target_col, **self.get_data(self.active_data))
+        return learn.Trainer(self.dataset, self.target_col, **self.data)
 
     def switch_net(self, depth, width, outputs, output_type):
         trainer = self.trainer
