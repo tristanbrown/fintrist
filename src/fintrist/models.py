@@ -516,16 +516,20 @@ class NNModel(BaseStudy):
         self.data = trainer.state
 
     def update_state(self, stateargs):
-        state = self.data.copy()
-        state.update(stateargs)
-        self.data = state
+        trainer = self.trainer
+        trainer.update_state(stateargs)
+        self.data = trainer.state
+        return trainer
 
     def train(self, epochs=10, save_interval=5, restart=False, **stateargs):
         if restart:
             self.reset()
-        self.update_state(stateargs)
-        trainer = self.trainer
+        trainer = self.update_state(stateargs)
         self.data = trainer.state
+        print(trainer.net)
+        print("Batch size: ", trainer.batch_size)
+        print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
+        print("Gamma: ", trainer.state['scheduler']['gamma'])
         total_epochs = trainer.epoch + epochs
         while trainer.epoch < total_epochs:
             trainer.train(save_interval)

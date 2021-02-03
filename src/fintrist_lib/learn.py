@@ -122,7 +122,6 @@ class Trainer():
         net_architecture.update(kwargs)
         net = Net(**net_architecture)
         self.apply_state_dict(net, 'model')
-        print(net)
         return net
 
     def switch_net(self, depth, width, outputs, output_type):
@@ -145,10 +144,10 @@ class Trainer():
         if sched_type == 'CyclicLR':
             defaults = {
                 'base_lr': 0.0001,
-                'max_lr': 0.05,
+                'max_lr': 0.01,
                 'step_size_up': 5,
                 'mode': 'exp_range',
-                'gamma': 0.995,
+                'gamma': 0.99,
             }
             scheduler = torch.optim.lr_scheduler.CyclicLR(
                 self.optimizer, **defaults)
@@ -202,10 +201,14 @@ class Trainer():
         self.state = state
 
     def update_state(self, new_state):
+        if batch_size := new_state.get('batch_size'):
+            self.batch_size = batch_size
+            self.save_state()
+            self.init_state()
         if nn_params := new_state.get('architecture'):
             self.switch_net(**nn_params)
         if sched_params := new_state.get('scheduler'):
-            self.update_scheduler(**sched_params)
+            self.update_scheduler(sched_params)
 
     def init_state(self):
         self.batch_size = self.state.get('batch_size', 1)
