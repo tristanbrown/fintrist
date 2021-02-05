@@ -13,10 +13,10 @@ class Net(nn.Module):
         super().__init__()
         if width is None:
             width = inputs * 2
-        if output_type == 'bounded':
-            self.final_act = torch.sigmoid
-        else:
-            self.final_act = torch.relu
+        # if output_type == 'bounded':
+        #     self.final_act = torch.sigmoid
+        # else:
+        #     self.final_act = torch.relu
 
         self.layers = self.build_layers(inputs, depth, width, outputs)
         self.architecture = {
@@ -28,13 +28,14 @@ class Net(nn.Module):
         conns = [inputs] + [width - i*(width-outputs)//(depth-1) for i in range(depth - 1)] + [outputs]
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
-            layers.append(nn.ReLU())
-        layers = layers[:-1]
+            layers.append(nn.LeakyReLU())
+        # layers = layers[:-1]
         return nn.Sequential(*layers)
     
     def forward(self, x):
         # forward pass
-        x = self.final_act(self.layers(x))
+        # x = self.final_act(self.layers(x))
+        x = self.layers(x)
         return x
 
 
@@ -56,6 +57,7 @@ class DfData(Dataset):
         self.trainidx, self.testidx = self.traintest_split(self.fulldata, testsize, seed)
         self.traindata, self.testdata = (
             self.fulldata.iloc[idx] for idx in (self.trainidx, self.testidx))
+        self.traindata = self.balance_classes(self.traindata)
 
     @property
     def data(self):
@@ -88,6 +90,9 @@ class DfData(Dataset):
             data, [trainlen, testlen], generator=torch.Generator().manual_seed(seed))
         return trainset.indices, testset.indices
 
+    def balance_classes(self, data):
+        return data
+
 class Trainer():
     def __init__(self, data, target_col, **state):
         self.load_state(state)
@@ -106,8 +111,11 @@ class Trainer():
 
     def apply_state_dict(self, obj, state_name):
         """Take the saved state and apply it to the object."""
-        if old_state := self.state.get(state_name):
-            obj.load_state_dict(old_state)
+        try:
+            if old_state := self.state.get(state_name):
+                obj.load_state_dict(old_state)
+        except (RuntimeError, ValueError):
+            pass
 
     def update_state_dict(self, obj, state_name, params):
         """Update parameters in the state and apply them to the object."""
@@ -124,13 +132,16 @@ class Trainer():
         self.apply_state_dict(net, 'model')
         return net
 
-    def switch_net(self, depth, width, outputs, output_type):
-        self.net = self.build_net(depth, width, outputs, output_type)
+    def switch_net(self, **kwargs):
+        self.net = self.build_net(**kwargs)
         self.save_state()
         self.init_state()
 
     def choose_criterion(self):
-        criterion = nn.SmoothL1Loss()
+        # criterion = nn.SmoothL1Loss()
+        weight = torch.tensor([0.57])
+        # criterion = nn.CrossEntropyLoss(weight)
+        criterion = nn.BCEWithLogitsLoss(weight)
         self.apply_state_dict(criterion, 'criterion')
         return criterion
 
@@ -229,7 +240,14 @@ class Trainer():
         for x_data, target in self.trainloader:
             # Training pass
             self.optimizer.zero_grad()
-            output = self.net(x_data.float()).T[0]
+            # output = self.net(x_data[0].float())
+            output = self.net(x_data.float()).squeeze(1)
+            # print(output)
+            # print(target)
+            # print(x_data[0].float())
+            # print(self.net(x_data[0].float()))
+            # print(x_data.float())
+            # print(self.net(x_data.float()))
             loss = self.criterion(output, target.float())
             loss.backward()
             self.optimizer.step()

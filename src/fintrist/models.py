@@ -525,7 +525,7 @@ class NNModel(BaseStudy):
         if restart:
             self.reset()
         trainer = self.update_state(stateargs)
-        self.data = trainer.state
+        # trainer = self.trainer
         print(trainer.net)
         print("Batch size: ", trainer.batch_size)
         print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
@@ -539,8 +539,9 @@ class NNModel(BaseStudy):
         self.data = {}
 
     def run(self, **kwargs):
-        self.status = 'Running'
         try:
+            self.status = 'Running'
+            self.save()
             self.train(**kwargs)
         finally:
             self.status = 'Idle'
