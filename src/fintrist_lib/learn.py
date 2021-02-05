@@ -13,10 +13,10 @@ class Net(nn.Module):
         super().__init__()
         if width is None:
             width = inputs * 2
-        # if output_type == 'bounded':
-        #     self.final_act = torch.sigmoid
-        # else:
-        #     self.final_act = torch.relu
+        if output_type == 'bounded':
+            self.final_act = torch.sigmoid
+        else:
+            self.final_act = torch.relu
 
         self.layers = self.build_layers(inputs, depth, width, outputs)
         self.architecture = {
@@ -28,14 +28,14 @@ class Net(nn.Module):
         conns = [inputs] + [width - i*(width-outputs)//(depth-1) for i in range(depth - 1)] + [outputs]
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
-            layers.append(nn.LeakyReLU())
-        # layers = layers[:-1]
+            layers.append(nn.ReLU())
+        layers = layers[:-1]
         return nn.Sequential(*layers)
     
     def forward(self, x):
         # forward pass
-        # x = self.final_act(self.layers(x))
-        x = self.layers(x)
+        x = self.final_act(self.layers(x))
+        # x = self.layers(x)
         return x
 
 
@@ -138,10 +138,10 @@ class Trainer():
         self.init_state()
 
     def choose_criterion(self):
-        # criterion = nn.SmoothL1Loss()
-        weight = torch.tensor([0.57])
+        criterion = nn.SmoothL1Loss()
+        # weight = torch.tensor([0.57])
         # criterion = nn.CrossEntropyLoss(weight)
-        criterion = nn.BCEWithLogitsLoss(weight)
+        # criterion = nn.BCEWithLogitsLoss(weight)
         self.apply_state_dict(criterion, 'criterion')
         return criterion
 
