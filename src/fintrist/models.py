@@ -525,7 +525,6 @@ class NNModel(BaseStudy):
         if restart:
             self.reset()
         trainer = self.update_state(stateargs)
-        # trainer = self.trainer
         print(trainer.net)
         print("Batch size: ", trainer.batch_size)
         print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
