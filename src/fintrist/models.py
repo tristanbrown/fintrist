@@ -181,6 +181,7 @@ class BaseStudy(Document):
     status = StringField(choices=['Idle', 'Running'], default='Idle')
 
     # Meta
+    notes = MapField(ListField(StringField()))
     schema_version = IntField(default=1)
     meta = {
         'strict': False,
@@ -405,6 +406,32 @@ class BaseStudy(Document):
                 self.remove_file(field)
             except KeyError:
                 pass
+
+    def add_note(self, title='default', text=None):
+        """Add a note to the notes field."""
+        entry = self.notes.get(title, [])
+        if text:
+            entry.append(text)
+        self.notes[title] = entry
+        self.save()
+
+    def del_note(self, title='default', index=None):
+        """Delete the specified note."""
+        if index is None:
+            self.notes.pop(title, None)
+        else:
+            entry = self.notes.get(title, [])
+            entry.pop(index)
+        self.save()
+
+    def read_notes(self, title=None):
+        """Read the notes."""
+        if title is None:
+            for key in self.notes.keys():
+                self.read_notes(key)
+        else:
+            entry = [f"{i}: {note}" for i, note in enumerate(self.notes.get(title, []))]
+            print(f"{title}\n\t" + "\n\t".join(entry))
 
 @clean_files.apply
 class Study(BaseStudy):
