@@ -147,13 +147,19 @@ class Trainer():
         self.save_state()
         self.init_state()
 
-    def choose_criterion(self):
-        criterion = nn.SmoothL1Loss()
-        # target_counts = self.traindata.y_data.value_counts()
-        # weight = torch.tensor([target_counts[0]/target_counts[1]])
-        # weight = torch.tensor(0.01)
-        # criterion = nn.CrossEntropyLoss(weight)
-        # criterion = nn.BCEWithLogitsLoss(weight)
+    def choose_criterion(self, crit_type=None, weight=None):
+        if crit_type is None:
+            criterion = self.state.get('criterion', nn.SmoothL1Loss)
+        elif crit_type.lower() in ['smoothl1loss', 'regression', 'l1']:
+            criterion = nn.SmoothL1Loss()
+        elif crit_type.lower() in ['bcewithlogitsloss', 'binary', 'bce']:
+            target_counts = self.traindata.y_data.value_counts()
+            if weight is None:
+                weight = torch.tensor([target_counts[0]/target_counts[1]])
+            criterion = nn.BCEWithLogitsLoss(weight)
+        elif crit_type.lower() in ['crossentropyloss', 'crossentropy', 'classifcation']:
+            # Need to implement a calculation for weight here.
+            criterion = nn.CrossEntropyLoss()
         self.apply_state_dict(criterion, 'criterion')
         return criterion
 
@@ -203,6 +209,13 @@ class Trainer():
         self.update_state_dict(self.scheduler, 'scheduler', _params)
         self.save_state()
         self.init_state()
+    
+    def update_criterion(self, params):
+        label = params.get('label') or params.get('type')
+        weight = params.get('weight')
+        self.criterion = self.choose_criterion(crit_type=label, weight=weight)
+        self.save_state()
+        self.init_state()
 
     def save_state(self):
         self.state = {
@@ -232,6 +245,8 @@ class Trainer():
             self.switch_net(**nn_params)
         if sched_params := new_state.get('scheduler'):
             self.update_scheduler(sched_params)
+        if crit_params := new_state.get('criterion'):
+            self.update_criterion(crit_params)
 
     def init_state(self):
         self.batch_size = self.state.get('batch_size', 1)

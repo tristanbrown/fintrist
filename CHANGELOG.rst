@@ -8,7 +8,7 @@ Unreleased
 
 Added
 -----
-* Make training scheduler and batch_size configurable.
+* Make training scheduler, batch_size, and criterion configurable.
 * Enable multiple active data versions on Study objects.
 * Can now take notes in the BaseStudy `notes` field.
 
