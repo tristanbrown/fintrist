@@ -22,9 +22,9 @@ class Net(nn.Module):
 
         # Define the final activation function.
         if output_type == 'bounded':
-            self.final_act = torch.sigmoid
+            self.final_act = nn.Sigmoid()
         elif output_type == 'logit':
-            self.final_act == lambda x: x
+            self.final_act = None
         else:
             self.final_act = self.activation
 
@@ -41,11 +41,13 @@ class Net(nn.Module):
             layers.append(nn.Linear(conns[i], conns[i+1]))
             layers.append(self.activation)
         layers = layers[:-1]
+        if self.final_act:
+            layers.append(self.final_act)
         return nn.Sequential(*layers)
     
     def forward(self, x):
         # forward pass
-        x = self.final_act(self.layers(x))
+        x = self.layers(x)
         return x
 
 
@@ -149,8 +151,8 @@ class Trainer():
 
     def choose_criterion(self, crit_type=None, weight=None):
         if crit_type is None:
-            criterion = self.state.get('criterion', nn.SmoothL1Loss)
-        elif crit_type.lower() in ['smoothl1loss', 'regression', 'l1']:
+             crit_type = self.state.get('crit_type', 'SmoothL1Loss')
+        if crit_type.lower() in ['smoothl1loss', 'regression', 'l1']:
             criterion = nn.SmoothL1Loss()
         elif crit_type.lower() in ['bcewithlogitsloss', 'binary', 'bce']:
             target_counts = self.traindata.y_data.value_counts()
@@ -225,6 +227,7 @@ class Trainer():
             'architecture': self.net.architecture,
             'model': self.net.state_dict(),
             'criterion': self.criterion.state_dict(),
+            'crit_type': self.criterion.__class__.__name__,
             'optimizer': self.optimizer.state_dict(),
             'scheduler': self.scheduler.state_dict(),
             'scheduler_type': self.scheduler.__class__.__name__,
