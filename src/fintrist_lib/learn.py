@@ -138,6 +138,8 @@ class Trainer():
     def build_net(self, **kwargs):
         if kwargs.get('inputs') is None:
             kwargs['inputs'] = len(self.x_df.columns)
+        if output_type := getattr(self, 'output_type', None):
+            kwargs['output_type'] = output_type
         net_architecture = self.state.get('architecture', {})
         net_architecture.update(kwargs)
         net = Net(**net_architecture)
@@ -159,9 +161,11 @@ class Trainer():
             if weight is None:
                 weight = torch.tensor([target_counts[0]/target_counts[1]])
             criterion = nn.BCEWithLogitsLoss(weight)
+            self.output_type = 'logit'
         elif crit_type.lower() in ['crossentropyloss', 'crossentropy', 'classifcation']:
             # Need to implement a calculation for weight here.
             criterion = nn.CrossEntropyLoss()
+            self.output_type = 'softmax' # Need to implement this on the Net.
         self.apply_state_dict(criterion, 'criterion')
         return criterion
 
@@ -244,12 +248,12 @@ class Trainer():
             self.batch_size = batch_size
             self.save_state()
             self.init_state()
+        if crit_params := new_state.get('criterion'):
+            self.update_criterion(crit_params)
         if nn_params := new_state.get('architecture'):
             self.switch_net(**nn_params)
         if sched_params := new_state.get('scheduler'):
             self.update_scheduler(sched_params)
-        if crit_params := new_state.get('criterion'):
-            self.update_criterion(crit_params)
 
     def init_state(self):
         self.batch_size = self.state.get('batch_size', 1)
