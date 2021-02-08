@@ -9,15 +9,26 @@ from .base import RecipeBase
 __all__ = ['Net', 'DfData', 'Trainer']
         
 class Net(nn.Module):
-    def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded'):
+    def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded', activation='relu'):
         super().__init__()
         if width is None:
             width = inputs * 2
+
+        # Define the activation functions between layers.
+        if activation == 'relu':
+            self.activation = nn.ReLU()
+        elif activation == 'leakyrelu':
+            self.activation = nn.LeakyReLU()
+
+        # Define the final activation function.
         if output_type == 'bounded':
             self.final_act = torch.sigmoid
+        elif output_type == 'logit':
+            self.final_act == lambda x: x
         else:
-            self.final_act = torch.relu
+            self.final_act = self.activation
 
+        # Build the layers
         self.layers = self.build_layers(inputs, depth, width, outputs)
         self.architecture = {
             'inputs': inputs, 'depth': depth, 'width': width, 'outputs': outputs,
@@ -28,15 +39,13 @@ class Net(nn.Module):
         conns = [inputs] + [width - i*(width-outputs)//(depth-1) for i in range(depth - 1)] + [outputs]
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
-            layers.append(nn.ReLU())
-            # layers.append(nn.LeakyReLU())
+            layers.append(self.activation)
         layers = layers[:-1]
         return nn.Sequential(*layers)
     
     def forward(self, x):
         # forward pass
         x = self.final_act(self.layers(x))
-        # x = self.layers(x)
         return x
 
 
@@ -140,7 +149,9 @@ class Trainer():
 
     def choose_criterion(self):
         criterion = nn.SmoothL1Loss()
-        # weight = torch.tensor([0.57])
+        # target_counts = self.traindata.y_data.value_counts()
+        # weight = torch.tensor([target_counts[0]/target_counts[1]])
+        # weight = torch.tensor(0.01)
         # criterion = nn.CrossEntropyLoss(weight)
         # criterion = nn.BCEWithLogitsLoss(weight)
         self.apply_state_dict(criterion, 'criterion')
