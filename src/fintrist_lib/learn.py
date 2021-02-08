@@ -107,6 +107,7 @@ class DfData(Dataset):
 
 class Trainer():
     def __init__(self, data, target_col, **state):
+        self.output_type = None
         self.load_state(state)
         seed = self.state.get('seed')
         self.traindata = DfData(data, target_col, train=True, seed=seed)
@@ -293,6 +294,8 @@ class Trainer():
                 # Test pass
                 output = self.net(x_data.float()).squeeze(1)
                 test_loss += self.criterion(output, target.float()).item()
+                if self.output_type == 'logit':
+                    output = torch.sigmoid(output)
                 if round(output.item()) == target.item():
                     correct += 1
                     if target.item() == 0:
@@ -333,13 +336,14 @@ class Trainer():
                 "Acc1: {accuracy_1:.1f}%, Test loss: {testloss:.4f}, ".format(**metrics) +\
                 "Train loss: {trainloss:.4f}, LR: {lr:.4f}".format(**metrics))
             self.scheduler.step()
-            # self.scheduler.step(running_loss/len(self.trainloader))
         ## Store training state
         self.save_state()
 
     def predict(self, inputs):
         print("Prediction: ", inputs)
         result = self.net(torch.tensor(inputs.values).float())
+        if self.output_type == 'logit':
+            result = torch.sigmoid(result)
         try:
             return result.item()
         except ValueError:
