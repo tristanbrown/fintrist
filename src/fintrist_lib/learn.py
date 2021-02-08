@@ -269,7 +269,7 @@ class Trainer():
         with torch.no_grad():
             for x_data, target in self.testloader:
                 # Test pass
-                output = self.net(x_data[0].float())
+                output = self.net(x_data.float()).squeeze(1)
                 test_loss += self.criterion(output, target.float()).item()
                 if round(output.item()) == target.item():
                     correct += 1
