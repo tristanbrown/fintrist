@@ -574,11 +574,11 @@ class NNModel(BaseStudy):
             self.status = 'Idle'
             self.save()
 
-    def predict(self, count=None):
+    def predict(self, count=None, shuffle_col=None):
         inputs = self.dataset.drop(self.target_col, axis=1)
         if count:
             inputs = inputs.tail(count)
-        return self.trainer.predict(inputs)
+        return self.trainer.predict(inputs, shuffle_col)
 
 class Strategy(Document):
     """A set of triggers for market actions.

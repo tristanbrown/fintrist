@@ -339,8 +339,11 @@ class Trainer():
         ## Store training state
         self.save_state()
 
-    def predict(self, inputs):
+    def predict(self, inputs, shuffle_col=None):
         print("Prediction: ", inputs)
+        if shuffle_col:
+            inputs = inputs.copy()
+            inputs[shuffle_col] = inputs[shuffle_col].sample(frac=1).values
         result = self.net(torch.tensor(inputs.values).float())
         if self.output_type == 'logit':
             result = torch.sigmoid(result)

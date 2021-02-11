@@ -11,6 +11,7 @@ Added
 * Make training scheduler, batch_size, and criterion configurable.
 * Enable multiple active data versions on Study objects.
 * Can now take notes in the BaseStudy `notes` field.
+* Can shuffle a column during NN predictions to evaluate variable importance.
 
 Fixed
 -----
