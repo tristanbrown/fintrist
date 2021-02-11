@@ -173,6 +173,7 @@ class BaseStudy(Document):
     # Data Outputs
     newfile = MapField(FileField())
     fileversions = MapField(FileField())
+    versiondefault = StringField(default='default')
     _timestamp = StringField()
     valid_age = IntField(default=0)  # Zero means always valid
     valid_type = StringField(choices=['market', 'always'], default='market')
@@ -223,7 +224,7 @@ class BaseStudy(Document):
     @property
     def timestamp(self):
         """Preprocess the timestamp to ensure consistency."""
-        return self.get_timestamp('default')
+        return self.get_timestamp(self.versiondefault)
 
     def get_timestamp(self, version):
         try:
@@ -325,7 +326,7 @@ class BaseStudy(Document):
 
     @property
     def version(self):
-        return getattr(self, '_version', 'default')
+        return getattr(self, '_version', self.versiondefault)
 
     @version.setter
     def version(self, label):
@@ -406,6 +407,16 @@ class BaseStudy(Document):
                 self.remove_file(field)
             except KeyError:
                 pass
+
+    def rename_data(self, oldname, newname):
+        """Rename the data file."""
+        try:
+            self.fileversions[newname].delete()
+        except KeyError:
+            pass
+        self.fileversions[newname] = self.fileversions[oldname]
+        del self.fileversions[oldname]
+        self.save()
 
     def add_note(self, title='default', text=None):
         """Add a note to the notes field."""
