@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
+from copy import deepcopy
 
 from .base import RecipeBase
 
@@ -111,7 +112,8 @@ class Trainer():
         self.load_state(state)
         seed = self.state.get('seed')
         self.traindata = DfData(data, target_col, train=True, seed=seed)
-        self.testdata = DfData(data, target_col, train=False, seed=seed)
+        self.testdata = deepcopy(self.traindata)
+        self.testdata.train = False
         self.init_state()
 
     @property

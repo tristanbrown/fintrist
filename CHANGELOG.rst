@@ -17,6 +17,7 @@ Fixed
 -----
 * Enable NN training batch sizes larger than 1.
 * Fix TrendLengthData "% day-0" to use "quote" at all times of day.
+* Keep train/test data complementary.
 
 ==================
 1.2.0 - 2021-01-31
