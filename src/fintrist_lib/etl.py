@@ -28,7 +28,7 @@ class TrendLengthData(RecipeBase):
         data, alerts = prep_pricing_data(daily_prices, today_prices)
         data = build_daystogain(data)
         data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
-        data = data[['% overnight-0', '% day-0', '% cumul-1', '% cumul-10', '% cumul-30',
+        data = data[['% overnight-0', '% day-0', '% day-1', '% cumul-1', '% cumul-10', '% cumul-30',
                       '% vol cumul-1', '% vol cumul-10', '% vol cumul-30', 'days to gain']]
         null_days = data['days to gain'].isna()
         data['up tomorrow'] = (data['days to gain'] == 1).astype(int)
@@ -82,7 +82,7 @@ def append_pct_overnight(data, lookback):
     
 def append_pct_day(data, lookback):
     ref = data['adjOpen'].shift(lookback)
-    if np.isnan(data['adjClose'][-1 - lookback]):
+    if lookback == 0:
         day_end = data['quote']
     else:
         day_end = data['adjClose']

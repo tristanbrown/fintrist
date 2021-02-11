@@ -334,7 +334,7 @@ class Trainer():
             self.performance = self.performance.append(metrics, ignore_index=True)
             print(f"({self.epoch}) " + "Acc: {accuracy:.1f}%, Acc0: {accuracy_0:.1f}%, ".format(**metrics) +\
                 "Acc1: {accuracy_1:.1f}%, Test loss: {testloss:.4f}, ".format(**metrics) +\
-                "Train loss: {trainloss:.4f}, LR: {lr:.4f}".format(**metrics))
+                "Train loss: {trainloss:.4f}, LR: {lr:.6f}".format(**metrics))
             self.scheduler.step()
         ## Store training state
         self.save_state()
