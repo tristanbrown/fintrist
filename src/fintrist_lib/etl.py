@@ -1,6 +1,7 @@
 """ETL Processes"""
 
 import numpy as np
+from scipy import stats
 from .base import RecipeBase
 from .scrapers import stockmarket
 
@@ -59,8 +60,30 @@ def prep_pricing_data(daily_prices, today_prices):
     alerts = []
     return data, alerts
 
-def append_simquote(data):
-    data['quote'] = data['adjLow'] + np.random.rand(len(data)) * (data['adjHigh'] - data['adjLow'])
+def append_simquote(data, timeofday=None):
+    """Simulate a stock quote at a given time of day.
+
+    timeofday (float): Given as the fraction of the market day passed
+        at the time the quote is obtained.
+
+    SOLVED THE QUOTE SIMULATION PROBLEM:
+    https://stats.stackexchange.com/a/510059/297889
+
+    #TODO: Update the descriptions below and incorporate the new quote simulation.
+
+    The quote is drawn from a truncated normal distribution.
+    The lower and upper bounds are adjLow and adjHigh.
+    The distribution is centered on a linear path from adjOpen to adjClose.
+    The timeofday determines how far along that path the center occurs.
+    The std dev is given by...
+    """
+    if timeofday is None:
+        data['quote'] = data['adjLow'] + np.random.rand(len(data)) * (data['adjHigh'] - data['adjLow'])
+    else:
+        lower = data['adjLow']
+        upper = data['adjHigh']
+        quotemean = (data['adjClose'] - data['adjOpen']) * timeofday + data['adjOpen']
+
     return data
 
 def append_today(data, today_prices, div=0, split=1):
