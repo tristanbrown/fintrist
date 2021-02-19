@@ -19,6 +19,11 @@ Fixed
 * Fix TrendLengthData "% day-0" to use "quote" at all times of day.
 * Keep train/test data complementary.
 
+Changed
+-------
+* Update TrendLengthData quote simulation to be more realistic, based on
+    a Brownian Bridge.
+
 ==================
 1.2.0 - 2021-01-31
 ==================
