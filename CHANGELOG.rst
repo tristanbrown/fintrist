@@ -23,6 +23,7 @@ Changed
 -------
 * Update TrendLengthData quote simulation to be more realistic, based on
     a Brownian Bridge.
+* Rename TrendLengthData to UpDownDay.
 
 ==================
 1.2.0 - 2021-01-31

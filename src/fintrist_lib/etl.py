@@ -5,9 +5,9 @@ from scipy import stats
 from .base import RecipeBase
 from .scrapers import stockmarket
 
-__all__ = ['prep_pricing_data', 'TrendLengthData']
+__all__ = ['prep_pricing_data', 'UpDownDay']
 
-class TrendLengthData(RecipeBase):
+class UpDownDay(RecipeBase):
 
     valid_type = 'market'
 
