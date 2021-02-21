@@ -4,16 +4,7 @@ import scipy.special as spc
 import matplotlib.pyplot as plt
 
 class StockDaySim():
-    def __init__(self, x, y, w, z, n):
-        self.x = x
-        self.y = y
-        self.w = w
-        self.z = z
-        self.n = n
-        
-    def generate_stocksim(self, t):
-        """Generate a normal distribution that represents a 1D-random
-        walker at time t.
+    """Simulate a stock price quote as a 1D-random walker at time t.
         This walker is defined as the Wiener Process W(t)=Nc*B(t).
         B(t) is a Brownian Bridge process. Nc is an independent normal
         distribution for scaling.
@@ -21,12 +12,44 @@ class StockDaySim():
         For t on the interval [0,1], the walker travels stochastically
         from W(0)=x to W(1)=y, achieving the values w and z as the min
         and max values observed with sample size n. 
+        """
 
+    def __init__(self, dayopen, dayclose, low, high, n):
+        self.low = low
+        self.high = high
+        self.open = dayopen
+        self.close = dayclose
+        self.n = n  # should be similar to the sample size observed by the neural network
+        self.x = (dayopen - low)/(high - low)
+        self.y = (dayclose - low)/(high - low)
+        
+    def generate(self, t):
+        """Generate the normal distribution representing a random variable of
+        the stock price at time t.
+        
         The distribution is truncated at the ends of the time interval.
         """
-        mu, std = multiply_norms(
-            *brownian_bridge(t, self.x, self.y), *brownian_multiplier(self.z, self.n))
-        return stats.truncnorm((0 - mu) / std, (1 - mu) / std, loc=mu, scale=std)
+        raw_mu, raw_std = multiply_norms(
+            *brownian_bridge(t, self.x, self.y), *brownian_multiplier(1, self.n))
+        
+        ## Scale and relocate
+        mu = raw_mu * (self.high - self.low) + self.low
+        std = raw_std * (self.high - self.low)
+
+        return stats.truncnorm((self.low - mu) / std, (self.high - mu) / std, loc=mu, scale=std)
+
+    def plot_stock_sim(self, times=None):
+        if not times:
+            times = [0.01, 0.1, 0.3, 0.5, 0.8, 0.9, 0.99, 0.999]
+
+        fig, ax = plt.subplots(len(times)+1, sharex=True)
+        X = stats.norm(*norm_limited(self.low, self.high, self.n))
+        ax[0].hist(X.rvs(10000), density=True, bins=40)
+        for i, t in enumerate(times):
+            X = self.generate(t)
+            ax[i+1].hist(X.rvs(10000), density=True, bins=40)
+        plt.xlim([self.low, self.high])
+        plt.show()
 
 def brownian_bridge(t, x, y):
     """Give the mean and std dev of a normal distribution
@@ -78,22 +101,3 @@ def multiply_norms(mu1, std1, mu2, std2):
     var = (std1**2)*(std2**2)/(std1**2 + std2**2)
     std = np.sqrt(var)
     return mu, std
-
-def plot_stock_sim():
-    times = [0.01, 0.1, 0.3, 0.5, 0.8, 0.9, 0.99, 0.999]
-    x, y = 0.7, 0.9
-    w, z = 0, 1
-    # n = 60 * 6.5
-    n=7000  # should be similar to the sample size observed by the neural network
-    # n=55000000
-    sim=StockDaySim(x, y, w, z, n)
-
-    fig, ax = plt.subplots(len(times)+1, sharex=True)
-    X = stats.norm(*norm_limited(w, z, n))
-    ax[0].hist(X.rvs(10000), density=True, bins=40)
-    for i, t in enumerate(times):
-        X = sim.generate_stocksim(t)
-        ax[i+1].hist(X.rvs(10000), density=True, bins=40)
-    # ax[1].hist(N.rvs(10000), density=True)
-    plt.xlim([0,1])
-    plt.show()

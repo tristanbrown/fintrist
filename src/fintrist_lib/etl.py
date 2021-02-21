@@ -4,6 +4,7 @@ import numpy as np
 from scipy import stats
 from .base import RecipeBase
 from .scrapers import stockmarket
+from .simulate import StockDaySim
 
 __all__ = ['prep_pricing_data', 'UpDownDay']
 
