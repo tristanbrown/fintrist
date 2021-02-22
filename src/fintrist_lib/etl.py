@@ -12,22 +12,23 @@ class UpDownDay(RecipeBase):
 
     valid_type = 'market'
 
-    def __init__(self, symbol='SPY'):
+    def __init__(self, symbol='SPY', timeofday=0.75):
         self.studyname = f"{symbol} Trend Length Data"
         self.parents = {
             'daily_prices': stockmarket.StockDaily(symbol),
             'today_prices': stockmarket.StockIntraday(symbol)
             }
+        self.params = {'timeofday': timeofday}
 
     @staticmethod
-    def process(daily_prices, today_prices):
+    def process(daily_prices, today_prices, timeofday):
         """Prepare stock data for a trend length indicator.
 
         ::parents:: daily_prices, today_prices
         ::params::
         ::alerts::
         """
-        data, alerts = prep_pricing_data(daily_prices, today_prices)
+        data, alerts = prep_pricing_data(daily_prices, today_prices, timeofday)
         data = build_daystogain(data)
         data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
         data = data[['% overnight-0', '% day-0', '% day-1', '% cumul-1', '% cumul-10', '% cumul-30',
@@ -38,7 +39,7 @@ class UpDownDay(RecipeBase):
         data = data.drop('days to gain', axis=1)
         return data, alerts
 
-def prep_pricing_data(daily_prices, today_prices):
+def prep_pricing_data(daily_prices, today_prices, timeofday):
     """Prepare pricing data for a stock.
 
     ::parents:: daily_prices, today_prices
@@ -54,14 +55,14 @@ def prep_pricing_data(daily_prices, today_prices):
     % cumul-N: % change between closing N-days ago and quote today.
     """
     data = daily_prices.copy().drop(['close', 'high', 'low', 'open', 'volume'], axis=1)
-    data = append_simquote(data)
+    data = append_simquote(data, timeofday)
     data = append_today(data, today_prices)
     data = append_divyield(data)
     data = build_lookbacks(data)
     alerts = []
     return data, alerts
 
-def append_simquote(data, timeofday=None):
+def append_simquote(data, timeofday):
     """Simulate a stock quote at a given time of day.
 
     timeofday (float): Given as the fraction of the market day passed
@@ -69,22 +70,9 @@ def append_simquote(data, timeofday=None):
 
     SOLVED THE QUOTE SIMULATION PROBLEM:
     https://stats.stackexchange.com/a/510059/297889
-
-    #TODO: Update the descriptions below and incorporate the new quote simulation.
-
-    The quote is drawn from a truncated normal distribution.
-    The lower and upper bounds are adjLow and adjHigh.
-    The distribution is centered on a linear path from adjOpen to adjClose.
-    The timeofday determines how far along that path the center occurs.
-    The std dev is given by...
     """
-    if timeofday is None:
-        data['quote'] = data['adjLow'] + np.random.rand(len(data)) * (data['adjHigh'] - data['adjLow'])
-    else:
-        lower = data['adjLow']
-        upper = data['adjHigh']
-        quotemean = (data['adjClose'] - data['adjOpen']) * timeofday + data['adjOpen']
-
+    sim = StockDaySim(data['adjOpen'], data['adjClose'], data['adjLow'], data['adjHigh'], len(data))
+    data['quote'] = sim.sample(timeofday)
     return data
 
 def append_today(data, today_prices, div=0, split=1):

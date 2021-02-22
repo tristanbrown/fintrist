@@ -5,15 +5,17 @@ import matplotlib.pyplot as plt
 
 class StockDaySim():
     """Simulate a stock price quote as a 1D-random walker at time t.
-        This walker is defined as the Wiener Process W(t)=Nc*B(t).
-        B(t) is a Brownian Bridge process. Nc is an independent normal
-        distribution for scaling.
+    This walker is defined as the Wiener Process W(t)=Nc*B(t).
+    B(t) is a Brownian Bridge process. Nc is an independent normal
+    distribution for scaling.
 
-        For t on the interval [0,1], the walker travels stochastically
-        from W(0)=x to W(1)=y, achieving the values w and z as the min
-        and max values observed with sample size n. 
+    For t on the interval [0,1], the walker travels stochastically
+    from W(0)=x to W(1)=y, achieving the values w and z as the min
+    and max values observed with sample size n.
 
-        Broadcasting works (numpy vectorized).
+    Proof: https://stats.stackexchange.com/a/510059/297889
+
+    Broadcasting works (numpy vectorized).
         """
 
     def __init__(self, dayopen, dayclose, low, high, n):
