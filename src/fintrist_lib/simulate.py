@@ -12,6 +12,8 @@ class StockDaySim():
         For t on the interval [0,1], the walker travels stochastically
         from W(0)=x to W(1)=y, achieving the values w and z as the min
         and max values observed with sample size n. 
+
+        Broadcasting works (numpy vectorized).
         """
 
     def __init__(self, dayopen, dayclose, low, high, n):
@@ -22,6 +24,8 @@ class StockDaySim():
         self.n = n  # should be similar to the sample size observed by the neural network
         self.x = (dayopen - low)/(high - low)
         self.y = (dayclose - low)/(high - low)
+        self.times = []
+        self.dist = []
         
     def generate(self, t):
         """Generate the normal distribution representing a random variable of
@@ -37,18 +41,33 @@ class StockDaySim():
         std = raw_std * (self.high - self.low)
 
         return stats.truncnorm((self.low - mu) / std, (self.high - mu) / std, loc=mu, scale=std)
+    
+    def sample(self, t, count=None):
+        """Sample the distribution(s) at time t."""
+        X = self.generate(t)
+        if count:
+            count = (count, self.n)
+        return X.rvs(count).T
 
-    def plot_stock_sim(self, times=None):
+    def simulate_many(self, times=None):
+        """Creates simulations for all of the days at the given times."""
         if not times:
             times = [0.01, 0.1, 0.3, 0.5, 0.8, 0.9, 0.99, 0.999]
-
-        fig, ax = plt.subplots(len(times)+1, sharex=True)
-        X = stats.norm(*norm_limited(self.low, self.high, self.n))
-        ax[0].hist(X.rvs(10000), density=True, bins=40)
-        for i, t in enumerate(times):
-            X = self.generate(t)
-            ax[i+1].hist(X.rvs(10000), density=True, bins=40)
-        plt.xlim([self.low, self.high])
+        self.times = times
+        self.dist = []
+        for t in times:
+            self.dist.append(self.sample(t, 10000))
+    
+    def plot_day_sim(self, day):
+        """Plots the simulation at various times for a given historical day.
+        
+        Days are specified as number of days in the past (e.g. -7).
+        """
+        if not self.dist:
+            self.simulate_many()
+        fig, ax = plt.subplots(len(self.times), sharex=True)
+        for i, t in enumerate(self.times):
+            ax[i].hist(self.dist[i][day], density=True, bins=40)
         plt.show()
 
 def brownian_bridge(t, x, y):
