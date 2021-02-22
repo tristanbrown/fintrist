@@ -23,7 +23,8 @@ Changed
 -------
 * Update TrendLengthData quote simulation to be more realistic, based on
     a Brownian Bridge.
-* Rename TrendLengthData to UpDownDay.
+* Rename TrendLengthData to UpDownIndicator.
+* Update UpDownIndicator to focus on a single configurable lookahead.
 
 ==================
 1.2.0 - 2021-01-31

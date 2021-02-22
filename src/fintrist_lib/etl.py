@@ -6,22 +6,26 @@ from .base import RecipeBase
 from .scrapers import stockmarket
 from .simulate import StockDaySim
 
-__all__ = ['prep_pricing_data', 'UpDownDay']
+__all__ = ['prep_pricing_data', 'UpDownIndicator']
 
-class UpDownDay(RecipeBase):
+class UpDownIndicator(RecipeBase):
 
     valid_type = 'market'
 
-    def __init__(self, symbol='SPY', timeofday=0.75):
-        self.studyname = f"{symbol} Trend Length Data"
+    def __init__(self, symbol='SPY', timeofday=0.75, lookahead=1, threshold=0):
+        self.studyname = f"{symbol} UpDownIndicator"
         self.parents = {
             'daily_prices': stockmarket.StockDaily(symbol),
             'today_prices': stockmarket.StockIntraday(symbol)
             }
-        self.params = {'timeofday': timeofday}
+        self.params = {
+            'timeofday': timeofday,
+            'lookahead': lookahead,
+            'threshold': threshold,
+            }
 
     @staticmethod
-    def process(daily_prices, today_prices, timeofday):
+    def process(daily_prices, today_prices, timeofday, lookahead, threshold):
         """Prepare stock data for a trend length indicator.
 
         ::parents:: daily_prices, today_prices
@@ -29,14 +33,9 @@ class UpDownDay(RecipeBase):
         ::alerts::
         """
         data, alerts = prep_pricing_data(daily_prices, today_prices, timeofday)
-        data = build_daystogain(data)
-        data = data.drop(['quote', 'adjHigh', 'adjLow', 'adjClose', 'adjOpen', 'adjVolume', 'divCash'], axis=1)
+        data['up indicator'] = check_future_gain(data, lookahead, threshold)
         data = data[['% overnight-0', '% day-0', '% day-1', '% cumul-1', '% cumul-10', '% cumul-30',
-                      '% vol cumul-1', '% vol cumul-10', '% vol cumul-30', 'days to gain']]
-        null_days = data['days to gain'].isna()
-        data['up tomorrow'] = (data['days to gain'] == 1).astype(int)
-        data.loc[null_days, 'up tomorrow'] = np.nan
-        data = data.drop('days to gain', axis=1)
+                      '% vol cumul-1', '% vol cumul-10', '% vol cumul-30', 'up indicator']]
         return data, alerts
 
 def prep_pricing_data(daily_prices, today_prices, timeofday):
