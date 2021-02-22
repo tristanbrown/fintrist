@@ -121,7 +121,6 @@ def build_lookbacks(data):
     for lookback in cum_lookbacks:
         data = append_cumulative(data, lookback)
         data = append_cum_vol_chg(data, lookback)
-    print(data.shape)
     return data
 
 def append_future_open(data, lookahead):
@@ -132,17 +131,23 @@ def append_future_pct(data, lookahead):
     data[f'% open+{lookahead}'] = (data['adjOpen'].shift(-lookahead) - data['quote'])/data['quote']
     return data
 
-def check_future_gain(data, lookahead):
+def check_future_gain(data, lookahead, threshold=0):
+    """For each day, check 'lookahead' number of days in the future. If that
+    day's open is 'threshold' % higher than the simulated current-time quote,
+    give True; otherwise False (or NaN if there is no data that far ahead).
+    """
     gain = (data['adjOpen'].shift(-lookahead) - data['quote'])/data['quote']
-    data[f'future gain'] = gain > 0
-    return data
+    check = gain > threshold
+    return check[~gain.isna()]
 
 def build_daystogain(data, lookahead=2000):
+    """For each day, count how many days in the future until the day opens
+    higher than the simulated current-time quote."""
     data = data.copy()
     data['days to gain'] = np.NaN
     for i in range(1, lookahead+1):
-        check_future_gain(data, i)
-        positive_today = data.loc[data['future gain'], 'future gain']
+        data['future gain'] = check_future_gain(data, i)
+        positive_today = data.loc[data['future gain'].fillna(False), 'future gain']
         data['days to gain'] = data['days to gain'].fillna(positive_today * i)
     data = data.drop('future gain', axis=1)
     return data
