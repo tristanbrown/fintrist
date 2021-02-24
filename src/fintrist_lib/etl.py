@@ -133,11 +133,11 @@ def append_future_pct(data, lookahead):
 def check_future_gain(data, lookahead, threshold=0):
     """For each day, check 'lookahead' number of days in the future. If that
     day's open is 'threshold' % higher than the simulated current-time quote,
-    give True; otherwise False (or NaN if there is no data that far ahead).
+    give True; otherwise False (or NA if there is no data that far ahead).
     """
     gain = (data['adjOpen'].shift(-lookahead) - data['quote'])/data['quote']
     check = gain > threshold
-    return check[~gain.isna()]
+    return check[~gain.isna()].astype('Int64')
 
 def build_daystogain(data, lookahead=2000):
     """For each day, count how many days in the future until the day opens
