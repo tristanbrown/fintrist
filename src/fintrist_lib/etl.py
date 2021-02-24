@@ -12,7 +12,7 @@ class UpDownIndicator(RecipeBase):
 
     valid_type = 'market'
 
-    def __init__(self, symbol='SPY', timeofday=0.75, lookahead=1, threshold=0):
+    def __init__(self, symbol='SPY', timeofday=0.9, lookahead=1, threshold=0):
         self.studyname = f"{symbol} UpDownIndicator"
         self.parents = {
             'daily_prices': stockmarket.StockDaily(symbol),

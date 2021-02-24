@@ -23,7 +23,7 @@ class StockDaySim():
         self.high = high
         self.open = dayopen
         self.close = dayclose
-        self.n = n  # should be similar to the sample size observed by the neural network
+        self.n = 55000000  # Setting to the daily volume of SPY
         self.x = (dayopen - low)/(high - low)
         self.y = (dayclose - low)/(high - low)
         self.times = []
@@ -48,13 +48,13 @@ class StockDaySim():
         """Sample the distribution(s) at time t."""
         X = self.generate(t)
         if count:
-            count = (count, self.n)
+            count = (count, len(self.open))
         return X.rvs(count).T
 
     def simulate_many(self, times=None):
         """Creates simulations for all of the days at the given times."""
         if not times:
-            times = [0.01, 0.1, 0.3, 0.5, 0.8, 0.9, 0.99, 0.999]
+            times = [0.01, 0.1, 0.3, 0.5, 0.75, 0.9, 0.99, 0.999]
         self.times = times
         self.dist = []
         for t in times:
