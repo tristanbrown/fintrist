@@ -12,6 +12,8 @@ Added
 * Enable multiple active data versions on Study objects.
 * Can now take notes in the BaseStudy `notes` field.
 * Can shuffle a column during NN predictions to evaluate variable importance.
+* Can rebalance training data to have equal sized classes through replacement
+    sampling.
 
 Fixed
 -----

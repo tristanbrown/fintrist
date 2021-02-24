@@ -565,6 +565,7 @@ class NNModel(BaseStudy):
         trainer = self.update_state(stateargs)
         print(trainer.net)
         print('Criterion: ', trainer.state['crit_type'])
+        print("Balance: ", trainer.state['balance'])
         print("Batch size: ", trainer.batch_size)
         print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
         print("Gamma: ", trainer.state['scheduler']['gamma'])

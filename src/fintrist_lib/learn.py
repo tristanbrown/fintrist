@@ -1,7 +1,8 @@
 """Construct Neural Networks using Pytorch"""
+import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, RandomSampler, WeightedRandomSampler
 from torch import nn
 from copy import deepcopy
 
@@ -70,7 +71,6 @@ class DfData(Dataset):
         self.trainidx, self.testidx = self.traintest_split(self.fulldata, testsize, seed)
         self.traindata, self.testdata = (
             self.fulldata.iloc[idx] for idx in (self.trainidx, self.testidx))
-        self.traindata = self.balance_classes(self.traindata)
 
     @property
     def data(self):
@@ -103,8 +103,6 @@ class DfData(Dataset):
             data, [trainlen, testlen], generator=torch.Generator().manual_seed(seed))
         return trainset.indices, testset.indices
 
-    def balance_classes(self, data):
-        return data
 
 class Trainer():
     def __init__(self, data, target_col, **state):
@@ -231,6 +229,7 @@ class Trainer():
             'epoch': self.epoch,
             'seed': self.traindata.seed,
             'batch_size': self.batch_size,
+            'balance': self.balance,
             'architecture': self.net.architecture,
             'model': self.net.state_dict(),
             'criterion': self.criterion.state_dict(),
@@ -247,8 +246,15 @@ class Trainer():
         self.state = state
 
     def update_state(self, new_state):
+        """Use kwargs passed to the trainer to initialize the state."""
+        init_state = False
         if batch_size := new_state.get('batch_size'):
             self.batch_size = batch_size
+            init_state = True
+        if (balance := new_state.get('balance')) is not None:
+            self.balance = balance
+            init_state = True
+        if init_state:
             self.save_state()
             self.init_state()
         if crit_params := new_state.get('criterion'):
@@ -258,11 +264,29 @@ class Trainer():
         if sched_params := new_state.get('scheduler'):
             self.update_scheduler(sched_params)
 
+    def choose_sampler(self, dataset):
+        """Choose whether to rebalance the classes in the dataset.
+
+        Balancing occurs through replacement sampling.
+        """
+        if self.balance:
+            y = dataset.y_data
+            counts = np.bincount(y)
+            weights = 1 / torch.Tensor(counts)
+            class_weights = weights[y]
+            sampler = WeightedRandomSampler(
+                class_weights, len(class_weights), replacement=True)
+        else:
+            sampler = RandomSampler(dataset)
+        return sampler
+
     def init_state(self):
         self.batch_size = self.state.get('batch_size', 1)
+        self.balance = self.state.get('balance', False)
         self.trainloader = DataLoader(
-            self.traindata, batch_size=self.batch_size, shuffle=True)
-        self.testloader = DataLoader(self.testdata, batch_size=1, shuffle=True)
+            self.traindata, batch_size=self.batch_size,
+            sampler=self.choose_sampler(self.traindata))
+        self.testloader = DataLoader(self.testdata, batch_size=1)
         self.net = self.build_net()
         self.criterion = self.choose_criterion()
         self.optimizer = self.choose_optimizer()
