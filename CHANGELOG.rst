@@ -21,6 +21,7 @@ Fixed
 * Fix TrendLengthData "% day-0" to use "quote" at all times of day.
 * Keep train/test data complementary.
 * Workaround pytorch bug in LR scheduler related to gamma scaling.
+* Make LR scheduler end on lowest LR.
 
 Changed
 -------

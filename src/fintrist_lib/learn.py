@@ -176,7 +176,7 @@ class Trainer():
         return optimizer
 
     def choose_scheduler(self):
-        # TODO: Initial LR is always base_lr.
+        # TODO: Initial LR is always default base_lr.
         sched_type = self.state.get('scheduler_type', 'CyclicLR')
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
@@ -358,6 +358,9 @@ class Trainer():
 
     def train(self, epochs=10):
         ## Train
+        if self.epoch == 0:
+            # Drop the 1st step to align base_lr with save points.
+            self.scheduler.step()
         for e in range(epochs):
             self.epoch += 1
             trainloss, current_lr = self.train_step()
