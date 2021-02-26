@@ -176,7 +176,9 @@ class Trainer():
         return optimizer
 
     def choose_scheduler(self):
+        # TODO: Initial LR is always base_lr.
         sched_type = self.state.get('scheduler_type', 'CyclicLR')
+        statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
             defaults = {
                 'base_lr': 0.0001,
@@ -185,8 +187,16 @@ class Trainer():
                 'mode': 'exp_range',
                 'gamma': 0.99,
             }
-            scheduler = torch.optim.lr_scheduler.CyclicLR(
-                self.optimizer, **defaults)
+            # Necessary because load_state_dict updates gamma without changing scaling
+            if statedict:
+                new_dict = {
+                    'base_lr': statedict['base_lrs'][0],
+                    'max_lr': statedict['max_lrs'][0],
+                    'step_size_up': statedict['step_ratio'] * statedict['total_size'],
+                    'mode': statedict['mode'],
+                    'gamma': statedict['gamma'],
+                }
+                defaults.update(new_dict)
         elif sched_type == 'ReduceLROnPlateau':
             defaults = {
                 'mode': 'max',
@@ -196,6 +206,10 @@ class Trainer():
             }
         SchedulerCls = getattr(torch.optim.lr_scheduler, sched_type)
         scheduler = SchedulerCls(self.optimizer, **defaults)
+
+        # Necessary to resume state without overwriting gamma scaling.
+        statedict = self.state.get('scheduler', {})
+        statedict.pop('scale_fn', None)
         self.apply_state_dict(scheduler, 'scheduler')
         return scheduler
 
