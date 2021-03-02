@@ -14,6 +14,7 @@ Added
 * Can shuffle a column during NN predictions to evaluate variable importance.
 * Can rebalance training data to have equal sized classes through replacement
     sampling.
+* LR range test.
 
 Fixed
 -----

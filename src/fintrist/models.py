@@ -574,14 +574,30 @@ class NNModel(BaseStudy):
             trainer.train(save_interval)
             self.data = trainer.state
 
+    def lr_rangetest(self, epochs=10, save_interval=5, restart=False, **stateargs):
+        if restart:
+            self.reset()
+        trainer = self.update_state(stateargs)
+        print(trainer.net)
+        print('Criterion: ', trainer.state['crit_type'])
+        print("Balance: ", trainer.state['balance'])
+        print("Batch size: ", trainer.batch_size)
+        print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
+        print("Gamma: ", trainer.state['scheduler']['gamma'])
+        trainer.lr_rangetest()
+        self.data = trainer.state
+
     def reset(self):
         self.data = {}
 
-    def run(self, **kwargs):
+    def run(self, lr_test=False, **kwargs):
         try:
             self.status = 'Running'
             self.save()
-            self.train(**kwargs)
+            if lr_test:
+                self.lr_rangetest(**kwargs)
+            else:
+                self.train(**kwargs)
         finally:
             self.status = 'Idle'
             self.save()

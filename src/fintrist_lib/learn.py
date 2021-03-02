@@ -177,6 +177,7 @@ class Trainer():
 
     def choose_scheduler(self):
         # TODO: Initial LR is always default base_lr.
+        # TODO: Implement one-cycle LR
         sched_type = self.state.get('scheduler_type', 'CyclicLR')
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
@@ -381,6 +382,15 @@ class Trainer():
             self.scheduler.step()
         ## Store training state
         self.save_state()
+
+    def lr_rangetest(self):
+        self.optimizer = self.choose_optimizer()
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=10,
+            gamma=10
+        )
+        self.train(50)
 
     def predict(self, inputs, shuffle_col=None):
         print("Prediction: ", inputs)
