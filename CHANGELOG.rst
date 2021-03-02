@@ -15,6 +15,7 @@ Added
 * Can rebalance training data to have equal sized classes through replacement
     sampling.
 * LR range test.
+* Generalize `predict` to apply models to unfamiliar data.
 
 Fixed
 -----

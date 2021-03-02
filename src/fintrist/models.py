@@ -602,8 +602,12 @@ class NNModel(BaseStudy):
             self.status = 'Idle'
             self.save()
 
-    def predict(self, count=None, shuffle_col=None):
-        inputs = self.dataset.drop(self.target_col, axis=1)
+    def predict(self, count=None, shuffle_col=None, alt_data=None):
+        if alt_data is not None:
+            dataset = alt_data
+        else:
+            dataset = self.dataset
+        inputs = dataset.drop(self.target_col, axis=1)
         if count:
             inputs = inputs.tail(count)
         return self.trainer.predict(inputs, shuffle_col)

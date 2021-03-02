@@ -393,7 +393,6 @@ class Trainer():
         self.train(50)
 
     def predict(self, inputs, shuffle_col=None):
-        print("Prediction: ", inputs)
         if shuffle_col:
             inputs = inputs.copy()
             inputs[shuffle_col] = inputs[shuffle_col].sample(frac=1).values
