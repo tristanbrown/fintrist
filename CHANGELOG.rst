@@ -2,6 +2,24 @@
 CHANGELOG
 #########
 
+=====
+TO DO
+=====
+
+Add
+---
+* LR Range Test
+* OneCycleLR scheduler
+
+Fix
+---
+* Trainer always starts from default LR. (requires refactor of trainer init)
+
+Test
+----
+* Try reducing the epochs for the LR Range Test.
+* Try CyclicLR or OneCycleLR from 0.003 to 0.01.
+
 ==========
 Unreleased
 ==========

@@ -182,7 +182,7 @@ class Trainer():
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
             defaults = {
-                'base_lr': 0.0001,
+                'base_lr': 0.00001,
                 'max_lr': 0.01,
                 'step_size_up': 5,
                 'mode': 'exp_range',
@@ -384,13 +384,17 @@ class Trainer():
         self.save_state()
 
     def lr_rangetest(self):
+        min_lr = 0.00001
+        max_lr = 0.1
+        epochs = 1000
+        gamma = (max_lr/min_lr)**(1/epochs)
         self.optimizer = self.choose_optimizer()
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer,
-            step_size=10,
-            gamma=10
+            step_size=1,
+            gamma=gamma
         )
-        self.train(50)
+        self.train(epochs)
 
     def predict(self, inputs, shuffle_col=None):
         if shuffle_col:
