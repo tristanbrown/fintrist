@@ -19,13 +19,13 @@ class StockDaySim():
         """
 
     def __init__(self, dayopen, dayclose, low, high, n):
-        self.low = low
-        self.high = high
+        self.low = low - 0.0001  # Avoid domain errors
+        self.high = high + 0.0001
         self.open = dayopen
         self.close = dayclose
         self.n = 55000000  # Setting to the daily volume of SPY
-        self.x = (dayopen - low)/(high - low)
-        self.y = (dayclose - low)/(high - low)
+        self.x = (self.open - self.low)/(self.high - self.low)
+        self.y = (self.close - self.low)/(self.high - self.low)
         self.times = []
         self.dist = []
         

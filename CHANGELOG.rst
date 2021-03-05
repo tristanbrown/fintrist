@@ -16,7 +16,6 @@ Add
 
 Fix
 ---
-* SOME STOCKS FAILING ETL.
 * Trainer always starts from default LR. (requires refactor of trainer init)
 
 Test
@@ -46,6 +45,7 @@ Fixed
 * Keep train/test data complementary.
 * Workaround pytorch bug in LR scheduler related to gamma scaling.
 * Make LR scheduler end on lowest LR.
+* In stock simulation, add a buffer to highs and lows to prevent singularities.
 
 Changed
 -------
