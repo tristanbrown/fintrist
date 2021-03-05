@@ -10,9 +10,13 @@ Add
 ---
 * LR Range Test
 * OneCycleLR scheduler
+* Custom two-cycle LR scheduler based on model 4k.
+* LayerNorm
+* Dropout
 
 Fix
 ---
+* SOME STOCKS FAILING ETL.
 * Trainer always starts from default LR. (requires refactor of trainer init)
 
 Test
