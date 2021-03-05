@@ -27,6 +27,10 @@ Test
 Unreleased
 ==========
 
+==================
+1.3.0 - 2021-03-04
+==================
+
 Added
 -----
 * Make training scheduler, batch_size, and criterion configurable.
