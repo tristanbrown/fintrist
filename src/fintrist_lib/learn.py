@@ -8,8 +8,12 @@ from copy import deepcopy
 
 from .base import RecipeBase
 
+print("Before device")
+cuda_device = torch.device("cuda")
+print("After device")
+
 __all__ = ['Net', 'DfData', 'Trainer']
-        
+
 class Net(nn.Module):
     def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded', activation='relu'):
         super().__init__()
@@ -39,10 +43,12 @@ class Net(nn.Module):
     def build_layers(self, inputs, depth, width, outputs):
         layers = []
         conns = [inputs] + [width - i*(width-outputs)//(depth-1) for i in range(depth - 1)] + [outputs]
+        layers.append(nn.LayerNorm(conns[0]))
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
             layers.append(self.activation)
-        layers = layers[:-1]
+            layers.append(nn.LayerNorm(conns[i+1]))
+        layers = layers[:-2]
         if self.final_act:
             layers.append(self.final_act)
         return nn.Sequential(*layers)
@@ -81,19 +87,20 @@ class DfData(Dataset):
     
     @property
     def x_data(self):
-        return self.data.drop(self.target_col, axis=1)
+        return torch.tensor(self.data.drop(self.target_col, axis=1).values).to(cuda_device)
 
     @property
     def y_data(self):
-        return self.data[self.target_col]
+        return torch.tensor(self.data[self.target_col]).to(cuda_device)
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        x_item = self.x_data.iloc[index].values
-        y_item = self.y_data.iloc[index]
-
+        # x_item = self.x_data.iloc[index].values
+        # y_item = self.y_data.iloc[index]
+        x_item = self.x_data[index]
+        y_item = self.y_data[index]
         return x_item, y_item
 
     def traintest_split(self, data, testsize, seed):
@@ -138,13 +145,16 @@ class Trainer():
 
     def build_net(self, **kwargs):
         if kwargs.get('inputs') is None:
-            kwargs['inputs'] = len(self.x_df.columns)
+            kwargs['inputs'] = len(self.traindata.traindata.columns) - 1
         if output_type := getattr(self, 'output_type', None):
             kwargs['output_type'] = output_type
         net_architecture = self.state.get('architecture', {})
         net_architecture.update(kwargs)
         net = Net(**net_architecture)
         self.apply_state_dict(net, 'model')
+        print("Before net")
+        net = net.to(cuda_device)
+        print("After net")
         return net
 
     def switch_net(self, **kwargs):
@@ -182,7 +192,7 @@ class Trainer():
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
             defaults = {
-                'base_lr': 0.00001,
+                'base_lr': 0.0001,
                 'max_lr': 0.01,
                 'step_size_up': 5,
                 'mode': 'exp_range',
@@ -285,7 +295,7 @@ class Trainer():
         Balancing occurs through replacement sampling.
         """
         if self.balance:
-            y = dataset.y_data
+            y = dataset.data[dataset.target_col]
             counts = np.bincount(y)
             weights = 1 / torch.Tensor(counts)
             class_weights = weights[y]
@@ -316,6 +326,8 @@ class Trainer():
         for x_data, target in self.trainloader:
             # Training pass
             self.optimizer.zero_grad()
+            # x_data = x_data.to(cuda_device)
+            # target = target.to(cuda_device)
             output = self.net(x_data.float()).squeeze(1)
             loss = self.criterion(output, target.float())
             loss.backward()
@@ -333,6 +345,8 @@ class Trainer():
         with torch.no_grad():
             for x_data, target in self.testloader:
                 # Test pass
+                # x_data = x_data.to(cuda_device)
+                # target = target.to(cuda_device)
                 output = self.net(x_data.float()).squeeze(1)
                 test_loss += self.criterion(output, target.float()).item()
                 if self.output_type == 'logit':
@@ -384,9 +398,9 @@ class Trainer():
         self.save_state()
 
     def lr_rangetest(self):
-        min_lr = 0.00001
+        min_lr = 0.0001
         max_lr = 0.1
-        epochs = 1000
+        epochs = 200
         gamma = (max_lr/min_lr)**(1/epochs)
         self.optimizer = self.choose_optimizer()
         self.scheduler = torch.optim.lr_scheduler.StepLR(
