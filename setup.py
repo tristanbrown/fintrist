@@ -27,7 +27,7 @@ REQUIREMENTS = [
     'arrow',
     'torch>=1.6.*',
     'pandas-market-calendars',
-    f"alpaca_management @ git+https://{os.environ['GITHUB_TOKEN']}:x-oauth-basic@github.com/tristanbrown/alpaca_management.git@v0.1.2#egg=alpaca_management"
+    f"alpaca_management @ git+https://{os.environ['GITHUB_TOKEN']}:x-oauth-basic@github.com/tristanbrown/alpaca_management.git@v0.1.3#egg=alpaca_management"
 ]
 
 setup(
