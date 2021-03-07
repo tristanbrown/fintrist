@@ -9,7 +9,7 @@ from copy import deepcopy
 from .base import RecipeBase
 
 __all__ = ['Net', 'DfData', 'Trainer']
-        
+
 class Net(nn.Module):
     def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded', activation='relu'):
         super().__init__()
@@ -39,10 +39,12 @@ class Net(nn.Module):
     def build_layers(self, inputs, depth, width, outputs):
         layers = []
         conns = [inputs] + [width - i*(width-outputs)//(depth-1) for i in range(depth - 1)] + [outputs]
+        layers.append(nn.LayerNorm(conns[0]))
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
             layers.append(self.activation)
-        layers = layers[:-1]
+            layers.append(nn.LayerNorm(conns[i+1]))
+        layers = layers[:-2]
         if self.final_act:
             layers.append(self.final_act)
         return nn.Sequential(*layers)
@@ -182,7 +184,7 @@ class Trainer():
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
             defaults = {
-                'base_lr': 0.00001,
+                'base_lr': 0.0001,
                 'max_lr': 0.01,
                 'step_size_up': 5,
                 'mode': 'exp_range',
@@ -384,9 +386,9 @@ class Trainer():
         self.save_state()
 
     def lr_rangetest(self):
-        min_lr = 0.00001
+        min_lr = 0.0001
         max_lr = 0.1
-        epochs = 1000
+        epochs = 200
         gamma = (max_lr/min_lr)**(1/epochs)
         self.optimizer = self.choose_optimizer()
         self.scheduler = torch.optim.lr_scheduler.StepLR(
