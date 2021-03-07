@@ -13,10 +13,15 @@ Add
 * Custom two-cycle LR scheduler based on model 4k.
 * LayerNorm
 * Dropout
+* Pre/Post Weekend flags to UpDownIndicator data.
+* Timestamps during training.
+* SELU
+* "Independent Components" layer (norm -> dropout -> weights -> activation)
 
 Fix
 ---
 * Trainer always starts from default LR. (requires refactor of trainer init)
+* Fix alpaca_management dependencies.
 
 Test
 ----
