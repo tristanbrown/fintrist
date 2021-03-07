@@ -1,10 +1,12 @@
 from setuptools import setup, find_packages
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 import __about__
 
 REQUIREMENTS = [
-    'pandas',
+    'pandas>=1.1.0',
     'matplotlib',
     'flask',
     'flask_wtf',
