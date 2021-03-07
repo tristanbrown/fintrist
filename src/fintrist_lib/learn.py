@@ -77,6 +77,19 @@ class DfData(Dataset):
         self.trainidx, self.testidx = self.traintest_split(self.fulldata, testsize, seed)
         self.traindata, self.testdata = (
             self.fulldata.iloc[idx] for idx in (self.trainidx, self.testidx))
+        self.reload_data()
+
+    def set_to_test(self):
+        self.train = False
+        self.reload_data()
+
+    def reload_data(self):
+        self.x_data = torch.tensor(self.data.drop(self.target_col, axis=1).values).to(cuda_device, 
+        # non_blocking=True
+        )
+        self.y_data = torch.tensor(self.data[self.target_col]).to(cuda_device, 
+        # non_blocking=True
+        )
 
     @property
     def data(self):
@@ -85,20 +98,20 @@ class DfData(Dataset):
         else:
             return self.testdata
     
-    @property
-    def x_data(self):
-        return self.data.drop(self.target_col, axis=1)
+    # @property
+    # def x_data(self):
+    #     return self.data.drop(self.target_col, axis=1)
 
-    @property
-    def y_data(self):
-        return self.data[self.target_col]
+    # @property
+    # def y_data(self):
+    #     return self.data[self.target_col]
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        x_item = self.x_data.iloc[index].values
-        y_item = self.y_data.iloc[index]
+        x_item = self.x_data[index]
+        y_item = self.y_data[index]
 
         return x_item, y_item
 
@@ -117,16 +130,17 @@ class Trainer():
         seed = self.state.get('seed')
         self.traindata = DfData(data, target_col, train=True, seed=seed)
         self.testdata = deepcopy(self.traindata)
-        self.testdata.train = False
+        self.testdata.set_to_test()
         self.init_state()
 
     @property
     def x_df(self):
-        return self.traindata.x_data
+        data = self.traindata.data
+        return data.drop(self.traindata.target_col, axis=1)
 
     @property
     def y_df(self):
-        return self.traindata.y_data
+        return self.traindata.data[self.traindata.target_col]
 
     def apply_state_dict(self, obj, state_name):
         """Take the saved state and apply it to the object."""
@@ -152,7 +166,9 @@ class Trainer():
         net = Net(**net_architecture)
         self.apply_state_dict(net, 'model')
         print("Before net")
-        net = net.to(cuda_device)
+        net = net.to(cuda_device, 
+        # non_blocking=True
+        )
         print("After net")
         return net
 
@@ -294,7 +310,7 @@ class Trainer():
         Balancing occurs through replacement sampling.
         """
         if self.balance:
-            y = dataset.y_data
+            y = dataset.data[dataset.target_col]
             counts = np.bincount(y)
             weights = 1 / torch.Tensor(counts)
             class_weights = weights[y]
@@ -309,8 +325,12 @@ class Trainer():
         self.balance = self.state.get('balance', False)
         self.trainloader = DataLoader(
             self.traindata, batch_size=self.batch_size,
-            sampler=self.choose_sampler(self.traindata))
-        self.testloader = DataLoader(self.testdata, batch_size=1)
+            sampler=self.choose_sampler(self.traindata), 
+            #pin_memory=True
+            )
+        self.testloader = DataLoader(self.testdata, batch_size=1, 
+        #pin_memory=True
+            )
         self.net = self.build_net()
         self.criterion = self.choose_criterion()
         self.optimizer = self.choose_optimizer()
@@ -325,8 +345,6 @@ class Trainer():
         for x_data, target in self.trainloader:
             # Training pass
             self.optimizer.zero_grad()
-            x_data = x_data.to(cuda_device)
-            target = target.to(cuda_device)
             output = self.net(x_data.float()).squeeze(1)
             loss = self.criterion(output, target.float())
             loss.backward()
@@ -344,8 +362,6 @@ class Trainer():
         with torch.no_grad():
             for x_data, target in self.testloader:
                 # Test pass
-                x_data = x_data.to(cuda_device)
-                target = target.to(cuda_device)
                 output = self.net(x_data.float()).squeeze(1)
                 test_loss += self.criterion(output, target.float()).item()
                 if self.output_type == 'logit':
