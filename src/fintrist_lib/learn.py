@@ -11,10 +11,13 @@ from .base import RecipeBase
 __all__ = ['Net', 'DfData', 'Trainer']
 
 class Net(nn.Module):
-    def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded', activation='relu'):
+    def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded',
+                activation='relu', normalize='layer'):
         super().__init__()
         if width is None:
             width = inputs * 2
+
+        self.normalize = normalize
 
         # Define the activation functions between layers.
         if activation == 'relu':
@@ -39,12 +42,14 @@ class Net(nn.Module):
     def build_layers(self, inputs, depth, width, outputs):
         layers = []
         conns = [inputs] + [width - i*(width-outputs)//(depth-1) for i in range(depth - 1)] + [outputs]
-        layers.append(nn.LayerNorm(conns[0]))
+        if self.normalize == 'layer':
+            layers.append(nn.LayerNorm(conns[0]))
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
             layers.append(self.activation)
-            layers.append(nn.LayerNorm(conns[i+1]))
-        layers = layers[:-2]
+            if (self.normalize == 'layer') and (i < list(range(depth))[-1]):
+                layers.append(nn.LayerNorm(conns[i+1]))
+        layers = layers[:-1]
         if self.final_act:
             layers.append(self.final_act)
         return nn.Sequential(*layers)
