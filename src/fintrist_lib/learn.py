@@ -61,7 +61,7 @@ class Net(nn.Module):
 
 
 class DfData(Dataset):
-    def __init__(self, dataset, target_col, train=True, testsize=0.2, seed=None):
+    def __init__(self, dataset, target_col, test=False, testsize=0.2, seed=None):
         """
         dataset (DataFrame): input dataset
         target_col (str): df column containing the data labels/targets/outputs
@@ -72,34 +72,42 @@ class DfData(Dataset):
         if seed is None:
             seed = torch.Generator().seed()
         self.seed = seed
-        self.train = train  # Set to False to get test data
         self.fulldata = dataset.copy().dropna(how='any')
         self.target_col = target_col
         self.trainidx, self.testidx = self.traintest_split(self.fulldata, testsize, seed)
         self.traindata, self.testdata = (
             self.fulldata.iloc[idx] for idx in (self.trainidx, self.testidx))
+        self.set_test(test)
+
+    def set_test(self, test=True):
+        self.test = test
+        self.reload_data()
+
+    def reload_data(self):
+        self.x_data = torch.tensor(self.x_df.values)
+        self.y_data = torch.tensor(self.y_df)
 
     @property
     def data(self):
-        if self.train:
-            return self.traindata
-        else:
+        if self.test:
             return self.testdata
-    
+        else:
+            return self.traindata
+
     @property
-    def x_data(self):
+    def x_df(self):
         return self.data.drop(self.target_col, axis=1)
 
     @property
-    def y_data(self):
+    def y_df(self):
         return self.data[self.target_col]
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        x_item = self.x_data.iloc[index].values
-        y_item = self.y_data.iloc[index]
+        x_item = self.x_data[index]
+        y_item = self.y_data[index]
 
         return x_item, y_item
 
@@ -116,18 +124,10 @@ class Trainer():
         self.output_type = None
         self.load_state(state)
         seed = self.state.get('seed')
-        self.traindata = DfData(data, target_col, train=True, seed=seed)
+        self.traindata = DfData(data, target_col, test=False, seed=seed)
         self.testdata = deepcopy(self.traindata)
-        self.testdata.train = False
+        self.testdata.set_test(True)
         self.init_state()
-
-    @property
-    def x_df(self):
-        return self.traindata.x_data
-
-    @property
-    def y_df(self):
-        return self.traindata.y_data
 
     def apply_state_dict(self, obj, state_name):
         """Take the saved state and apply it to the object."""
@@ -145,7 +145,7 @@ class Trainer():
 
     def build_net(self, **kwargs):
         if kwargs.get('inputs') is None:
-            kwargs['inputs'] = len(self.x_df.columns)
+            kwargs['inputs'] = len(self.traindata.x_df.columns)
         if output_type := getattr(self, 'output_type', None):
             kwargs['output_type'] = output_type
         net_architecture = self.state.get('architecture', {})
@@ -165,7 +165,7 @@ class Trainer():
         if crit_type.lower() in ['smoothl1loss', 'regression', 'l1']:
             criterion = nn.SmoothL1Loss()
         elif crit_type.lower() in ['bcewithlogitsloss', 'binary', 'bce']:
-            target_counts = self.traindata.y_data.value_counts()
+            target_counts = self.traindata.y_df.value_counts()
             if weight is None:
                 weight = torch.tensor([target_counts[0]/target_counts[1]])
             criterion = nn.BCEWithLogitsLoss(weight)
@@ -292,7 +292,7 @@ class Trainer():
         Balancing occurs through replacement sampling.
         """
         if self.balance:
-            y = dataset.y_data
+            y = dataset.y_df
             counts = np.bincount(y)
             weights = 1 / torch.Tensor(counts)
             class_weights = weights[y]

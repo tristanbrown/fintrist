@@ -32,6 +32,10 @@ Test
 Unreleased
 ==========
 
+Fix
+---
+* Improve DataLoader efficiency
+
 ==================
 1.3.0 - 2021-03-04
 ==================
