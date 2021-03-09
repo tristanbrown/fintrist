@@ -12,7 +12,7 @@ Add
 * OneCycleLR scheduler
 * Custom two-cycle LR scheduler based on model 4k.
 * LayerNorm
-* Dropout
+* AlphaDropout
 * Pre/Post Weekend flags to UpDownIndicator data.
 * Timestamps during training.
 * SELU
@@ -21,16 +21,21 @@ Add
 Fix
 ---
 * Trainer always starts from default LR. (requires refactor of trainer init)
-* Fix alpaca_management dependencies.
+* Selection of normalization doesn't work.
 
 Test
 ----
-* Try reducing the epochs for the LR Range Test.
 * Try CyclicLR or OneCycleLR from 0.003 to 0.01.
 
 ==========
 Unreleased
 ==========
+
+Add
+---
+* Input normalization with LayerNorm.
+* Hidden layer normalization with LayerNorm.
+* SELU.
 
 Fix
 ---

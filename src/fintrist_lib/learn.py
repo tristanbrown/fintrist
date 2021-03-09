@@ -12,7 +12,7 @@ __all__ = ['Net', 'DfData', 'Trainer']
 
 class Net(nn.Module):
     def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded',
-                activation='relu', normalize='layer'):
+                activation='selu', normalize='inputs'):
         super().__init__()
         if width is None:
             width = inputs * 2
@@ -24,6 +24,8 @@ class Net(nn.Module):
             self.activation = nn.ReLU()
         elif activation == 'leakyrelu':
             self.activation = nn.LeakyReLU()
+        elif activation == 'selu':
+            self.activation = nn.SELU()
 
         # Define the final activation function.
         if output_type == 'bounded':
@@ -42,7 +44,7 @@ class Net(nn.Module):
     def build_layers(self, inputs, depth, width, outputs):
         layers = []
         conns = [inputs] + [width - i*(width-outputs)//(depth-1) for i in range(depth - 1)] + [outputs]
-        if self.normalize == 'layer':
+        if (self.normalize == 'inputs') or (self.normalize == 'layer'):
             layers.append(nn.LayerNorm(conns[0]))
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
