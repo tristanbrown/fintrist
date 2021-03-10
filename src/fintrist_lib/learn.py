@@ -153,7 +153,9 @@ class Trainer():
             'performance': self.performance
         }
 
-    def init_state(self, stateargs, resume=False):
+    def init_state(self, stateargs=None, resume=False):
+        if stateargs is None:
+            stateargs = {}
         if batch_size := stateargs.get('batch_size'):
             self.state['batch_size'] = batch_size
         if (balance := stateargs.get('balance')) is not None:

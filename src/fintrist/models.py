@@ -610,7 +610,9 @@ class NNModel(BaseStudy):
         inputs = dataset.drop(self.target_col, axis=1)
         if count:
             inputs = inputs.tail(count)
-        return self.trainer.predict(inputs, shuffle_col)
+        trainer = self.trainer
+        trainer.init_state()
+        return trainer.predict(inputs, shuffle_col)
 
 class Strategy(Document):
     """A set of triggers for market actions.
