@@ -12,7 +12,7 @@ __all__ = ['Net', 'DfData', 'Trainer']
 
 class Net(nn.Module):
     def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded',
-                activation='selu', normalize='inputs'):
+                activation='relu', normalize=None):
         super().__init__()
         if width is None:
             width = inputs * 2
@@ -123,6 +123,7 @@ class DfData(Dataset):
 
 class Trainer():
     def __init__(self, data, target_col, **state):
+        print("Trainer init")
         self.output_type = None
         self.load_state(state)
         seed = self.state.get('seed')
@@ -130,6 +131,66 @@ class Trainer():
         self.testdata = deepcopy(self.traindata)
         self.testdata.set_test(True)
         self.init_state()
+
+    ## State init and update
+
+    def load_state(self, state):
+        if state == None:
+            state = {}
+        self.state = state
+
+    def save_state(self):
+        # print("Save state")
+        self.state = {
+            'epoch': self.epoch,
+            'seed': self.traindata.seed,
+            'batch_size': self.batch_size,
+            'balance': self.balance,
+            'architecture': self.net.architecture,
+            'model': self.net.state_dict(),
+            'criterion': self.criterion.state_dict(),
+            'crit_type': self.criterion.__class__.__name__,
+            'optimizer': self.optimizer.state_dict(),
+            'scheduler': self.scheduler.state_dict(),
+            'scheduler_type': self.scheduler.__class__.__name__,
+            'performance': self.performance
+        }
+
+    def init_state(self):
+        print("Init state")
+        self.batch_size = self.state.get('batch_size', 1)
+        self.balance = self.state.get('balance', False)
+        self.trainloader = DataLoader(
+            self.traindata, batch_size=self.batch_size,
+            sampler=self.choose_sampler(self.traindata))
+        self.testloader = DataLoader(self.testdata, batch_size=1)
+        self.net = self.build_net()
+        self.criterion = self.choose_criterion()
+        self.optimizer = self.choose_optimizer()
+        self.scheduler = self.choose_scheduler()
+        self.epoch = self.state.get('epoch', 0)
+        self.performance = self.state.get('performance', self.empty_performance)
+        self.save_state()
+
+    def update_state(self, new_state):
+        """Use kwargs passed to the trainer to initialize the state."""
+        print("Update state")
+        init_state = False
+        if batch_size := new_state.get('batch_size'):
+            self.batch_size = batch_size
+            init_state = True
+        if (balance := new_state.get('balance')) is not None:
+            self.balance = balance
+            init_state = True
+        if init_state:
+            self.save_state()
+            self.init_state()
+        if crit_params := new_state.get('criterion'):
+            self.update_criterion(crit_params)
+        if nn_params := new_state.get('architecture'):
+            self.switch_net(**nn_params)
+        if sched_params := new_state.get('scheduler'):
+            self.update_scheduler(sched_params)
 
     def apply_state_dict(self, obj, state_name):
         """Take the saved state and apply it to the object."""
@@ -145,7 +206,10 @@ class Trainer():
         old_state.update(params)
         self.apply_state_dict(obj, state_name)
 
+    ## Choosing Configurables
+
     def build_net(self, **kwargs):
+        # print("Build net")
         if kwargs.get('inputs') is None:
             kwargs['inputs'] = len(self.traindata.x_df.columns)
         if output_type := getattr(self, 'output_type', None):
@@ -157,9 +221,26 @@ class Trainer():
         return net
 
     def switch_net(self, **kwargs):
+        print("Switch net")
         self.net = self.build_net(**kwargs)
         self.save_state()
         self.init_state()
+
+    def choose_sampler(self, dataset):
+        """Choose whether to rebalance the classes in the dataset.
+
+        Balancing occurs through replacement sampling.
+        """
+        if self.balance:
+            y = dataset.y_df
+            counts = np.bincount(y)
+            weights = 1 / torch.Tensor(counts)
+            class_weights = weights[y]
+            sampler = WeightedRandomSampler(
+                class_weights, len(class_weights), replacement=True)
+        else:
+            sampler = RandomSampler(dataset)
+        return sampler
 
     def choose_criterion(self, crit_type=None, weight=None):
         if crit_type is None:
@@ -185,8 +266,6 @@ class Trainer():
         return optimizer
 
     def choose_scheduler(self):
-        # TODO: Initial LR is always default base_lr.
-        # TODO: Implement one-cycle LR
         sched_type = self.state.get('scheduler_type', 'CyclicLR')
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
@@ -224,6 +303,7 @@ class Trainer():
         return scheduler
 
     def update_scheduler(self, params):
+        print("Update scheduler")
         _params = {}
         lr = params.get('max_lr') or params.get('lr')
         if lr:
@@ -242,82 +322,14 @@ class Trainer():
         self.init_state()
     
     def update_criterion(self, params):
+        print("Update criterion")
         label = params.get('label') or params.get('type')
         weight = params.get('weight')
         self.criterion = self.choose_criterion(crit_type=label, weight=weight)
         self.save_state()
         self.init_state()
 
-    def save_state(self):
-        self.state = {
-            'epoch': self.epoch,
-            'seed': self.traindata.seed,
-            'batch_size': self.batch_size,
-            'balance': self.balance,
-            'architecture': self.net.architecture,
-            'model': self.net.state_dict(),
-            'criterion': self.criterion.state_dict(),
-            'crit_type': self.criterion.__class__.__name__,
-            'optimizer': self.optimizer.state_dict(),
-            'scheduler': self.scheduler.state_dict(),
-            'scheduler_type': self.scheduler.__class__.__name__,
-            'performance': self.performance
-        }
-
-    def load_state(self, state):
-        if state == None:
-            state = {}
-        self.state = state
-
-    def update_state(self, new_state):
-        """Use kwargs passed to the trainer to initialize the state."""
-        init_state = False
-        if batch_size := new_state.get('batch_size'):
-            self.batch_size = batch_size
-            init_state = True
-        if (balance := new_state.get('balance')) is not None:
-            self.balance = balance
-            init_state = True
-        if init_state:
-            self.save_state()
-            self.init_state()
-        if crit_params := new_state.get('criterion'):
-            self.update_criterion(crit_params)
-        if nn_params := new_state.get('architecture'):
-            self.switch_net(**nn_params)
-        if sched_params := new_state.get('scheduler'):
-            self.update_scheduler(sched_params)
-
-    def choose_sampler(self, dataset):
-        """Choose whether to rebalance the classes in the dataset.
-
-        Balancing occurs through replacement sampling.
-        """
-        if self.balance:
-            y = dataset.y_df
-            counts = np.bincount(y)
-            weights = 1 / torch.Tensor(counts)
-            class_weights = weights[y]
-            sampler = WeightedRandomSampler(
-                class_weights, len(class_weights), replacement=True)
-        else:
-            sampler = RandomSampler(dataset)
-        return sampler
-
-    def init_state(self):
-        self.batch_size = self.state.get('batch_size', 1)
-        self.balance = self.state.get('balance', False)
-        self.trainloader = DataLoader(
-            self.traindata, batch_size=self.batch_size,
-            sampler=self.choose_sampler(self.traindata))
-        self.testloader = DataLoader(self.testdata, batch_size=1)
-        self.net = self.build_net()
-        self.criterion = self.choose_criterion()
-        self.optimizer = self.choose_optimizer()
-        self.scheduler = self.choose_scheduler()
-        self.epoch = self.state.get('epoch', 0)
-        self.performance = self.state.get('performance', self.empty_performance)
-        self.save_state()
+    ## Training the NN
 
     def train_step(self):
         self.net.train()
@@ -404,6 +416,8 @@ class Trainer():
             gamma=gamma
         )
         self.train(epochs)
+
+    ## Inference
 
     def predict(self, inputs, shuffle_col=None):
         if shuffle_col:
