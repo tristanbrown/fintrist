@@ -123,14 +123,12 @@ class DfData(Dataset):
 
 class Trainer():
     def __init__(self, data, target_col, **state):
-        print("Trainer init")
         self.output_type = None
         self.load_state(state)
         seed = self.state.get('seed')
         self.traindata = DfData(data, target_col, test=False, seed=seed)
         self.testdata = deepcopy(self.traindata)
         self.testdata.set_test(True)
-        self.init_state()
 
     ## State init and update
 
@@ -140,7 +138,6 @@ class Trainer():
         self.state = state
 
     def save_state(self):
-        # print("Save state")
         self.state = {
             'epoch': self.epoch,
             'seed': self.traindata.seed,
@@ -156,8 +153,13 @@ class Trainer():
             'performance': self.performance
         }
 
-    def init_state(self):
-        print("Init state")
+    def init_state(self, stateargs, resume=False):
+        if batch_size := stateargs.get('batch_size'):
+            self.state['batch_size'] = batch_size
+        if (balance := stateargs.get('balance')) is not None:
+            self.state['balance'] = balance
+        if nn_params := stateargs.get('architecture'):
+            self.state['architecture'] = nn_params
         self.batch_size = self.state.get('batch_size', 1)
         self.balance = self.state.get('balance', False)
         self.trainloader = DataLoader(
@@ -165,32 +167,12 @@ class Trainer():
             sampler=self.choose_sampler(self.traindata))
         self.testloader = DataLoader(self.testdata, batch_size=1)
         self.net = self.build_net()
-        self.criterion = self.choose_criterion()
+        self.criterion = self.update_criterion(stateargs.get('criterion', {}))
         self.optimizer = self.choose_optimizer()
-        self.scheduler = self.choose_scheduler()
+        self.scheduler = self.choose_scheduler(stateargs.get('scheduler', {}))
         self.epoch = self.state.get('epoch', 0)
         self.performance = self.state.get('performance', self.empty_performance)
         self.save_state()
-
-    def update_state(self, new_state):
-        """Use kwargs passed to the trainer to initialize the state."""
-        print("Update state")
-        init_state = False
-        if batch_size := new_state.get('batch_size'):
-            self.batch_size = batch_size
-            init_state = True
-        if (balance := new_state.get('balance')) is not None:
-            self.balance = balance
-            init_state = True
-        if init_state:
-            self.save_state()
-            self.init_state()
-        if crit_params := new_state.get('criterion'):
-            self.update_criterion(crit_params)
-        if nn_params := new_state.get('architecture'):
-            self.switch_net(**nn_params)
-        if sched_params := new_state.get('scheduler'):
-            self.update_scheduler(sched_params)
 
     def apply_state_dict(self, obj, state_name):
         """Take the saved state and apply it to the object."""
@@ -208,24 +190,6 @@ class Trainer():
 
     ## Choosing Configurables
 
-    def build_net(self, **kwargs):
-        # print("Build net")
-        if kwargs.get('inputs') is None:
-            kwargs['inputs'] = len(self.traindata.x_df.columns)
-        if output_type := getattr(self, 'output_type', None):
-            kwargs['output_type'] = output_type
-        net_architecture = self.state.get('architecture', {})
-        net_architecture.update(kwargs)
-        net = Net(**net_architecture)
-        self.apply_state_dict(net, 'model')
-        return net
-
-    def switch_net(self, **kwargs):
-        print("Switch net")
-        self.net = self.build_net(**kwargs)
-        self.save_state()
-        self.init_state()
-
     def choose_sampler(self, dataset):
         """Choose whether to rebalance the classes in the dataset.
 
@@ -241,6 +205,22 @@ class Trainer():
         else:
             sampler = RandomSampler(dataset)
         return sampler
+
+    def build_net(self, **kwargs):
+        if kwargs.get('inputs') is None:
+            kwargs['inputs'] = len(self.traindata.x_df.columns)
+        if output_type := getattr(self, 'output_type', None):
+            kwargs['output_type'] = output_type
+        net_architecture = self.state.get('architecture', {})
+        net_architecture.update(kwargs)
+        net = Net(**net_architecture)
+        self.apply_state_dict(net, 'model')
+        return net
+
+    def update_criterion(self, params):
+        label = params.get('label') or params.get('type')
+        weight = params.get('weight')
+        return self.choose_criterion(crit_type=label, weight=weight)
 
     def choose_criterion(self, crit_type=None, weight=None):
         if crit_type is None:
@@ -265,8 +245,8 @@ class Trainer():
         self.apply_state_dict(optimizer, 'optimizer')
         return optimizer
 
-    def choose_scheduler(self):
-        sched_type = self.state.get('scheduler_type', 'CyclicLR')
+    def choose_scheduler(self, params):
+        sched_type = params.pop('type', self.state.get('scheduler_type', 'CyclicLR'))
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
             defaults = {
@@ -293,41 +273,27 @@ class Trainer():
                 'patience': 5,
                 'verbose': True,
             }
+        defaults.update(self.sched_param_map(params))
         SchedulerCls = getattr(torch.optim.lr_scheduler, sched_type)
         scheduler = SchedulerCls(self.optimizer, **defaults)
 
         # Necessary to resume state without overwriting gamma scaling.
-        statedict = self.state.get('scheduler', {})
-        statedict.pop('scale_fn', None)
-        self.apply_state_dict(scheduler, 'scheduler')
+        if statedict:
+            statedict.pop('scale_fn', None)
+            self.apply_state_dict(scheduler, 'scheduler')
         return scheduler
 
-    def update_scheduler(self, params):
-        print("Update scheduler")
-        _params = {}
-        lr = params.get('max_lr') or params.get('lr')
-        if lr:
-            _params['max_lrs'] = [lr]
-        min_lr = params.get('min_lr') or params.get('base_lr')
-        if min_lr:
-            _params['base_lrs'] = [min_lr]
-        gamma = params.get('gamma') or params.get('lr_gamma')
-        if gamma:
-            _params['gamma'] = gamma
-        step_size = params.get('step_size') or params.get('step_size_up')
-        if step_size:
-            _params['total_size'] = step_size * 2
-        self.update_state_dict(self.scheduler, 'scheduler', _params)
-        self.save_state()
-        self.init_state()
-    
-    def update_criterion(self, params):
-        print("Update criterion")
-        label = params.get('label') or params.get('type')
-        weight = params.get('weight')
-        self.criterion = self.choose_criterion(crit_type=label, weight=weight)
-        self.save_state()
-        self.init_state()
+    def sched_param_map(self, params):
+        mappings = {
+            'lr': 'max_lr',
+            'min_lr': 'base_lr',
+            'step_size': 'step_size_up',
+        }
+        for k, v in mappings.items():
+            value = params.pop(k, None)
+            if value:
+                params[v] = value
+        return params
 
     ## Training the NN
 

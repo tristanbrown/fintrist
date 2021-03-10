@@ -11,17 +11,14 @@ Add
 * LR Range Test
 * OneCycleLR scheduler
 * Custom two-cycle LR scheduler based on model 4k.
-* LayerNorm
 * AlphaDropout
 * Pre/Post Weekend flags to UpDownIndicator data.
 * Timestamps during training.
-* SELU
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
 
 Fix
 ---
-* Trainer always starts from default LR. (requires refactor of trainer init)
-* Selection of normalization doesn't work.
+* Trainer always starts from default LR.
 
 Test
 ----
@@ -35,11 +32,12 @@ Add
 ---
 * Input normalization with LayerNorm.
 * Hidden layer normalization with LayerNorm.
-* SELU.
+* SELU
 
 Fix
 ---
 * Improve DataLoader efficiency
+* Refactor Trainer to init only once.
 
 ==================
 1.3.0 - 2021-03-04

@@ -555,7 +555,7 @@ class NNModel(BaseStudy):
 
     def update_state(self, stateargs):
         trainer = self.trainer
-        trainer.update_state(stateargs)
+        trainer.init_state(stateargs)
         self.data = trainer.state
         return trainer
 
