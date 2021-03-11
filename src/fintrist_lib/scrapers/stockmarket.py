@@ -91,6 +91,9 @@ class StockIntraday(RecipeBase):
         if source == 'Alpaca':
             data = trade_api.get_barset(
                 symbols, timeframe='minute', start=open_time, end=close_time, limit=1000)
+            missing = [symbol for symbol, records in data.items() if not records]
+            if missing:
+                raise ValueError(f"No intraday data found for symbol(s) {', '.join(missing)}.")
             dfs = {symbol: format_stockrecords(records, tz) for symbol, records in data.items()}
         elif source == 'mock':
             dfs = mock

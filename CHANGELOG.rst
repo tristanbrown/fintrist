@@ -18,7 +18,6 @@ Add
 
 Fix
 ---
-* Timestamp bug on THNQ.
 
 Test
 ----
