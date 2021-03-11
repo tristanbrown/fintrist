@@ -39,7 +39,7 @@ class Net(nn.Module):
         self.layers = self.build_layers(inputs, depth, width, outputs)
         self.architecture = {
             'inputs': inputs, 'depth': depth, 'width': width, 'outputs': outputs,
-            'output_type': output_type}
+            'output_type': output_type, 'activation': activation, 'normalize': normalize}
 
     def build_layers(self, inputs, depth, width, outputs):
         layers = []

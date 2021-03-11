@@ -21,7 +21,6 @@ Add
 
 Fix
 ---
-* Predict needs to use the correct net model.
 
 Change
 ------
@@ -47,6 +46,7 @@ Fix
 * Refactor Trainer to init only once.
 * Trainer no longer restarts from default LR.
 * Call out missing intraday data.
+* Save normalization and activation in architecture state.
 
 ==================
 1.3.0 - 2021-03-04
