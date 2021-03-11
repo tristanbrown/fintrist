@@ -18,7 +18,7 @@ Add
 
 Fix
 ---
-* Trainer always starts from default LR.
+* Timestamp bug on THNQ.
 
 Test
 ----
@@ -36,8 +36,9 @@ Add
 
 Fix
 ---
-* Improve DataLoader efficiency
+* Improve DataLoader efficiency.
 * Refactor Trainer to init only once.
+* Trainer no longer restarts from default LR.
 
 ==================
 1.3.0 - 2021-03-04

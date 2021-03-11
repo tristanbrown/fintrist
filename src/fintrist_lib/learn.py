@@ -283,6 +283,7 @@ class Trainer():
         if statedict:
             statedict.pop('scale_fn', None)
             self.apply_state_dict(scheduler, 'scheduler')
+            self.apply_state_dict(scheduler.optimizer, 'optimizer')
         return scheduler
 
     def sched_param_map(self, params):
