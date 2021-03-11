@@ -15,9 +15,17 @@ Add
 * Pre/Post Weekend flags to UpDownIndicator data.
 * Timestamps during training.
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
+* UpDown24H model.
+* UpDown5Day model.
+* UpDown30Day model.
 
 Fix
 ---
+* Predict needs to use the correct net model.
+
+Change
+------
+* Rename UpDownDay to UpDownNight
 
 Test
 ----
@@ -38,6 +46,7 @@ Fix
 * Improve DataLoader efficiency.
 * Refactor Trainer to init only once.
 * Trainer no longer restarts from default LR.
+* Call out missing intraday data.
 
 ==================
 1.3.0 - 2021-03-04
