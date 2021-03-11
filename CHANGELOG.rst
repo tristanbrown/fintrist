@@ -34,6 +34,10 @@ Test
 Unreleased
 ==========
 
+==================
+1.4.0 - 2021-03-11
+==================
+
 Add
 ---
 * Input normalization with LayerNorm.
