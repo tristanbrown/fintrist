@@ -122,6 +122,31 @@ class DfData(Dataset):
 
 
 class Trainer():
+    """Configurable parameters:
+    seed
+    epochs
+    batch_size
+    balance
+    architecture
+        depth
+        width
+        outputs
+        output_type
+        activation
+        normalize
+    criterion
+        type or label
+    optimizer
+    scheduler
+        type (CyclicLR, lr_test, ReduceLROnPlateau)
+        lr_test:
+            min_lr, max_lr
+        CyclicLR:
+            min_lr, max_lr/lr, gamma, step_size, mode
+        ReduceLROnPlateau
+            mode, factor, patience, verbose
+    """
+
     def __init__(self, data, target_col, **state):
         self.output_type = None
         self.load_state(state)
