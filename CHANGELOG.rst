@@ -8,16 +8,17 @@ TO DO
 
 Add
 ---
-* LR Range Test
+* Organize/filter/automate notes.
 * OneCycleLR scheduler
 * Custom two-cycle LR scheduler based on model 4k.
 * AlphaDropout
 * Pre/Post Weekend flags to UpDownIndicator data.
 * Timestamps during training.
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
-* UpDown24H model.
+* UpDown24H model. (NEXT closing price.)
 * UpDown5Day model.
 * UpDown30Day model.
+* TrendReversal model. ("Will tomorrow follow the same trend as today?")
 
 Fix
 ---
@@ -33,6 +34,15 @@ Test
 ==========
 Unreleased
 ==========
+
+Add
+---
+* LR Range Test
+
+Change
+------
+* Require `epochs` arg in training.
+
 
 ==================
 1.4.0 - 2021-03-11

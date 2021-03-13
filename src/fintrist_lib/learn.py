@@ -140,6 +140,7 @@ class Trainer():
     def save_state(self):
         self.state = {
             'epoch': self.epoch,
+            'epochs': self.epochs,
             'seed': self.traindata.seed,
             'batch_size': self.batch_size,
             'balance': self.balance,
@@ -149,19 +150,19 @@ class Trainer():
             'crit_type': self.criterion.__class__.__name__,
             'optimizer': self.optimizer.state_dict(),
             'scheduler': self.scheduler.state_dict(),
-            'scheduler_type': self.scheduler.__class__.__name__,
+            'sched_type': self.scheduler.__class__.__name__,
             'performance': self.performance
         }
 
-    def init_state(self, stateargs=None, resume=False):
+    def save_config(self, params):
+        configs = ['epochs', 'batch_size', 'balance', 'architecture']
+        new_params = {k: v for k, v in params.items() if k in configs}
+        self.state.update(new_params)
+
+    def init_state(self, stateargs=None):
         if stateargs is None:
             stateargs = {}
-        if batch_size := stateargs.get('batch_size'):
-            self.state['batch_size'] = batch_size
-        if (balance := stateargs.get('balance')) is not None:
-            self.state['balance'] = balance
-        if nn_params := stateargs.get('architecture'):
-            self.state['architecture'] = nn_params
+        self.save_config(stateargs)
         self.batch_size = self.state.get('batch_size', 1)
         self.balance = self.state.get('balance', False)
         self.trainloader = DataLoader(
@@ -171,6 +172,7 @@ class Trainer():
         self.net = self.build_net()
         self.criterion = self.update_criterion(stateargs.get('criterion', {}))
         self.optimizer = self.choose_optimizer()
+        self.epochs = self.state.get('epochs')
         self.scheduler = self.choose_scheduler(stateargs.get('scheduler', {}))
         self.epoch = self.state.get('epoch', 0)
         self.performance = self.state.get('performance', self.empty_performance)
@@ -248,7 +250,7 @@ class Trainer():
         return optimizer
 
     def choose_scheduler(self, params):
-        sched_type = params.pop('type', self.state.get('scheduler_type', 'CyclicLR'))
+        sched_type = params.pop('type', self.state.get('sched_type', 'CyclicLR'))
         statedict = self.state.get('scheduler', {})
         if sched_type == 'CyclicLR':
             defaults = {
@@ -268,6 +270,11 @@ class Trainer():
                     'gamma': statedict['gamma'],
                 }
                 defaults.update(new_dict)
+            mappings = {
+                'lr': 'max_lr',
+                'min_lr': 'base_lr',
+                'step_size': 'step_size_up',
+            }
         elif sched_type == 'ReduceLROnPlateau':
             defaults = {
                 'mode': 'max',
@@ -275,7 +282,21 @@ class Trainer():
                 'patience': 5,
                 'verbose': True,
             }
-        defaults.update(self.sched_param_map(params))
+        elif sched_type == 'lr_test':
+            epochs = self.epochs or 200
+            min_lr = params.get('min_lr', 0.0001)
+            max_lr = params.get('max_lr', 0.1)
+            gamma = (max_lr/min_lr)**(1/epochs)
+            defaults = {
+                'gamma': gamma,
+                'step_size': 1,
+            }
+            sched_type = 'StepLR'
+            self.optimizer.param_groups[0]['lr'] = min_lr
+            mappings = {'max_lr': None, 'min_lr': None}
+        else:
+            defaults = {}
+        defaults.update(self.sched_param_map(params, mappings))
         SchedulerCls = getattr(torch.optim.lr_scheduler, sched_type)
         scheduler = SchedulerCls(self.optimizer, **defaults)
 
@@ -286,15 +307,13 @@ class Trainer():
             self.apply_state_dict(scheduler.optimizer, 'optimizer')
         return scheduler
 
-    def sched_param_map(self, params):
-        mappings = {
-            'lr': 'max_lr',
-            'min_lr': 'base_lr',
-            'step_size': 'step_size_up',
-        }
+    def sched_param_map(self, params, mappings):
+        """Map scheduler parameters to Scheduler object inputs.
+        Removes null values.
+        """
         for k, v in mappings.items():
             value = params.pop(k, None)
-            if value:
+            if v and value:
                 params[v] = value
         return params
 
@@ -372,19 +391,6 @@ class Trainer():
             self.scheduler.step()
         ## Store training state
         self.save_state()
-
-    def lr_rangetest(self):
-        min_lr = 0.0001
-        max_lr = 0.1
-        epochs = 200
-        gamma = (max_lr/min_lr)**(1/epochs)
-        self.optimizer = self.choose_optimizer()
-        self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optimizer,
-            step_size=1,
-            gamma=gamma
-        )
-        self.train(epochs)
 
     ## Inference
 

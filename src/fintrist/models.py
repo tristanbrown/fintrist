@@ -559,45 +559,33 @@ class NNModel(BaseStudy):
         self.data = trainer.state
         return trainer
 
-    def train(self, epochs=10, save_interval=5, restart=False, **stateargs):
+    def train(self, epochs, save_interval=5, restart=False, **stateargs):
         if restart:
             self.reset()
+        stateargs['epochs'] = epochs
         trainer = self.update_state(stateargs)
         print(trainer.net)
         print('Criterion: ', trainer.state['crit_type'])
         print("Balance: ", trainer.state['balance'])
         print("Batch size: ", trainer.batch_size)
-        print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
+        try:
+            print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
+        except KeyError:
+            pass
         print("Gamma: ", trainer.state['scheduler']['gamma'])
         total_epochs = trainer.epoch + epochs
         while trainer.epoch < total_epochs:
             trainer.train(save_interval)
             self.data = trainer.state
 
-    def lr_rangetest(self, epochs=10, save_interval=5, restart=False, **stateargs):
-        if restart:
-            self.reset()
-        trainer = self.update_state(stateargs)
-        print(trainer.net)
-        print('Criterion: ', trainer.state['crit_type'])
-        print("Balance: ", trainer.state['balance'])
-        print("Batch size: ", trainer.batch_size)
-        print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
-        print("Gamma: ", trainer.state['scheduler']['gamma'])
-        trainer.lr_rangetest()
-        self.data = trainer.state
-
     def reset(self):
         self.data = {}
 
-    def run(self, lr_test=False, **kwargs):
+    def run(self, **kwargs):
         try:
             self.status = 'Running'
             self.save()
-            if lr_test:
-                self.lr_rangetest(**kwargs)
-            else:
-                self.train(**kwargs)
+            self.train(**kwargs)
         finally:
             self.status = 'Idle'
             self.save()
