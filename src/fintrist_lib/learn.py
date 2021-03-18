@@ -1,4 +1,5 @@
 """Construct Neural Networks using Pytorch"""
+import time
 import numpy as np
 import pandas as pd
 import torch
@@ -165,6 +166,7 @@ class Trainer():
     def save_state(self):
         self.state = {
             'epoch': self.epoch,
+            'time': self.time,
             'epochs': self.epochs,
             'seed': self.traindata.seed,
             'batch_size': self.batch_size,
@@ -200,6 +202,7 @@ class Trainer():
         self.epochs = self.state.get('epochs')
         self.scheduler = self.choose_scheduler(stateargs.get('scheduler', {}))
         self.epoch = self.state.get('epoch', 0)
+        self.time = self.state.get('time', 0)
         self.performance = self.state.get('performance', self.empty_performance)
         self.save_state()
 
@@ -397,9 +400,12 @@ class Trainer():
             # Drop the 1st step to align base_lr with save points.
             self.scheduler.step()
         for e in range(epochs):
+            start_time = time.time()
             self.epoch += 1
             trainloss, current_lr = self.train_step()
             testloss, accuracy, acc_zero, acc_ones = self.test_step()
+            end_time = time.time()
+            self.time += end_time - start_time
 
             metrics = {
                 'lr': current_lr,
@@ -412,7 +418,8 @@ class Trainer():
             self.performance = self.performance.append(metrics, ignore_index=True)
             print(f"({self.epoch}) " + "Acc: {accuracy:.1f}%, Acc0: {accuracy_0:.1f}%, ".format(**metrics) +\
                 "Acc1: {accuracy_1:.1f}%, Test loss: {testloss:.4f}, ".format(**metrics) +\
-                "Train loss: {trainloss:.4f}, LR: {lr:.6f}".format(**metrics))
+                "Train loss: {trainloss:.4f}, LR: {lr:.6f}, Time: ".format(**metrics) +\
+                f"{self.time:.1f}")
             self.scheduler.step()
         ## Store training state
         self.save_state()

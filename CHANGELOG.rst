@@ -13,7 +13,6 @@ Add
 * Custom two-cycle LR scheduler based on model 4k.
 * AlphaDropout
 * Pre/Post Weekend flags to UpDownIndicator data.
-* Timestamps during training.
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
 * UpDown24H model. (NEXT closing price.)
 * UpDown5Day model.
@@ -38,6 +37,7 @@ Unreleased
 Add
 ---
 * LR Range Test
+* Training timing.
 
 Change
 ------
