@@ -438,7 +438,7 @@ class BaseStudy(Document):
     def read_notes(self, title=None):
         """Read the notes."""
         if title is None:
-            for key in self.notes.keys():
+            for key in reversed(self.notes.keys()):
                 self.read_notes(key)
         else:
             entry = [f"{i}: {note}" for i, note in enumerate(self.notes.get(title, []))]
