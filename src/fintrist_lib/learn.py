@@ -56,7 +56,7 @@ class Net(nn.Module):
             layers.append(nn.Linear(conns[i], conns[i+1]))
             layers.append(self.activation)
             if (i < list(range(depth))[-1]):
-                if self.dropout:
+                if self.dropout and (i != 0):
                     layers.append(self.dropout)
                 if self.normalize == 'layer':
                     layers.append(nn.LayerNorm(conns[i+1]))
