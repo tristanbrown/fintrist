@@ -11,7 +11,7 @@ Add
 * Organize/filter/automate notes.
 * OneCycleLR scheduler
 * Custom two-cycle LR scheduler based on model 4k.
-* AlphaDropout
+* SELU except last layer.
 * Pre/Post Weekend flags to UpDownIndicator data.
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
 * UpDown24H model. (NEXT closing price.)
@@ -38,6 +38,7 @@ Add
 ---
 * LR Range Test
 * Training timing.
+* Dropout and AlphaDropout
 
 Change
 ------

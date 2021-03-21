@@ -13,12 +13,16 @@ __all__ = ['Net', 'DfData', 'Trainer']
 
 class Net(nn.Module):
     def __init__(self, inputs, depth=4, width=None, outputs=1, output_type='bounded',
-                activation='relu', normalize=None):
+                activation='relu', normalize=None, dropout=False):
         super().__init__()
         if width is None:
             width = inputs * 2
 
         self.normalize = normalize
+        if dropout and (activation == 'selu'):
+            self.dropout = nn.AlphaDropout(p=0.1)
+        elif dropout:
+            self.dropout = nn.Dropout(p=0.5)
 
         # Define the activation functions between layers.
         if activation == 'relu':
@@ -40,7 +44,8 @@ class Net(nn.Module):
         self.layers = self.build_layers(inputs, depth, width, outputs)
         self.architecture = {
             'inputs': inputs, 'depth': depth, 'width': width, 'outputs': outputs,
-            'output_type': output_type, 'activation': activation, 'normalize': normalize}
+            'output_type': output_type, 'activation': activation, 'normalize': normalize,
+            'dropout': dropout}
 
     def build_layers(self, inputs, depth, width, outputs):
         layers = []
@@ -50,8 +55,11 @@ class Net(nn.Module):
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
             layers.append(self.activation)
-            if (self.normalize == 'layer') and (i < list(range(depth))[-1]):
-                layers.append(nn.LayerNorm(conns[i+1]))
+            if (i < list(range(depth))[-1]):
+                if self.dropout:
+                    layers.append(self.dropout)
+                if self.normalize == 'layer':
+                    layers.append(nn.LayerNorm(conns[i+1]))
         layers = layers[:-1]
         if self.final_act:
             layers.append(self.final_act)
