@@ -31,7 +31,8 @@ class Net(nn.Module):
             self.activation = nn.ReLU()
         elif activation == 'leakyrelu':
             self.activation = nn.LeakyReLU()
-        elif activation == 'selu':
+        elif (activation == 'selu') or (activation == 'selu-relu'):
+            self.relu_end = True
             self.activation = nn.SELU()
 
         # Define the final activation function.
@@ -56,8 +57,12 @@ class Net(nn.Module):
             layers.append(nn.LayerNorm(conns[0]))
         for i in range(depth):
             layers.append(nn.Linear(conns[i], conns[i+1]))
+            if (i == list(range(depth))[-2]) and self.relu_end:
+                ## Switch back to ReLU in last layer to avoid SELU compression of outputs
+                self.activation = nn.ReLU()
             layers.append(self.activation)
             if (i < list(range(depth))[-1]):
+                ## Add dropout and/or normalization on hidden layers
                 if self.dropout and (i != 0):
                     layers.append(self.dropout)
                 if self.normalize == 'layer':

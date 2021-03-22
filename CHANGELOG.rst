@@ -9,8 +9,6 @@ TO DO
 Add
 ---
 * Organize/filter/automate notes.
-* Custom two-cycle LR scheduler based on model 4k.
-* SELU except last layer.
 * Pre/Post Weekend flags to UpDownIndicator data.
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
 * UpDown24H model. (NEXT closing price.)
@@ -38,6 +36,8 @@ Add
 * Training timing.
 * Dropout and AlphaDropout
 * OneCycleLR Scheduler
+* SELU-ReLU architecture: Use SELU everywhere except the last layer,
+    to avoid compression of outputs.
 
 Change
 ------
