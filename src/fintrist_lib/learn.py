@@ -23,6 +23,8 @@ class Net(nn.Module):
             self.dropout = nn.AlphaDropout(p=0.1)
         elif dropout:
             self.dropout = nn.Dropout(p=0.5)
+        else:
+            self.dropout = dropout
 
         # Define the activation functions between layers.
         if activation == 'relu':
@@ -310,6 +312,14 @@ class Trainer():
                 'lr': 'max_lr',
                 'min_lr': 'base_lr',
                 'step_size': 'step_size_up',
+            }
+        elif sched_type == 'OneCycleLR':
+            defaults = {
+                'max_lr': 0.1,
+                'total_steps': self.epochs + 1
+            }
+            mappings = {
+                'lr': 'max_lr',
             }
         elif sched_type == 'ReduceLROnPlateau':
             defaults = {

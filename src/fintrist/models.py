@@ -572,7 +572,10 @@ class NNModel(BaseStudy):
             print("Max LR: ", trainer.state['scheduler']['max_lrs'][0])
         except KeyError:
             pass
-        print("Gamma: ", trainer.state['scheduler']['gamma'])
+        try:
+            print("Gamma: ", trainer.state['scheduler']['gamma'])
+        except KeyError:
+            pass
         total_epochs = trainer.epoch + epochs
         while trainer.epoch < total_epochs:
             trainer.train(save_interval)

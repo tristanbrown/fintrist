@@ -9,7 +9,6 @@ TO DO
 Add
 ---
 * Organize/filter/automate notes.
-* OneCycleLR scheduler
 * Custom two-cycle LR scheduler based on model 4k.
 * SELU except last layer.
 * Pre/Post Weekend flags to UpDownIndicator data.
@@ -28,7 +27,6 @@ Change
 
 Test
 ----
-* Try CyclicLR or OneCycleLR from 0.003 to 0.01.
 
 ==========
 Unreleased
@@ -39,6 +37,7 @@ Add
 * LR Range Test
 * Training timing.
 * Dropout and AlphaDropout
+* OneCycleLR Scheduler
 
 Change
 ------
