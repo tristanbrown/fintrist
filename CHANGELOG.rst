@@ -10,10 +10,8 @@ Add
 ---
 * Organize/filter/automate notes.
 * Pre/Post Weekend flags to UpDownIndicator data.
+* Add volatility to UpDownIndicator data.
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
-* UpDown24H model. (NEXT closing price.)
-* UpDown5Day model.
-* UpDown30Day model.
 * TrendReversal model. ("Will tomorrow follow the same trend as today?")
 
 Fix
@@ -46,6 +44,7 @@ Add
 Change
 ------
 * Require `epochs` arg in training.
+* UpDownIndicator looks at closing prices.
 
 
 ==================

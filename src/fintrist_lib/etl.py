@@ -6,7 +6,37 @@ from .base import RecipeBase
 from .scrapers import stockmarket
 from .simulate import StockDaySim
 
-__all__ = ['prep_pricing_data', 'UpDownIndicator']
+__all__ = ['prep_pricing_data', 'UpDownIndicator', 'UpDownIndicator2']
+
+class UpDownIndicator2(RecipeBase):
+
+    valid_type = 'market'
+
+    def __init__(self, symbol='SPY', timeofday=0.9, lookahead=1, threshold=0):
+        self.studyname = f"{symbol} UpDownIndicator {lookahead}Day {threshold*100}%"
+        self.parents = {
+            'daily_prices': stockmarket.StockDaily(symbol),
+            'today_prices': stockmarket.StockIntraday(symbol)
+            }
+        self.params = {
+            'timeofday': timeofday,
+            'lookahead': lookahead,
+            'threshold': threshold,
+            }
+
+    @staticmethod
+    def process(daily_prices, today_prices, timeofday, lookahead, threshold):
+        """Prepare stock data for a trend length indicator.
+
+        ::parents:: daily_prices, today_prices
+        ::params::
+        ::alerts::
+        """
+        data, alerts = prep_pricing_data(daily_prices, today_prices, timeofday)
+        data['up indicator'] = check_future_gain(data, lookahead, threshold, endtime='close')
+        data = data[['% overnight-0', '% day-0', '% day-1', '% cumul-1', '% cumul-5', '% cumul-10', '% cumul-20',
+                      '% vol cumul-1', '% vol cumul-5', '% vol cumul-10', '% vol cumul-20', 'up indicator']]
+        return data, alerts
 
 class UpDownIndicator(RecipeBase):
 
@@ -113,7 +143,7 @@ def append_cum_vol_chg(data, lookback):
 def build_lookbacks(data):
     data = data.copy()
     recent_lookbacks = [0, 1, 2, 3, 4, 5]
-    cum_lookbacks = [1, 2, 3, 4, 5, 10, 15, 30, 60]
+    cum_lookbacks = [1, 2, 3, 4, 5, 10, 15, 20, 30, 60]
     for lookback in recent_lookbacks:
         data = append_pct_overnight(data, lookback)
         data = append_pct_day(data, lookback)
@@ -130,12 +160,16 @@ def append_future_pct(data, lookahead):
     data[f'% open+{lookahead}'] = (data['adjOpen'].shift(-lookahead) - data['quote'])/data['quote']
     return data
 
-def check_future_gain(data, lookahead, threshold=0):
+def check_future_gain(data, lookahead, threshold=0, endtime='open'):
     """For each day, check 'lookahead' number of days in the future. If that
-    day's open is 'threshold' % higher than the simulated current-time quote,
+    day's open/close is 'threshold' % higher than the simulated current-time quote,
     give True; otherwise False (or NA if there is no data that far ahead).
     """
-    gain = (data['adjOpen'].shift(-lookahead) - data['quote'])/data['quote']
+    if endtime == 'open':
+        timecol = 'adjOpen'
+    elif endtime == 'close':
+        timecol = 'adjClose'
+    gain = (data[timecol].shift(-lookahead) - data['quote'])/data['quote']
     check = gain > threshold
     return check[~gain.isna()].astype('Int64')
 
