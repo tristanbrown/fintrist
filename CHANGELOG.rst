@@ -11,6 +11,17 @@ Add
 * Organize/filter/automate notes.
 * Pre/Post Weekend flags to UpDownIndicator data.
 * Add volatility to UpDownIndicator data.
+    - Two options:
+    - Use an advanced mathematical model.
+    - Use two different types of volatility: Close-Close and Low/High
+* Try building an overnight model with a returns threshold, and use limit orders.
+* Try building an overnight returns regression model, and use limit orders.
+* See if model can predict closing price with open price available.
+* Try chaining NN predictors?
+* Include moving avg data alongside price data.
+* Can base-building be modeled?
+* Highs/Lows in the last 5 days, 10 days, 20 days, 60 days.
+* Implement squeeze indicator (multiple timescales).
 * "Independent Components" layer (norm -> dropout -> weights -> activation)
 * TrendReversal model. ("Will tomorrow follow the same trend as today?")
 
