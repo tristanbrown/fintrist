@@ -2,6 +2,8 @@
 
 import numpy as np
 from scipy import stats
+
+from . import analysis
 from .base import RecipeBase
 from .scrapers import stockmarket
 from .simulate import StockDaySim
@@ -16,7 +18,8 @@ class UpDownIndicator2(RecipeBase):
         self.studyname = f"{symbol} UpDownIndicator {lookahead}Day {threshold*100}%"
         self.parents = {
             'daily_prices': stockmarket.StockDaily(symbol),
-            'today_prices': stockmarket.StockIntraday(symbol)
+            'today_prices': stockmarket.StockIntraday(symbol),
+            'volatility': analysis.Volatility(symbol)
             }
         self.params = {
             'timeofday': timeofday,

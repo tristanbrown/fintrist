@@ -8,7 +8,7 @@ from .settings import Config
 from .base import RecipeBase
 from .scrapers import stockmarket
 
-__all__ = ['any_data', 'MovingAvg', 'sample_dates', 'simulate',
+__all__ = ['any_data', 'MovingAvg', 'Volatility', 'sample_dates', 'simulate',
     'multisim']
 
 def any_data(data):
@@ -46,6 +46,34 @@ class MovingAvg(RecipeBase):
             alerts.append('5d over 30d')
         else:
             alerts.append('5d under 30d')
+        return (outdf, alerts)
+
+class Volatility(RecipeBase):
+    """Close/Close volatility given by std of natural log returns.
+    High/Low volatility is Parkinson volatility.
+    https://www.ivolatility.com/help/3.html#:~:text=The%20Parkinson%20number%2C%20or%20High,on%20a%20fixed%20time%20interval.
+    ln(xn/xm) ~= (xn - xm)/xm * 100%
+    https://stats.stackexchange.com/questions/244199/why-is-it-that-natural-log-changes-are-percentage-changes-what-is-about-logs-th
+    """
+    valid_type = 'market'
+
+    def __init__(self, symbol='SPY'):
+        self.studyname = f"{symbol} Volatility"
+        self.parents = {'prices': stockmarket.StockDaily(symbol)}
+
+    @staticmethod
+    def process(prices, **kwargs):
+        alerts = []
+        outdf = prices[['adjClose', 'adjLow', 'adjHigh']].copy()
+        outdf['logReturns'] = np.log(outdf['adjClose'] / outdf['adjClose'].shift(1))
+        outdf['HighLow'] = np.log(outdf['adjHigh'] / outdf['adjLow'])
+        outdf['5-day close volat'] = outdf['logReturns'].rolling(5).std(ddof=0)
+        outdf['10-day close volat'] = outdf['logReturns'].rolling(10).std(ddof=0)
+        outdf['20-day close volat'] = outdf['logReturns'].rolling(20).std(ddof=0)
+        outdf['5-day highlow volat'] = outdf['HighLow'].rolling(5).std(ddof=0) / (4 * np.log(2))**(1/2) * 4
+        outdf['10-day highlow volat'] = outdf['HighLow'].rolling(10).std(ddof=0) / (4 * np.log(2))**(1/2) * 4
+        outdf['20-day highlow volat'] = outdf['HighLow'].rolling(20).std(ddof=0) / (4 * np.log(2))**(1/2) * 4
+
         return (outdf, alerts)
 
 def sample_dates(data, N=100, window=365, backdate=0):

@@ -10,12 +10,10 @@ Add
 ---
 * Organize/filter/automate notes.
 * Pre/Post Weekend flags to UpDownIndicator data.
-* Add volatility to UpDownIndicator data.
-    - Two options:
-    - Use an advanced mathematical model.
-    - Use two different types of volatility: Close-Close and Low/High
 * Try building an overnight model with a returns threshold, and use limit orders.
 * Try building an overnight returns regression model, and use limit orders.
+* Build a model that just takes the closing linear trend for the day, and predicts
+    the price change at open.
 * See if model can predict closing price with open price available.
 * Try chaining NN predictors?
 * Include moving avg data alongside price data.
@@ -51,6 +49,7 @@ Add
 * OneCycleLR Scheduler
 * SELU-ReLU architecture: Use SELU everywhere except the last layer,
     to avoid compression of outputs.
+* Volatility Recipe
 
 Change
 ------
