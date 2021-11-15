@@ -39,12 +39,20 @@ class StockDaily(RecipeBase):
             data.index = pd.to_datetime(data.index)
         elif source == 'Tiingo':
             data = pdr.get_data_tiingo(symbol, api_key=Config.APIKEY_TIINGO, start='1900')
-            data = data.droplevel('symbol')  # Multiple stock symbols are possible
+
+            # Multiple stock symbols are possible
+            data = data.reset_index().set_index('date')
             data.index = data.index.date
+            data.index.name = 'date'
+            data = data.set_index('symbol', append=True)
+            data = data.reorder_levels(['symbol', 'date'])
+            if isinstance(symbol, str):  ## Single symbol only
+                data = data.droplevel('symbol')
         elif source == 'mock':
             data = mock
 
         ## Create alerts
+        ## TODO: These alerts don't work for multiple symbols
         alerts = [f'source: {source}']
         div = data.loc[data.index.max(), 'divCash']
         if div > 0:
