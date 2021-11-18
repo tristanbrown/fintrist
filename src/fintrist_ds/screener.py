@@ -19,7 +19,7 @@ class StockScreener():
     screener.gainloss_data()
     """
 
-    def __init__(self, symbols=None, name="Stock Screener"):
+    def __init__(self, name="Stock Screener"):
         self.name = name
         self.timestamp = arrow.now()
 
