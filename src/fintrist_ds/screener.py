@@ -68,11 +68,19 @@ class StockScreener():
         result = [self.check_all_intervals(data.loc[symbol,:]) for symbol in all_symbols]
         df = pd.DataFrame(result, index=all_symbols, columns = self.time_periods.keys())
         df['crash_mean'] = df[self.crashes.keys()].mean(axis=1)
+        self.append_annual(df)
         return df.sort_values('crash_mean', ascending=False)
 
     def check_all_intervals(self, prices):
         """Calculate returns across every given time interval."""
         return [price_returns(prices, *interval) for interval in self.time_periods.values()]
+
+    def append_annual(self, returns_df):
+        """Append annual returns"""
+        for period in self.gains.keys():
+            years = int(period.rstrip('y'))
+            annualized = annual_from_long(returns_df[period], years)
+            returns_df[f"{period}_ann"] = annualized
 
 def get_date(datestr):
     """Get a date from a date string."""
@@ -101,3 +109,7 @@ def price_returns(prices, start, end):
         return end_price / start_price - 1
     except TypeError:
         return
+
+def annual_from_long(long_return, years):
+    """Calculate the annual returns from long-term returns."""
+    return (1 + long_return) ** (1 / years) - 1
