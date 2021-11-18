@@ -23,19 +23,23 @@ class StockScreener():
         self.name = name
         self.timestamp = arrow.now()
 
-        self.time_periods = {
+        self.crashes = {
             '2020Feb': ('2020-02-19', '2020-03-23'),
             '2018Oct': ('2018-10-03', '2018-12-24'),
             '2015Aug': ('2015-07-22', '2016-02-11'),
             '2011May': ('2011-05-02', '2011-10-03'),
             '2010Apr': ('2010-04-26', '2010-08-30'),
             '2007Oct': ('2007-10-09', '2009-03-09'),
+        }
+        self.gains = {
             '1y': years_interval(1),
             '3y': years_interval(3),
             '5y': years_interval(5),
             '10y': years_interval(10),
             '20y': years_interval(20),
         }
+        self.time_periods = self.crashes.copy()
+        self.time_periods.update(self.gains)
 
     ## Data I/O
     def pull_stock_data(self, symbols):
@@ -62,7 +66,9 @@ class StockScreener():
         data = self.stock_data
         all_symbols = self.symbols
         result = [self.check_all_intervals(data.loc[symbol,:]) for symbol in all_symbols]
-        return pd.DataFrame(result, index=all_symbols, columns = self.time_periods.keys())
+        df = pd.DataFrame(result, index=all_symbols, columns = self.time_periods.keys())
+        df['crash_mean'] = df[self.crashes.keys()].mean(axis=1)
+        return df.sort_values('crash_mean', ascending=False)
 
     def check_all_intervals(self, prices):
         """Calculate returns across every given time interval."""
