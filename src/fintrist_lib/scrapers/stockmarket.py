@@ -54,14 +54,17 @@ class StockDaily(RecipeBase):
         ## Create alerts
         ## TODO: These alerts don't work for multiple symbols
         alerts = [f'source: {source}']
-        div = data.loc[data.index.max(), 'divCash']
-        if div > 0:
-            alerts.append('ex-dividend')
-        splitf = data.loc[data.index.max(), 'splitFactor']
-        if splitf > 1:
-            alerts.append('split')
-        elif splitf < 1:
-            alerts.append('reverse split')
+        try:
+            div = data.loc[data.index.max(), 'divCash']
+            if div > 0:
+                alerts.append('ex-dividend')
+            splitf = data.loc[data.index.max(), 'splitFactor']
+            if splitf > 1:
+                alerts.append('split')
+            elif splitf < 1:
+                alerts.append('reverse split')
+        except:
+            pass
         return (data, alerts)
 
 class StockIntraday(RecipeBase):
